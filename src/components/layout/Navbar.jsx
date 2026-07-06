@@ -93,20 +93,24 @@ function Navbar({ onMenuClick, pageTitle = "Dashboard" }) {
   return (
 <header
   className="
-    sticky top-4
+    sticky
+    top-4
     mx-4
+    mb-4
     h-16
     rounded-3xl
+    border
+    border-[#1F2937]
     bg-[#111827]/90
     backdrop-blur-xl
-    border border-[#1F2937]
     shadow-lg
-    flex items-center
+    flex
+    items-center
     justify-between
     px-6
     z-40
   "
->      
+>     
       {/* --- LEFT SECTION: Mobile Menu & Breadcrumb --- */}
       <div className="flex items-center gap-4">
         <button
