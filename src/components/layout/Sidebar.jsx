@@ -129,11 +129,20 @@ function Sidebar({
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 h-screen bg-[#111827] border-r border-[#1F2937] z-50 flex flex-col transition-all duration-300 ease-in-out
-          ${isCollapsed ? 'md:w-[72px]' : 'md:w-[260px]'}
-          ${isMobileOpen ? 'translate-x-0 w-[260px]' : '-translate-x-full md:translate-x-0'}
-        `}
-      >
+  className={`
+    fixed top-4 left-4 bottom-4
+    bg-[#111827]/95
+    backdrop-blur-xl
+    border border-[#1F2937]
+    rounded-3xl
+    shadow-2xl
+    transition-all duration-300
+    z-50
+    flex flex-col
+
+    ${isCollapsed ? "w-[82px]" : "w-[270px]"}
+  `}
+>
         {/* Top Header Section */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-[#1F2937] shrink-0">
           <div className="flex items-center gap-3 overflow-hidden">

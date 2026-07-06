@@ -6,7 +6,7 @@ import Register from "./pages/RegisterPage";
 
 import MainLayout from "./layouts/MainLayout";
 
-import Dashboard from "./pages/Dashboard";
+import Dashboard from "./pages/Dashboard/Dashboard";
 // import Tasks from "./pages/Tasks";
 // import GitHub from "./pages/GitHub";
 // import LeetCode from "./pages/LeetCode";
