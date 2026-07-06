@@ -39,7 +39,7 @@ const MOCK_NOTIFICATIONS = [
   }
 ];
 
-export function Navbar({ onMenuClick, pageTitle = "Dashboard" }) {
+function Navbar({ onMenuClick, pageTitle = "Dashboard" }) {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -303,3 +303,4 @@ export function Navbar({ onMenuClick, pageTitle = "Dashboard" }) {
     </header>
   );
 }
+export default Navbar;

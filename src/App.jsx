@@ -2,24 +2,24 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Login from "./pages/Login";
 import Register from "./pages/RegisterPage";
-import ForgotPassword from "./pages/ForgotPassword";
+// import ForgotPassword from "./pages/ForgotPassword";
 
 import MainLayout from "./layouts/MainLayout";
 
 import Dashboard from "./pages/Dashboard";
-import Tasks from "./pages/Tasks";
-import GitHub from "./pages/GitHub";
-import LeetCode from "./pages/LeetCode";
-import Learning from "./pages/Learning";
-import Communication from "./pages/Communication";
-import LinkedIn from "./pages/LinkedIn";
-import Analytics from "./pages/Analytics";
-import Journal from "./pages/Journal";
-import Reports from "./pages/Reports";
-import Achievements from "./pages/Achievements";
-import Notifications from "./pages/Notifications";
-import Settings from "./pages/Settings";
-import Profile from "./pages/Profile";
+// import Tasks from "./pages/Tasks";
+// import GitHub from "./pages/GitHub";
+// import LeetCode from "./pages/LeetCode";
+// import Learning from "./pages/Learning";
+// import Communication from "./pages/Communication";
+// import LinkedIn from "./pages/LinkedIn";
+// import Analytics from "./pages/Analytics";
+// import Journal from "./pages/Journal";
+// import Reports from "./pages/Reports";
+// import Achievements from "./pages/Achievements";
+// import Notifications from "./pages/Notifications";
+// import Settings from "./pages/Settings";
+// import Profile from "./pages/Profile";
 
 export default function App() {
   return (
@@ -30,13 +30,13 @@ export default function App() {
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
+        {/* <Route path="/forgot-password" element={<ForgotPassword />} /> */}
 
         {/* Main Application */}
         <Route element={<MainLayout />}>
-{/* 
+
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/tasks" element={<Tasks />} />
+    {/*       <Route path="/tasks" element={<Tasks />} />
           <Route path="/github" element={<GitHub />} />
           <Route path="/leetcode" element={<LeetCode />} />
           <Route path="/learning" element={<Learning />} />

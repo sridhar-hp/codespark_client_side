@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter, NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   Zap,
   ChevronLeft,
@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 
 const MAIN_NAV_ITEMS = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/tasks', label: 'Tasks', icon: CheckSquare },
   { path: '/github', label: 'GitHub', icon: Github },
   { path: '/leetcode', label: 'LeetCode', icon: Code2 },
@@ -44,7 +44,7 @@ const BOTTOM_NAV_ITEMS = [
   { path: '/logout', label: 'Logout', icon: LogOut, isDanger: true },
 ];
 
-export function Sidebar({ 
+function Sidebar({ 
   isCollapsed = false, 
   setIsCollapsed, 
   isMobileOpen = false, 
@@ -181,4 +181,4 @@ export function Sidebar({
     </>
   );
 }
-
+export default Sidebar;
