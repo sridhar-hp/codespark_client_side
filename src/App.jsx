@@ -22,21 +22,21 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 // import Profile from "./pages/Profile";
 
 export default function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
+    return (
+        <BrowserRouter>
+            <Routes>
 
-        {/* Authentication */}
-        <Route path="/" element={<Login />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        {/* <Route path="/forgot-password" element={<ForgotPassword />} /> */}
+                {/* Authentication */}
+                <Route path="/" element={<Login />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                {/* <Route path="/forgot-password" element={<ForgotPassword />} /> */}
 
-        {/* Main Application */}
-        <Route element={<MainLayout />}>
+                {/* Main Application */}
+                <Route element={<MainLayout />}>
 
-          <Route path="/dashboard" element={<Dashboard />} />
-          {/*       <Route path="/tasks" element={<Tasks />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    {/*       <Route path="/tasks" element={<Tasks />} />
           <Route path="/github" element={<GitHub />} />
           <Route path="/leetcode" element={<LeetCode />} />
           <Route path="/learning" element={<Learning />} />
@@ -50,9 +50,9 @@ export default function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/profile" element={<Profile />} /> */}
 
-        </Route>
+                </Route>
 
-      </Routes>
-    </BrowserRouter>
-  );
+            </Routes>
+        </BrowserRouter>
+    );
 }
