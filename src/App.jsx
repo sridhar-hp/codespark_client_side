@@ -36,7 +36,7 @@ export default function App() {
         <Route element={<MainLayout />}>
 
           <Route path="/dashboard" element={<Dashboard />} />
-    {/*       <Route path="/tasks" element={<Tasks />} />
+          {/*       <Route path="/tasks" element={<Tasks />} />
           <Route path="/github" element={<GitHub />} />
           <Route path="/leetcode" element={<LeetCode />} />
           <Route path="/learning" element={<Learning />} />
