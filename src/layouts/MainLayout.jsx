@@ -13,10 +13,10 @@ function MainLayout() {
                 <Navbar />
 
                 <main className="flex-1 px-4 pb-4">
-                    <div className="min-h-full rounded-3xl border border-[#1F2937] bg-[#0F172A] p-8">
-                        <Outlet />
-                    </div>
-                </main>
+  <div className="mt-4 min-h-full rounded-3xl border border-[#1F2937] bg-[#0F172A] p-8">
+    <Outlet />
+  </div>
+</main>
 
             </div>
 

@@ -86,10 +86,10 @@ function Sidebar({
                             <Icon
                                 size={20}
                                 className={`shrink-0 transition-colors ${isActive
-                                        ? 'text-amber-500'
-                                        : item.isDanger
-                                            ? 'text-[#9CA3AF] group-hover:text-red-500'
-                                            : 'text-[#9CA3AF] group-hover:text-white'
+                                    ? 'text-amber-500'
+                                    : item.isDanger
+                                        ? 'text-[#9CA3AF] group-hover:text-red-500'
+                                        : 'text-[#9CA3AF] group-hover:text-white'
                                     }`}
                             />
 
@@ -127,19 +127,18 @@ function Sidebar({
 
             {/* Sidebar Container */}
             <aside
-                className={`
-    fixed top-4 left-4 bottom-4
-    bg-[#111827]/95
-    backdrop-blur-xl
-    border border-[#1F2937]
+                className="
+    fixed
+    top-4
+    left-4
+    bottom-4
+    w-[270px]
     rounded-3xl
-    shadow-2xl
-    transition-all duration-300
-    z-50
+    border border-[#1F2937]
+    bg-[#111827]
+    overflow-hidden
     flex flex-col
-
-    ${isCollapsed ? "w-[82px]" : "w-[270px]"}
-  `}
+  "
             >
                 {/* Top Header Section */}
                 <div className="h-16 flex items-center justify-between px-4 border-b border-[#1F2937] shrink-0">
