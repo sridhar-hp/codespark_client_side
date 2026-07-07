@@ -7,7 +7,7 @@ import Register from "./pages/RegisterPage";
 import MainLayout from "./layouts/MainLayout";
 
 import Dashboard from "./pages/Dashboard/Dashboard";
-// import Tasks from "./pages/Tasks";
+import Tasks from "./pages/TasksPage/Tasks";
 // import GitHub from "./pages/GitHub";
 // import LeetCode from "./pages/LeetCode";
 // import Learning from "./pages/Learning";
@@ -36,8 +36,8 @@ export default function App() {
                 <Route element={<MainLayout />}>
 
                     <Route path="/dashboard" element={<Dashboard />} />
-                    {/*       <Route path="/tasks" element={<Tasks />} />
-          <Route path="/github" element={<GitHub />} />
+                      <Route path="/tasks" element={<Tasks />} />
+             {/*  <Route path="/github" element={<GitHub />} />
           <Route path="/leetcode" element={<LeetCode />} />
           <Route path="/learning" element={<Learning />} />
           <Route path="/communication" element={<Communication />} />
