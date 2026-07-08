@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import { 
-  FaGithub, 
-  FaGoogle, 
-  FaFire, 
-  FaCode, 
-  FaBrain, 
-  FaEye, 
-  FaEyeSlash, 
-  FaBolt, 
-  FaUser, 
-  FaAt, 
-  FaLock 
+import {
+  FaGithub,
+  FaGoogle,
+  FaFire,
+  FaCode,
+  FaBrain,
+  FaEye,
+  FaEyeSlash,
+  FaBolt,
+  FaUser,
+  FaAt,
+  FaLock
 } from 'react-icons/fa';
 
 export default function RegisterPage() {
@@ -22,7 +22,7 @@ export default function RegisterPage() {
     password: '',
     confirmPassword: ''
   });
-  
+
   // UI Display States
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -48,10 +48,10 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen w-full bg-[#0B1120] text-[#F9FAFB] font-sans flex flex-col lg:flex-row overflow-x-hidden selection:bg-amber-500/30 selection:text-amber-200">
-      
+
       {/* LEFT SIDE: Brand Identity & Gamification Preview Block (60% Width on Desktop) */}
       <div className="relative w-full lg:w-[60%] flex-col justify-between p-8 md:p-12 lg:p-16 hidden md:flex overflow-hidden border-b lg:border-b-0 lg:border-r border-[#1F2937] select-none">
-        
+
         {/* Background Decorative Mesh & Matrix Canvas Grid */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#111827_1px,transparent_1px),linear-gradient(to_bottom,#111827_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-60" />
         <div className="absolute top-1/3 left-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
@@ -81,7 +81,7 @@ export default function RegisterPage() {
 
         {/* Dashboard Floating System Micro-Components */}
         <div className="relative z-10 grid grid-cols-2 gap-4 max-w-2xl w-full opacity-90">
-          
+
           {/* Component: Streak Tracker */}
           <div className="bg-[#111827]/80 backdrop-blur-md border border-[#1F2937] p-4 rounded-xl transition-all duration-300 hover:border-amber-500/40 hover:shadow-[0_0_20px_rgba(245,158,11,0.05)] transform hover:-translate-y-1">
             <div className="flex items-center justify-between mb-2">
@@ -116,11 +116,10 @@ export default function RegisterPage() {
             </div>
             <div className="flex gap-1.5 overflow-x-auto pb-1">
               {contributionBlocks.map((lvl, idx) => (
-                <div 
-                  key={idx} 
-                  className={`h-4 w-4 rounded-sm flex-shrink-0 transition-all duration-500 hover:scale-110 ${
-                    idx === 0 ? 'bg-amber-500 animate-pulse' : 'bg-[#1F2937]'
-                  }`}
+                <div
+                  key={idx}
+                  className={`h-4 w-4 rounded-sm flex-shrink-0 transition-all duration-500 hover:scale-110 ${idx === 0 ? 'bg-amber-500 animate-pulse' : 'bg-[#1F2937]'
+                    }`}
                 />
               ))}
             </div>
@@ -135,12 +134,12 @@ export default function RegisterPage() {
 
       {/* RIGHT SIDE: Account Provisioning Form Frame (40% Width on Desktop) */}
       <div className="w-full lg:w-[40%] flex flex-col justify-center items-center p-6 sm:p-12 md:p-16 lg:p-8 bg-[#0B1120] relative min-h-screen">
-        
+
         {/* Soft mobile ambient light blur element */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-[80px] pointer-events-none md:hidden" />
-        
+
         <div className="w-full max-w-md bg-[#111827]/40 backdrop-blur-xl border border-[#1F2937] rounded-2xl p-6 sm:p-8 shadow-2xl relative z-10 my-auto">
-          
+
           {/* Header Block Descriptor */}
           <div className="flex flex-col items-center mb-6 md:items-start">
             <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center shadow-lg shadow-amber-500/20 mb-4 md:hidden">
@@ -165,7 +164,7 @@ export default function RegisterPage() {
               <FaGithub className="text-lg text-white" />
               <span>GitHub</span>
             </button>
-            
+
             <button
               type="button"
               onClick={() => handleOAuthSignUp('Google')}
@@ -186,7 +185,7 @@ export default function RegisterPage() {
 
           {/* Functional Component Inputs Form */}
           <form onSubmit={handleRegisterSubmit} className="space-y-4">
-            
+
             {/* Full Name Input Box */}
             <div>
               <label htmlFor="fullName" className="block text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider mb-1.5">
@@ -303,7 +302,7 @@ export default function RegisterPage() {
                   {showConfirmPassword ? <FaEyeSlash className="text-xs" /> : <FaEye className="text-xs" />}
                 </button>
               </div>
-              
+
               {/* Premium Inline Native Validation UI indicator */}
               {formData.password && formData.confirmPassword && (
                 <div className="mt-2 text-xs flex items-center gap-1.5 transition-all duration-200">
@@ -327,8 +326,8 @@ export default function RegisterPage() {
           {/* Alternative Auth Inter-Routing Footer */}
           <div className="mt-6 text-center text-sm text-[#9CA3AF]">
             <span>Already have an account? </span>
-            <a 
-              href="#login" 
+            <a
+              href="#login"
               className="font-semibold text-amber-500 hover:text-amber-400 transition-colors inline-flex items-center gap-0.5 group"
               onClick={(e) => { e.preventDefault(); console.log('Redirecting to legacy login portal component context.'); }}
             >
