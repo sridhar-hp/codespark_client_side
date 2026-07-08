@@ -282,7 +282,7 @@ export default function App() {
 
                     if (isCompleting) {
                         triggerToast(`+${task.xpReward} XP Earned! "${task.title}" Completed.`, 'xp');
-                        
+
                         // Fire modular sparkle burst around event target
                         if (event) {
                             const rect = event.currentTarget.getBoundingClientRect();
@@ -456,10 +456,9 @@ export default function App() {
             <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 relative z-10">
 
                 {/* HEADER SECTION */}
-                <div 
-                    className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#1F2937]/60 pb-6 transition-all duration-700 transform ${
-                        isMounted ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'
-                    }`}
+                <div
+                    className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#1F2937]/60 pb-6 transition-all duration-700 transform ${isMounted ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'
+                        }`}
                 >
                     <div className="space-y-1">
                         <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center gap-2 group">
@@ -484,10 +483,9 @@ export default function App() {
                 </div>
 
                 {/* PROGRESS RING AND KEY METRICS ROW */}
-                <div 
-                    className={`grid grid-cols-1 lg:grid-cols-3 gap-6 transition-all duration-700 delay-100 transform ${
-                        isMounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-                    }`}
+                <div
+                    className={`grid grid-cols-1 lg:grid-cols-3 gap-6 transition-all duration-700 delay-100 transform ${isMounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+                        }`}
                 >
                     {/* Circular Progress Layout card */}
                     <CardGlow className="bg-[#111827]/80 backdrop-blur-md border border-[#1F2937] p-6 rounded-2xl flex flex-col sm:flex-row items-center gap-6 shadow-xl relative overflow-hidden group hover:border-amber-500/20 transition-all">
@@ -610,10 +608,9 @@ export default function App() {
                 </div>
 
                 {/* SEARCH AND TAB TIMELINE FILTERS CONTAINER */}
-                <div 
-                    className={`flex flex-col xl:flex-row gap-4 items-stretch justify-between bg-[#111827]/40 border border-[#1F2937]/80 p-4 rounded-2xl transition-all duration-700 delay-200 transform ${
-                        isMounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-                    }`}
+                <div
+                    className={`flex flex-col xl:flex-row gap-4 items-stretch justify-between bg-[#111827]/40 border border-[#1F2937]/80 p-4 rounded-2xl transition-all duration-700 delay-200 transform ${isMounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+                        }`}
                 >
                     {/* Tab filters list */}
                     <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto">
@@ -665,10 +662,9 @@ export default function App() {
                 </div>
 
                 {/* CATEGORY CHIPS PANEL */}
-                <div 
-                    className={`space-y-2 transition-all duration-700 delay-250 transform ${
-                        isMounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-                    }`}
+                <div
+                    className={`space-y-2 transition-all duration-700 delay-250 transform ${isMounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+                        }`}
                 >
                     <span className="block text-[10px] font-bold text-[#6B7280] uppercase tracking-wider">Filter by Category</span>
                     <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
@@ -692,10 +688,9 @@ export default function App() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
                     {/* Left main task feed column */}
-                    <div 
-                        className={`lg:col-span-8 space-y-4 transition-all duration-700 delay-300 transform ${
-                            isMounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-                        }`}
+                    <div
+                        className={`lg:col-span-8 space-y-4 transition-all duration-700 delay-300 transform ${isMounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+                            }`}
                     >
                         <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-[#6B7280] uppercase tracking-widest">
@@ -764,9 +759,9 @@ export default function App() {
                                                         }`}>
                                                         {task.title}
                                                         {isCompleted && (
-                                                            <span 
-                                                                className="absolute top-[50%] left-0 h-[1.5px] bg-[#6B7280]" 
-                                                                style={{ animation: 'strike-draw 0.35s ease-out forwards' }} 
+                                                            <span
+                                                                className="absolute top-[50%] left-0 h-[1.5px] bg-[#6B7280]"
+                                                                style={{ animation: 'strike-draw 0.35s ease-out forwards' }}
                                                             />
                                                         )}
                                                     </h3>
@@ -879,10 +874,9 @@ export default function App() {
                     </div>
 
                     {/* Right column (sidebar assets & routine) */}
-                    <div 
-                        className={`lg:col-span-4 space-y-6 transition-all duration-700 delay-350 transform ${
-                            isMounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-                        }`}
+                    <div
+                        className={`lg:col-span-4 space-y-6 transition-all duration-700 delay-350 transform ${isMounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+                            }`}
                     >
 
                         {/* Daily Routine checklist card */}
@@ -917,9 +911,9 @@ export default function App() {
                                                 }`}>
                                                 {item.text}
                                                 {item.done && (
-                                                    <span 
-                                                        className="absolute top-[50%] left-0 h-[1.5px] bg-[#6B7280]" 
-                                                        style={{ animation: 'strike-draw 0.3s ease-out forwards' }} 
+                                                    <span
+                                                        className="absolute top-[50%] left-0 h-[1.5px] bg-[#6B7280]"
+                                                        style={{ animation: 'strike-draw 0.3s ease-out forwards' }}
                                                     />
                                                 )}
                                             </span>
@@ -1006,7 +1000,7 @@ function AddTaskModal({ onClose, onSubmit }) {
             {/* Backdrop clickable zone */}
             <div className="absolute inset-0" onClick={onClose} />
 
-            <div 
+            <div
                 className="bg-[#111827] border border-[#1F2937] rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative"
                 style={{
                     animation: 'modal-scale-spring 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards',
