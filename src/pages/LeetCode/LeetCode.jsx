@@ -284,7 +284,7 @@ export default function LeetCode() {
     };
 
     return (
-       <div className="w-full text-[#F9FAFB] font-sans antialiased relative selection:bg-amber-500/30 selection:text-amber-200">
+        <div className="w-full text-[#F9FAFB] font-sans antialiased relative selection:bg-amber-500/30 selection:text-amber-200">
             <style dangerouslySetInnerHTML={{ __html: MOTION_STYLES }} />
 
             {/* --- ABSTRACT BACKGROUND GRADIENTS --- */}
@@ -330,13 +330,12 @@ export default function LeetCode() {
                 {toasts.map(toast => (
                     <div
                         key={toast.id}
-                        className={`pointer-events-auto flex items-center gap-3 px-4 py-3.5 rounded-xl border shadow-2xl relative overflow-hidden ${
-                            toast.type === 'xp'
+                        className={`pointer-events-auto flex items-center gap-3 px-4 py-3.5 rounded-xl border shadow-2xl relative overflow-hidden ${toast.type === 'xp'
                                 ? 'bg-amber-500/15 border-amber-500/30 text-amber-400'
                                 : toast.type === 'success'
                                     ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
                                     : 'bg-[#111827] border-[#1F2937] text-white'
-                        }`}
+                            }`}
                         style={{
                             animation: 'slide-up-spring 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'
                         }}
@@ -351,17 +350,16 @@ export default function LeetCode() {
             </div>
 
             {/* --- MAIN PAGE GRAPHICS WRAPPER --- */}
-<div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8 relative z-10 ">
+            <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8 relative z-10 ">
                 {/* SECTION 1: DEVELOPER HERO COMPONENT */}
                 <div
-                    className={`grid grid-cols-1 lg:grid-cols-12 gap-6 transition-all duration-700 transform ${
-                        isMounted ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'
-                    }`}
+                    className={`grid grid-cols-1 lg:grid-cols-12 gap-6 transition-all duration-700 transform ${isMounted ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'
+                        }`}
                 >
                     {/* Hero Left Segment: Player identity */}
                     <div className="lg:col-span-8 bg-gradient-to-br from-[#111827] via-[#111827] to-amber-950/15 border border-[#1F2937] rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/[0.015] rounded-full blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-700" />
-                        
+
                         <div className="space-y-4">
                             <div className="space-y-1">
                                 <span className="text-[10px] text-amber-500 uppercase tracking-widest font-extrabold flex items-center gap-1.5">
@@ -450,9 +448,8 @@ export default function LeetCode() {
 
                 {/* SECTION 2: HERO STATISTICS */}
                 <div
-                    className={`grid grid-cols-2 lg:grid-cols-4 gap-4 transition-all duration-700 delay-75 transform ${
-                        isMounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-                    }`}
+                    className={`grid grid-cols-2 lg:grid-cols-4 gap-4 transition-all duration-700 delay-75 transform ${isMounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+                        }`}
                 >
                     {/* Stat Card 1 */}
                     <CardGlow className="bg-[#111827]/40 backdrop-blur-md border border-[#1F2937] p-5 rounded-2xl flex flex-col justify-between transition-all duration-300 hover:border-amber-500/20 hover:scale-[1.02] group">
@@ -516,9 +513,8 @@ export default function LeetCode() {
 
                     {/* LEFT CONTAINER (8 COLS DESKTOP): PROGRESS, SKILL MASTERIES, REC PRACTICE */}
                     <div
-                        className={`lg:col-span-8 space-y-8 transition-all duration-700 delay-150 transform ${
-                            isMounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-                        }`}
+                        className={`lg:col-span-8 space-y-8 transition-all duration-700 delay-150 transform ${isMounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+                            }`}
                     >
 
                         {/* SECTION 5: THE PREMIUM TOPIC MASTERY DASHBOARD GRID (NO ROADMAPS OR HEATMAPS) */}
@@ -557,9 +553,8 @@ export default function LeetCode() {
                                             )}
 
                                             {!isDone && (
-                                                <span className={`absolute top-4 right-4 text-[9px] font-bold px-2 py-0.5 rounded-full ${
-                                                    isLow ? 'bg-slate-800 text-slate-400' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                                }`}>
+                                                <span className={`absolute top-4 right-4 text-[9px] font-bold px-2 py-0.5 rounded-full ${isLow ? 'bg-slate-800 text-slate-400' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                                    }`}>
                                                     {topic.confidence}
                                                 </span>
                                             )}
@@ -594,10 +589,9 @@ export default function LeetCode() {
                                                         <span className="text-amber-400">{topic.pct}%</span>
                                                     </div>
                                                     <div className="w-full h-1.5 bg-[#0B1120] border border-[#1F2937] rounded-full overflow-hidden relative">
-                                                        <div 
-                                                            className={`h-full rounded-full transition-all duration-1000 ${
-                                                                isDone ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-amber-500 to-orange-500'
-                                                            }`}
+                                                        <div
+                                                            className={`h-full rounded-full transition-all duration-1000 ${isDone ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-amber-500 to-orange-500'
+                                                                }`}
                                                             style={{ width: `${topic.pct}%` }}
                                                         />
                                                     </div>
@@ -605,7 +599,7 @@ export default function LeetCode() {
 
                                                 <div className="flex items-center justify-between border-t border-[#1F2937]/50 pt-3 text-[10px] font-semibold text-[#6B7280]">
                                                     <span>Last: {topic.lastDate}</span>
-                                                    
+
                                                     {!isDone && (
                                                         <button
                                                             onClick={(e) => handlePracticeTopic(topic.name, topic.id, e)}
@@ -716,10 +710,9 @@ export default function LeetCode() {
                                     >
                                         <div className="space-y-2">
                                             <div className="flex justify-between items-center">
-                                                <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md ${
-                                                    rec.diff === 'Hard' ? 'bg-rose-500/10 text-rose-400' :
-                                                    rec.diff === 'Medium' ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'
-                                                }`}>
+                                                <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md ${rec.diff === 'Hard' ? 'bg-rose-500/10 text-rose-400' :
+                                                        rec.diff === 'Medium' ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'
+                                                    }`}>
                                                     {rec.diff}
                                                 </span>
                                                 <span className="text-[10px] font-semibold text-[#6B7280] flex items-center gap-1">
@@ -747,9 +740,8 @@ export default function LeetCode() {
 
                     {/* RIGHT CONTAINER (4 COLS DESKTOP): DAILY CHALLENGE, TIMER, INSIGHTS */}
                     <div
-                        className={`lg:col-span-4 space-y-6 transition-all duration-700 delay-300 transform ${
-                            isMounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-                        }`}
+                        className={`lg:col-span-4 space-y-6 transition-all duration-700 delay-300 transform ${isMounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+                            }`}
                     >
 
                         {/* SECTION 4: DAILY GOAL */}
@@ -929,14 +921,13 @@ export default function LeetCode() {
                                 {SUBMISSIONS.map((sub) => (
                                     <div key={sub.id} className="relative flex items-center justify-between gap-4 group cursor-pointer">
                                         <div className="absolute -left-[16px] w-2.5 h-2.5 rounded-full bg-slate-800 border-2 border-[#111827] group-hover:bg-amber-500 group-hover:border-amber-400 transition-all duration-300" />
-                                        
+
                                         <div className="space-y-1">
                                             <h4 className="text-sm font-bold text-white group-hover:text-amber-400 transition-colors">{sub.name}</h4>
                                             <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold text-[#6B7280]">
-                                                <span className={`px-2 py-0.5 rounded-md ${
-                                                    sub.diff === 'Hard' ? 'bg-rose-500/10 text-rose-400' :
-                                                    sub.diff === 'Medium' ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'
-                                                }`}>
+                                                <span className={`px-2 py-0.5 rounded-md ${sub.diff === 'Hard' ? 'bg-rose-500/10 text-rose-400' :
+                                                        sub.diff === 'Medium' ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'
+                                                    }`}>
                                                     {sub.diff}
                                                 </span>
                                                 <span>Runtime: {sub.runtime}</span>
@@ -945,13 +936,12 @@ export default function LeetCode() {
                                             </div>
                                         </div>
 
-                                        <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg border ${
-                                            sub.status === 'Accepted'
+                                        <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg border ${sub.status === 'Accepted'
                                                 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                                                 : sub.status === 'TLE'
                                                     ? 'bg-amber-500/10 border-amber-500/20 text-amber-400 animate-pulse'
                                                     : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-                                        }`}>
+                                            }`}>
                                             {sub.status}
                                         </span>
                                     </div>
