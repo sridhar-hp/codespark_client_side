@@ -392,7 +392,7 @@ export default function App() {
             <style dangerouslySetInnerHTML={{ __html: MOTION_STYLES }} />
 
             {/* Floating Subtle Ambient Gradients */}
-            <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+            <div className="absolute inset-0 rounded-[32px] overflow-hidden pointer-events-none z-0">
                 <div
                     className="absolute w-[500px] h-[500px] bg-amber-500/[0.03] rounded-full blur-[130px]"
                     style={{

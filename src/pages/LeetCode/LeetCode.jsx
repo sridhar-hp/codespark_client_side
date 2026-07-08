@@ -44,19 +44,26 @@ const MOTION_STYLES = `
 }
 @keyframes float-ambient-soft {
     0%, 100% { transform: translate(0px, 0px) scale(1); opacity: 0.08; }
-    50% { transform: translate(25px, -25px) scale(1.03); opacity: 0.18; }
+    50% { transform: translate(25px, -25px) scale(1.03); opacity: 0.22; }
 }
 @keyframes particle-fade-burst {
     0% { transform: translate(0, 0) scale(1.2); opacity: 1; }
     100% { transform: translate(var(--mx), var(--my)) scale(0.3); opacity: 0; }
 }
-@keyframes border-glow-wave {
-    0%, 100% { border-color: rgba(31, 41, 55, 0.6); }
-    50% { border-color: rgba(245, 158, 11, 0.35); }
+@keyframes ring-shimmer-sweep {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
-@keyframes slide-up-spring {
-    0% { transform: translateY(1.5rem) scale(0.95); opacity: 0; }
-    100% { transform: translateY(0) scale(1); opacity: 1; }
+@keyframes element-entrance {
+    0% { opacity: 0; transform: translateY(12px) scale(0.99); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes shimmer-glow {
+    0% { transform: translateX(-150%); }
+    50%, 100% { transform: translateX(150%); }
+}
+.animate-entrance {
+    animation: element-entrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 @media (prefers-reduced-motion: reduce) {
     * {
@@ -83,10 +90,10 @@ function CardGlow({ children, className = "", delay = "0ms", style = {} }) {
         <div
             ref={cardRef}
             onMouseMove={handleMouseMove}
-            className={`relative overflow-hidden group/glow ${className}`}
+            className={`relative overflow-hidden group/glow will-change-transform ${className}`}
             style={{ ...style, transitionDelay: delay }}
         >
-            <div className="pointer-events-none absolute inset-0 rounded-[inherit] transition-opacity duration-500 opacity-0 group-hover/glow:opacity-100 bg-[radial-gradient(350px_circle_at_var(--x,50%)_var(--y,50%),rgba(245,158,11,0.05),transparent_80%)]" />
+            <div className="pointer-events-none absolute inset-0 rounded-[inherit] transition-opacity duration-500 opacity-0 group-hover/glow:opacity-100 bg-[radial-gradient(350px_circle_at_var(--x,50%)_var(--y,50%),rgba(245,158,11,0.06),transparent_80%)]" />
             {children}
         </div>
     );
@@ -144,36 +151,10 @@ const SUBMISSIONS = [
     { id: 6, name: 'Merge Two Sorted Lists', diff: 'Easy', runtime: '84 ms', memory: '41.5 MB', lang: 'JavaScript', time: '3d ago', status: 'Wrong Answer' }
 ];
 
-const ACHIEVEMENTS = [
-    { id: 1, title: '50 Problems', desc: 'Solved 50 total problems.', unlocked: true },
-    { id: 2, title: '100 Problems', desc: 'Solved 100 total problems.', unlocked: true },
-    { id: 3, title: '365 Day Streak', desc: 'Maintained consistency for 1 year.', unlocked: false },
-    { id: 4, title: 'Contest Winner', desc: 'Ranked in top 1% of a contest.', unlocked: true },
-    { id: 5, title: 'Hard Master', desc: 'Solved 10 hard problems in a row.', unlocked: false }
-];
-
 const RECOMMENDATIONS = [
-  {
-    id: 1,
-    topic: "Sliding Window",
-    diff: "Medium",
-    xp: 120,
-    time: "20 min",
-  },
-  {
-    id: 2,
-    topic: "Binary Search",
-    diff: "Easy",
-    xp: 80,
-    time: "15 min",
-  },
-  {
-    id: 3,
-    topic: "Dynamic Programming",
-    diff: "Hard",
-    xp: 200,
-    time: "45 min",
-  }
+    { id: 1, topic: 'Subarray Sum Equals K', diff: 'Medium', xp: 50, time: '35 min' },
+    { id: 2, topic: 'Reverse Nodes in k-Group', diff: 'Hard', xp: 120, time: '60 min' },
+    { id: 3, topic: 'Binary Search Index Node', diff: 'Easy', xp: 30, time: '15 min' }
 ];
 
 const LANGUAGES = [
@@ -184,28 +165,22 @@ const LANGUAGES = [
 ];
 
 export default function LeetCode() {
-    // --- LAYOUT & USER SYNCHRONIZATION STATE METRICS ---
     const [isMounted, setIsMounted] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [toasts, setToasts] = useState([]);
     const [particles, setParticles] = useState([]);
     const [isChallengeStarted, setIsChallengeStarted] = useState(false);
 
-    // Focus Timer pomodoro engine states
     const [timerActive, setTimerActive] = useState(false);
     const [timerSeconds, setTimerSeconds] = useState(25 * 60);
 
-    // Live counts
     const [problemsSolved, setProblemsSolved] = useState(248);
     const [streakCount, setStreakCount] = useState(14);
     const [acceptanceRate, setAcceptanceRate] = useState(68);
     const [contestRating, setContestRating] = useState(1854);
     const [todayGoal, setTodayGoal] = useState({ solved: 1, target: 2 });
 
-    // Interactive topic tiles state
     const [topics, setTopics] = useState(INITIAL_TOPIC_MASTERY);
-
-    // Staggered animated state tracking
     const [animatedRing, setAnimatedRing] = useState(0);
 
     useEffect(() => {
@@ -216,7 +191,6 @@ export default function LeetCode() {
         return () => clearTimeout(ringTimer);
     }, []);
 
-    // Focus Timer execution
     useEffect(() => {
         let interval = null;
         if (timerActive && timerSeconds > 0) {
@@ -256,7 +230,6 @@ export default function LeetCode() {
         setProblemsSolved(p => p + 1);
         triggerToast(`Objective complete: "${name}"!`, 'xp');
 
-        // Burst sparkles particles
         if (event) {
             const rect = event.currentTarget.getBoundingClientRect();
             const originX = rect.left + rect.width / 2 + window.scrollX;
@@ -315,7 +288,7 @@ export default function LeetCode() {
             <style dangerouslySetInnerHTML={{ __html: MOTION_STYLES }} />
 
             {/* --- ABSTRACT BACKGROUND GRADIENTS --- */}
-            <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+            <div className="absolute inset-0 rounded-[32px] overflow-hidden pointer-events-none z-0">
                 <div
                     className="absolute w-[500px] h-[500px] bg-amber-500/[0.02] rounded-full blur-[130px]"
                     style={{
@@ -378,8 +351,8 @@ export default function LeetCode() {
             </div>
 
             {/* --- MAIN PAGE GRAPHICS WRAPPER --- */}
-            <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8 relative z-10">
-
+<div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8 relative z-10
+                rounded-[32px] overflow-hidden">
                 {/* SECTION 1: DEVELOPER HERO COMPONENT */}
                 <div
                     className={`grid grid-cols-1 lg:grid-cols-12 gap-6 transition-all duration-700 transform ${
@@ -442,7 +415,7 @@ export default function LeetCode() {
                     </div>
 
                     {/* Hero Right Segment: Solving Target (No trend charts) */}
-                    <CardGlow className="lg:col-span-4 bg-gradient-to-br from-[#111827] to-[#0B1120] border border-[#1F2937] rounded-3xl p-6 flex flex-row items-center justify-between gap-4">
+                    <CardGlow className="lg:col-span-4 bg-gradient-to-br from-[#111827] to-[#0B1120] border border-[#1F2937] rounded-[36px] p-6 flex flex-row items-center justify-between gap-4">
                         <div className="space-y-3">
                             <span className="text-[10px] text-amber-500 uppercase tracking-widest font-extrabold block">Daily Track Target</span>
                             <div>
@@ -453,7 +426,7 @@ export default function LeetCode() {
                             </div>
                             <span className="inline-block text-[9px] font-extrabold uppercase bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/25">
                                 +200 XP Daily Balance
-                              </span>
+                            </span>
                         </div>
 
                         {/* Radial progress ring loader */}
@@ -598,7 +571,7 @@ export default function LeetCode() {
                                                     <div className="p-2.5 rounded-xl bg-[#0B1120] border border-[#1F2937] text-amber-500 group-hover:scale-110 transition-transform duration-300">
                                                         <IconComponent className="w-5 h-5" />
                                                     </div>
-                                                    <div>
+                                                    <div className="pr-16">
                                                         <h4 className="text-sm font-extrabold text-white leading-tight">{topic.name}</h4>
                                                         <span className="text-[10px] text-[#6B7280] font-semibold">Active solved: {topic.solved} problems</span>
                                                     </div>
@@ -732,49 +705,6 @@ export default function LeetCode() {
                             </CardGlow>
                         </div>
 
-                        {/* SECTION 7: TOPIC MASTERY */}
-<div className="space-y-3">
-    <span className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">
-        Structural Topic Mastery
-    </span>
-
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        {topics.map((card, i) => (
-            <CardGlow
-                key={card.id}
-                delay={`${i * 50}ms`}
-                className="bg-[#111827]/40 border border-[#1F2937] p-4 rounded-xl flex flex-col justify-between h-36 hover:border-amber-500/20"
-            >
-                <div>
-                    <h4 className="text-xs font-extrabold text-white mb-1">
-                        {card.name}
-                    </h4>
-
-                    <p className="text-[10px] text-[#6B7280] font-bold">
-                        Solved: {card.solved} Problems
-                    </p>
-                </div>
-
-                <div className="space-y-2">
-                    <div className="flex justify-between items-center text-[10px] font-bold text-[#9CA3AF]">
-                        <span>Confidence</span>
-                        <span className="text-amber-500">
-                            {card.confidence}
-                        </span>
-                    </div>
-
-                    <div className="w-full h-1.5 bg-[#0B1120] border border-[#1F2937] rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-amber-500"
-                            style={{ width: `${card.pct}%` }}
-                        />
-                    </div>
-                </div>
-            </CardGlow>
-        ))}
-    </div>
-</div>
-
                         {/* SECTION 12: RECOMMENDED PRACTICE */}
                         <div className="space-y-3">
                             <span className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">Recommended Practice Sets</span>
@@ -816,7 +746,7 @@ export default function LeetCode() {
 
                     </div>
 
-                    {/* RIGHT CONTAINER (4 COLS DESKTOP): DAILY CHALLENGE, TIMER, INSIGHTS, ACHIEVEMENTS */}
+                    {/* RIGHT CONTAINER (4 COLS DESKTOP): DAILY CHALLENGE, TIMER, INSIGHTS */}
                     <div
                         className={`lg:col-span-4 space-y-6 transition-all duration-700 delay-300 transform ${
                             isMounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
@@ -986,35 +916,6 @@ export default function LeetCode() {
                                         </div>
                                     </div>
                                 ))}
-                            </div>
-                        </CardGlow>
-
-                        {/* SECTION 11: ACHIEVEMENT GALLERY (UNLOCKED GLOW ANIMATION) */}
-                        <CardGlow className="bg-[#111827]/40 backdrop-blur-md border border-[#1F2937] p-6 rounded-2xl">
-                            <h3 className="text-white text-sm font-bold flex items-center gap-2 mb-4">
-                                <Award className="w-4.5 h-4.5 text-amber-500" />
-                                Badges & Achievements
-                            </h3>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                {ACHIEVEMENTS.map(ach => {
-                                    return (
-                                        <div
-                                            key={ach.id}
-                                            className={`p-3 rounded-xl border flex flex-col items-center text-center justify-center space-y-1.5 transition-all duration-300 ${
-                                                ach.unlocked
-                                                    ? 'bg-[#111827] border-amber-500/20 text-amber-400 hover:border-amber-500/40'
-                                                    : 'bg-[#111827]/30 border-[#1F2937]/50 text-slate-500 opacity-50'
-                                            }`}
-                                        >
-                                            <Trophy className={`w-6 h-6 ${ach.unlocked ? 'text-amber-500 animate-pulse' : 'text-slate-500'}`} />
-                                            <div>
-                                                <h4 className="text-[10px] font-extrabold uppercase tracking-wide text-white">{ach.title}</h4>
-                                                <p className="text-[9px] text-[#6B7280] leading-tight pt-0.5">{ach.desc}</p>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
                             </div>
                         </CardGlow>
 
