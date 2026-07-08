@@ -1,25 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Github, 
-  RefreshCw, 
-  GitBranch, 
-  GitCommit, 
-  GitFork, 
-  Star, 
-  Info, 
-  Trophy, 
-  Search, 
-  Calendar, 
-  MapPin, 
-  Building, 
-  Link2, 
-  ExternalLink, 
-  Flame, 
-  CheckCircle2, 
-  TrendingUp, 
-  Code2, 
-  BookOpen, 
-  Award, 
+import {
+  Github,
+  RefreshCw,
+  GitBranch,
+  GitCommit,
+  GitFork,
+  Star,
+  Info,
+  Trophy,
+  Search,
+  Calendar,
+  MapPin,
+  Building,
+  Link2,
+  ExternalLink,
+  Flame,
+  CheckCircle2,
+  TrendingUp,
+  Code2,
+  BookOpen,
+  Award,
   Sparkles,
   Inbox,
   AlertCircle,
@@ -181,10 +181,9 @@ function CardGlow({ children, className = "", delay = "0ms" }) {
       className={`relative overflow-hidden group/glow ${className}`}
       style={{ transitionDelay: delay }}
     >
-      <div 
-        className={`pointer-events-none absolute -inset-px rounded-[inherit] transition-opacity duration-500 z-10 ${
-          isHovered ? 'opacity-100' : 'opacity-0'
-        }`}
+      <div
+        className={`pointer-events-none absolute -inset-px rounded-[inherit] transition-opacity duration-500 z-10 ${isHovered ? 'opacity-100' : 'opacity-0'
+          }`}
         style={{
           background: `radial-gradient(400px circle at ${coords.x}px ${coords.y}px, rgba(245, 158, 11, 0.08), transparent 80%)`,
         }}
@@ -205,7 +204,7 @@ export default function GitHubDashboard() {
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const [toasts, setToasts] = useState([]);
   const [pageMounted, setPageMounted] = useState(false);
-  
+
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -358,7 +357,7 @@ export default function GitHubDashboard() {
   };
 
   return (
-<div className="w-full h-full text-[#F9FAFB] font-sans antialiased relative">      
+    <div className="w-full h-full text-[#F9FAFB] font-sans antialiased relative">
       {/* Premium CSS Keyframe Variables Injection */}
       <style>{`
         @keyframes floatSlow1 {
@@ -400,13 +399,12 @@ export default function GitHubDashboard() {
       {/* Toast Notification Stack */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2.5 max-w-sm pointer-events-none">
         {toasts.map(toast => (
-          <div 
-            key={toast.id} 
-            className={`pointer-events-auto flex items-center gap-3 px-4 py-3.5 rounded-xl border shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all duration-500 transform translate-y-0 scale-100 animate-fade-in ${
-              toast.type === 'info' 
-                ? 'bg-sky-500/10 border-sky-500/30 text-sky-400' 
+          <div
+            key={toast.id}
+            className={`pointer-events-auto flex items-center gap-3 px-4 py-3.5 rounded-xl border shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all duration-500 transform translate-y-0 scale-100 animate-fade-in ${toast.type === 'info'
+                ? 'bg-sky-500/10 border-sky-500/30 text-sky-400'
                 : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-            }`}
+              }`}
           >
             <div className="flex-shrink-0">
               {toast.type === 'info' ? <RefreshCw className="w-5 h-5 text-sky-500 animate-spin" /> : <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
@@ -417,11 +415,10 @@ export default function GitHubDashboard() {
       </div>
 
       <div className="p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto space-y-6 relative z-10">
-        
+
         {/* PAGE HEADER */}
-        <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#1F2937]/60 pb-6 transition-all duration-700 transform ${
-          pageMounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
-        }`}>
+        <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#1F2937]/60 pb-6 transition-all duration-700 transform ${pageMounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
+          }`}>
           <div className="space-y-1">
             <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
               <Github className="w-8 h-8 text-amber-500 transition-transform duration-500 hover:rotate-12 cursor-pointer" />
@@ -450,10 +447,9 @@ export default function GitHubDashboard() {
         </div>
 
         {/* TOP LEVEL METRICS GRID */}
-        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 transition-all duration-700 delay-100 transform ${
-          pageMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-        }`}>
-          
+        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 transition-all duration-700 delay-100 transform ${pageMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}>
+
           {/* Today's Coding Time */}
           <CardGlow className="bg-[#111827]/70 backdrop-blur-md border border-[#1F2937]/80 p-5 rounded-2xl flex flex-col justify-between hover:border-amber-500/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_4px_30px_rgba(245,158,11,0.06)] group">
             <div className="flex items-center justify-between text-[#6B7280]">
@@ -521,15 +517,14 @@ export default function GitHubDashboard() {
 
         {/* --- MAIN GRID LAYOUT ARCHITECTURE --- */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
+
           {/* --- LEFT SIDEBAR: Identity, Real Workspace, & Goals --- */}
           <div className="lg:col-span-4 space-y-6">
-            
+
             {/* PROFILE CARD */}
-            <CardGlow className={`bg-[#111827]/80 backdrop-blur-md border border-[#1F2937] p-6 rounded-2xl flex flex-col items-center text-center transition-all duration-700 delay-200 transform ${
-              pageMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-            } hover:border-amber-500/20`}>
-              
+            <CardGlow className={`bg-[#111827]/80 backdrop-blur-md border border-[#1F2937] p-6 rounded-2xl flex flex-col items-center text-center transition-all duration-700 delay-200 transform ${pageMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+              } hover:border-amber-500/20`}>
+
               {/* Profile Avatar Frame with glowing halo */}
               <div className="relative mb-4 group-hover:scale-102 transition-transform duration-300">
                 <div className="absolute inset-0 bg-gradient-to-tr from-amber-500 to-orange-500 rounded-full blur-[10px] opacity-30 group-hover:opacity-60 transition-opacity animate-pulse" />
@@ -591,7 +586,7 @@ export default function GitHubDashboard() {
                 </div>
               </div>
 
-              <button 
+              <button
                 onClick={() => triggerToast('Redirecting to legacy GitHub profile page.', 'info')}
                 className="w-full py-2.5 bg-[#1F2937]/50 hover:bg-[#1F2937] text-white border border-[#1F2937] hover:border-[#374151] rounded-xl text-xs font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
               >
@@ -601,9 +596,8 @@ export default function GitHubDashboard() {
             </CardGlow>
 
             {/* CURRENT ACTIVE WORKSPACE CARD */}
-            <CardGlow className={`bg-[#111827]/80 backdrop-blur-md border border-[#1F2937] p-5 rounded-2xl space-y-4 shadow-xl transition-all duration-700 delay-300 transform ${
-              pageMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-            } hover:border-amber-500/20`}>
+            <CardGlow className={`bg-[#111827]/80 backdrop-blur-md border border-[#1F2937] p-5 rounded-2xl space-y-4 shadow-xl transition-all duration-700 delay-300 transform ${pageMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+              } hover:border-amber-500/20`}>
               <div className="flex items-center justify-between border-b border-[#1F2937]/60 pb-3">
                 <h3 className="text-white font-extrabold text-xs uppercase tracking-wider flex items-center gap-2">
                   <Zap className="w-4 h-4 text-amber-500 animate-pulse" />
@@ -613,7 +607,7 @@ export default function GitHubDashboard() {
                   Tracking
                 </span>
               </div>
-              
+
               <div className="space-y-3 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-[#6B7280] font-semibold">Active Repository</span>
@@ -658,7 +652,7 @@ export default function GitHubDashboard() {
                 </span>
                 Sync Integration Status
               </h3>
-              
+
               <div className="space-y-3.5 text-xs">
                 <div className="flex items-center justify-between border-b border-[#1F2937]/40 pb-2">
                   <span className="text-[#6B7280] font-semibold">Live Pipeline Connection</span>
@@ -685,7 +679,7 @@ export default function GitHubDashboard() {
                 <h3 className="text-white font-extrabold text-sm uppercase tracking-wider">GitHub Milestones</h3>
                 <span className="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded font-bold uppercase">Weekly Focus</span>
               </div>
-              
+
               <div className="space-y-3.5">
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
@@ -723,11 +717,10 @@ export default function GitHubDashboard() {
 
           {/* --- RIGHT COLUMN: Interactive Graphs, Stats & Repositories --- */}
           <div className="lg:col-span-8 space-y-6">
-            
+
             {/* HERO LEVEL STATS ROW */}
-            <div className={`grid grid-cols-2 md:grid-cols-3 gap-4 transition-all duration-700 delay-200 transform ${
-              pageMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-            }`}>
+            <div className={`grid grid-cols-2 md:grid-cols-3 gap-4 transition-all duration-700 delay-200 transform ${pageMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+              }`}>
               <CardGlow className="bg-[#111827]/80 border border-[#1F2937] p-5 rounded-2xl flex flex-col justify-between transition-all duration-350 hover:border-amber-500/20 hover:scale-[1.02] hover:shadow-[0_4px_25px_rgba(245,158,11,0.03)] group">
                 <div className="flex items-center justify-between text-[#6B7280]">
                   <span className="text-[10px] font-bold uppercase tracking-wider">Workspace Repos</span>
@@ -773,11 +766,10 @@ export default function GitHubDashboard() {
             </div>
 
             {/* CONTRIBUTION HEATMAP REDESIGN */}
-            <div 
+            <div
               ref={containerRef}
-              className={`relative bg-[#111827]/80 backdrop-blur-md border border-[#1F2937] p-6 rounded-2xl flex flex-col gap-5 select-none shadow-2xl overflow-visible transition-all duration-700 delay-300 transform ${
-                pageMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-              } hover:border-amber-500/10`}
+              className={`relative bg-[#111827]/80 backdrop-blur-md border border-[#1F2937] p-6 rounded-2xl flex flex-col gap-5 select-none shadow-2xl overflow-visible transition-all duration-700 delay-300 transform ${pageMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+                } hover:border-amber-500/10`}
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1F2937]/60 pb-5">
                 <div className="flex items-center gap-3">
@@ -810,12 +802,12 @@ export default function GitHubDashboard() {
               {/* Matrix Layout Area */}
               <div className="relative w-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden pb-2">
                 <div className="min-w-[760px] flex flex-col gap-2 relative">
-                  
+
                   {/* Month labels timeline */}
                   <div className="relative h-6 text-[#6B7280] text-[11px] font-semibold tracking-wider">
                     {monthLabels.map((label, index) => (
-                      <span 
-                        key={index} 
+                      <span
+                        key={index}
                         className="absolute transition-opacity duration-500"
                         style={{ left: `${(label.colIndex * 13.8) + 28}px` }}
                       >
@@ -836,10 +828,10 @@ export default function GitHubDashboard() {
                     {/* Week-by-Week Staggered Core Blocks */}
                     <div className="flex gap-1 flex-1">
                       {columns.map((week, colIdx) => (
-                        <div 
-                          key={colIdx} 
+                        <div
+                          key={colIdx}
                           className="flex flex-col gap-1 transition-all duration-500 transform"
-                          style={{ 
+                          style={{
                             transitionDelay: `${colIdx * 12}ms`,
                             transform: pageMounted ? 'scale(1)' : 'scale(0.8)',
                             opacity: pageMounted ? 1 : 0
@@ -866,11 +858,11 @@ export default function GitHubDashboard() {
 
                 {/* Grid Tooltip Overlay */}
                 {hoveredCell && (
-                  <div 
+                  <div
                     className="absolute z-50 w-64 bg-[#111827] border border-[#1F2937] rounded-xl p-3.5 shadow-2xl border-t-amber-500/40 pointer-events-none transition-all duration-300 transform scale-100 opacity-100 -translate-x-1/2 -translate-y-full"
-                    style={{ 
-                      left: `${tooltipPos.x}px`, 
-                      top: `${tooltipPos.y}px` 
+                    style={{
+                      left: `${tooltipPos.x}px`,
+                      top: `${tooltipPos.y}px`
                     }}
                   >
                     <div className="flex items-center justify-between border-b border-[#1F2937]/50 pb-2">
@@ -925,7 +917,7 @@ export default function GitHubDashboard() {
 
             {/* --- CORE DOUBLE SEGMENT: Language Analytics & Productivity Insights --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
+
               {/* LANGUAGE ANALYTICS (SVG DONUT CHART WITH CODING HOURS) */}
               <CardGlow className="bg-[#111827]/80 backdrop-blur-md border border-[#1F2937] p-5 rounded-2xl flex flex-col justify-between shadow-xl hover:border-amber-500/20 transition-all duration-300">
                 <div>
@@ -938,31 +930,31 @@ export default function GitHubDashboard() {
                     <svg className="w-full h-full transform -rotate-90 transition-transform duration-500 group-hover/donut:rotate-0" viewBox="0 0 42 42">
                       <circle cx="21" cy="21" r="15.915" fill="none" stroke="#1F2937" strokeWidth="4.2" />
                       {/* React/TS Arc (42%) */}
-                      <circle 
-                        cx="21" cy="21" r="15.915" fill="none" 
-                        stroke="#f1e05a" strokeWidth="4.2" 
-                        strokeDasharray={pageMounted ? "42 58" : "0 100"} strokeDashoffset="0" 
+                      <circle
+                        cx="21" cy="21" r="15.915" fill="none"
+                        stroke="#f1e05a" strokeWidth="4.2"
+                        strokeDasharray={pageMounted ? "42 58" : "0 100"} strokeDashoffset="0"
                         className="transition-all duration-1000 ease-out"
                       />
                       {/* TypeScript Arc (31%) */}
-                      <circle 
-                        cx="21" cy="21" r="15.915" fill="none" 
-                        stroke="#3178c6" strokeWidth="4.2" 
-                        strokeDasharray={pageMounted ? "31 69" : "0 100"} strokeDashoffset="-42" 
+                      <circle
+                        cx="21" cy="21" r="15.915" fill="none"
+                        stroke="#3178c6" strokeWidth="4.2"
+                        strokeDasharray={pageMounted ? "31 69" : "0 100"} strokeDashoffset="-42"
                         className="transition-all duration-1000 ease-out"
                       />
                       {/* Python Arc (15%) */}
-                      <circle 
-                        cx="21" cy="21" r="15.915" fill="none" 
-                        stroke="#3572A5" strokeWidth="4.2" 
-                        strokeDasharray={pageMounted ? "15 85" : "0 100"} strokeDashoffset="-73" 
+                      <circle
+                        cx="21" cy="21" r="15.915" fill="none"
+                        stroke="#3572A5" strokeWidth="4.2"
+                        strokeDasharray={pageMounted ? "15 85" : "0 100"} strokeDashoffset="-73"
                         className="transition-all duration-1000 ease-out"
                       />
                       {/* Java Arc (12%) */}
-                      <circle 
-                        cx="21" cy="21" r="15.915" fill="none" 
-                        stroke="#b07219" strokeWidth="4.2" 
-                        strokeDasharray={pageMounted ? "12 88" : "0 100"} strokeDashoffset="-88" 
+                      <circle
+                        cx="21" cy="21" r="15.915" fill="none"
+                        stroke="#b07219" strokeWidth="4.2"
+                        strokeDasharray={pageMounted ? "12 88" : "0 100"} strokeDashoffset="-88"
                         className="transition-all duration-1000 ease-out"
                       />
                     </svg>
@@ -1007,7 +999,7 @@ export default function GitHubDashboard() {
                   </h3>
                   <p className="text-xs text-[#9CA3AF]">Calculated performance telemetry data</p>
                 </div>
-                
+
                 <div className="space-y-2.5 text-xs font-semibold">
                   <div className="flex items-center justify-between p-2.5 bg-[#0B1120]/60 border border-[#1F2937]/80 rounded-xl transition-all duration-300 hover:bg-[#111827] hover:border-amber-500/10">
                     <span className="text-[#6B7280]">Peak Active Day</span>
@@ -1032,15 +1024,15 @@ export default function GitHubDashboard() {
 
             {/* --- REPOSITORY SEARCH, FILTERS, AND LIST SECTION --- */}
             <div className="space-y-4">
-              
+
               <div className="flex flex-col xl:flex-row gap-4 items-stretch justify-between bg-[#111827]/40 border border-[#1F2937]/80 p-4 rounded-2xl shadow-xl">
-                
+
                 {/* Search Text Input container */}
                 <div className="relative flex-grow sm:max-w-md group">
                   <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-[#6B7280] group-focus-within:text-amber-500 transition-colors" />
-                  <input 
-                    type="text" 
-                    placeholder="Search repositories by name, language..." 
+                  <input
+                    type="text"
+                    placeholder="Search repositories by name, language..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full bg-[#0B1120] border border-[#1F2937] rounded-xl pl-10 pr-4 py-2.5 text-xs font-semibold text-white placeholder-[#6B7280] focus:outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition-all duration-300"
@@ -1053,11 +1045,10 @@ export default function GitHubDashboard() {
                     <button
                       key={filter}
                       onClick={() => setSelectedFilter(filter)}
-                      className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-300 cursor-pointer whitespace-nowrap active:scale-95 ${
-                        selectedFilter === filter 
-                          ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 font-extrabold shadow-[0_2px_10px_rgba(245,158,11,0.08)]' 
+                      className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-300 cursor-pointer whitespace-nowrap active:scale-95 ${selectedFilter === filter
+                          ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 font-extrabold shadow-[0_2px_10px_rgba(245,158,11,0.08)]'
                           : 'text-[#9CA3AF] border border-transparent hover:text-white hover:bg-slate-800/40'
-                      }`}
+                        }`}
                     >
                       {filter}
                     </button>
@@ -1100,10 +1091,10 @@ export default function GitHubDashboard() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {filteredRepos.map((repo, idx) => (
-                    <div 
+                    <div
                       key={idx}
                       className="bg-[#111827]/80 backdrop-blur-md border border-[#1F2937] p-5 rounded-2xl flex flex-col justify-between gap-4 transition-all duration-500 hover:-translate-y-1.5 hover:border-amber-500/20 group hover:shadow-[0_8px_32px_rgba(245,158,11,0.06)] transform"
-                      style={{ 
+                      style={{
                         transitionDelay: `${idx * 50}ms`,
                         animationPlayState: 'running'
                       }}
@@ -1113,13 +1104,12 @@ export default function GitHubDashboard() {
                           <h4 className="text-sm sm:text-base font-extrabold text-white group-hover:text-amber-400 transition-colors truncate flex items-center gap-1.5">
                             {repo.name}
                           </h4>
-                          <span className={`text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 border rounded-full transition-transform duration-300 group-hover:scale-105 ${
-                            repo.visibility === 'Public'
+                          <span className={`text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 border rounded-full transition-transform duration-300 group-hover:scale-105 ${repo.visibility === 'Public'
                               ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                               : repo.visibility === 'Private'
                                 ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
                                 : 'bg-[#1F2937] border-slate-700 text-[#9CA3AF]'
-                          }`}>
+                            }`}>
                             {repo.visibility}
                           </span>
                         </div>
@@ -1154,7 +1144,7 @@ export default function GitHubDashboard() {
                             <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: repo.languageColor }} />
                             <span>{repo.language}</span>
                           </div>
-                          
+
                           <div className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer group/stat">
                             <Star className="w-3.5 h-3.5 group-hover/stat:rotate-[72deg] transition-transform" />
                             <span>{repo.stars}</span>
@@ -1167,7 +1157,7 @@ export default function GitHubDashboard() {
                         </div>
 
                         {/* Slide-in View Repository Trigger */}
-                        <button 
+                        <button
                           onClick={() => triggerToast(`Opening connection path for ${repo.name}...`, 'info')}
                           className="absolute bottom-0 left-0 text-xs font-bold text-amber-500 hover:text-amber-400 flex items-center gap-1 transition-all duration-300 transform translate-y-8 group-hover:translate-y-0 cursor-pointer"
                         >
@@ -1188,11 +1178,11 @@ export default function GitHubDashboard() {
               <h3 className="text-white font-extrabold text-sm uppercase tracking-wider border-b border-[#1F2937]/50 pb-3">
                 Recent Commit Timeline Feed
               </h3>
-              
+
               <div className="relative border-l-2 border-[#1F2937] ml-3.5 pl-6 space-y-6">
                 {MOCK_REPOSITORIES.map((repo, idx) => (
-                  <div 
-                    key={idx} 
+                  <div
+                    key={idx}
                     className="relative group transition-all duration-500 transform hover:translate-x-1"
                     style={{ transitionDelay: `${idx * 40}ms` }}
                   >
