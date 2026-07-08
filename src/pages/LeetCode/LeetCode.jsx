@@ -152,6 +152,30 @@ const ACHIEVEMENTS = [
     { id: 5, title: 'Hard Master', desc: 'Solved 10 hard problems in a row.', unlocked: false }
 ];
 
+const RECOMMENDATIONS = [
+  {
+    id: 1,
+    topic: "Sliding Window",
+    diff: "Medium",
+    xp: 120,
+    time: "20 min",
+  },
+  {
+    id: 2,
+    topic: "Binary Search",
+    diff: "Easy",
+    xp: 80,
+    time: "15 min",
+  },
+  {
+    id: 3,
+    topic: "Dynamic Programming",
+    diff: "Hard",
+    xp: 200,
+    time: "45 min",
+  }
+];
+
 const LANGUAGES = [
     { name: 'JavaScript', solved: 142, pct: 58, color: 'bg-amber-500' },
     { name: 'Python', solved: 62, pct: 25, color: 'bg-sky-500' },
