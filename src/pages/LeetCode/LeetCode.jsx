@@ -284,11 +284,11 @@ export default function LeetCode() {
     };
 
     return (
-        <div className="min-h-screen bg-[#0B1120] text-[#F9FAFB] font-sans antialiased relative overflow-hidden selection:bg-amber-500/30 selection:text-amber-200">
+       <div className="w-full text-[#F9FAFB] font-sans antialiased relative selection:bg-amber-500/30 selection:text-amber-200">
             <style dangerouslySetInnerHTML={{ __html: MOTION_STYLES }} />
 
             {/* --- ABSTRACT BACKGROUND GRADIENTS --- */}
-            <div className="absolute inset-0 rounded-[32px] overflow-hidden pointer-events-none z-0">
+            <div className="absolute inset-0 pointer-events-none z-0 rounded-inherit">
                 <div
                     className="absolute w-[500px] h-[500px] bg-amber-500/[0.02] rounded-full blur-[130px]"
                     style={{
@@ -351,8 +351,7 @@ export default function LeetCode() {
             </div>
 
             {/* --- MAIN PAGE GRAPHICS WRAPPER --- */}
-<div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8 relative z-10
-                rounded-[32px] overflow-hidden">
+<div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8 relative z-10 ">
                 {/* SECTION 1: DEVELOPER HERO COMPONENT */}
                 <div
                     className={`grid grid-cols-1 lg:grid-cols-12 gap-6 transition-all duration-700 transform ${

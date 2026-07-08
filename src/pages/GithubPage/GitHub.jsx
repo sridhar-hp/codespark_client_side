@@ -358,8 +358,7 @@ export default function GitHubDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B1120] text-[#F9FAFB] font-sans antialiased relative overflow-hidden">
-      
+<div className="w-full h-full text-[#F9FAFB] font-sans antialiased relative">      
       {/* Premium CSS Keyframe Variables Injection */}
       <style>{`
         @keyframes floatSlow1 {
