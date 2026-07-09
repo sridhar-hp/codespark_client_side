@@ -10,7 +10,7 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 import Tasks from "./pages/TasksPage/Tasks";
 import GitHub from "./pages/GithubPage/GitHub";
 import LeetCode from "./pages/LeetCode/LeetCode";
-import Learning from "./pages/Learning";
+import Learning from "./pages/Learning/Learning";
 // import Communication from "./pages/Communication";
 // import LinkedIn from "./pages/LinkedIn";
 // import Analytics from "./pages/Analytics";
