@@ -27,7 +27,8 @@ import {
     Target,
     Zap,
     GraduationCap,
-    HelpCircle
+    HelpCircle,
+    Check
 } from 'lucide-react';
 
 // --- PREMIUM HARDWARE-ACCELERATED KEYFRAMES ---
