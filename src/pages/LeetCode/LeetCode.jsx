@@ -331,10 +331,10 @@ export default function LeetCode() {
                     <div
                         key={toast.id}
                         className={`pointer-events-auto flex items-center gap-3 px-4 py-3.5 rounded-xl border shadow-2xl relative overflow-hidden ${toast.type === 'xp'
-                                ? 'bg-amber-500/15 border-amber-500/30 text-amber-400'
-                                : toast.type === 'success'
-                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                                    : 'bg-[#111827] border-[#1F2937] text-white'
+                            ? 'bg-amber-500/15 border-amber-500/30 text-amber-400'
+                            : toast.type === 'success'
+                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                                : 'bg-[#111827] border-[#1F2937] text-white'
                             }`}
                         style={{
                             animation: 'slide-up-spring 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'
@@ -711,7 +711,7 @@ export default function LeetCode() {
                                         <div className="space-y-2">
                                             <div className="flex justify-between items-center">
                                                 <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md ${rec.diff === 'Hard' ? 'bg-rose-500/10 text-rose-400' :
-                                                        rec.diff === 'Medium' ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'
+                                                    rec.diff === 'Medium' ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'
                                                     }`}>
                                                     {rec.diff}
                                                 </span>
@@ -926,7 +926,7 @@ export default function LeetCode() {
                                             <h4 className="text-sm font-bold text-white group-hover:text-amber-400 transition-colors">{sub.name}</h4>
                                             <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold text-[#6B7280]">
                                                 <span className={`px-2 py-0.5 rounded-md ${sub.diff === 'Hard' ? 'bg-rose-500/10 text-rose-400' :
-                                                        sub.diff === 'Medium' ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'
+                                                    sub.diff === 'Medium' ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'
                                                     }`}>
                                                     {sub.diff}
                                                 </span>
@@ -937,10 +937,10 @@ export default function LeetCode() {
                                         </div>
 
                                         <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg border ${sub.status === 'Accepted'
-                                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                                                : sub.status === 'TLE'
-                                                    ? 'bg-amber-500/10 border-amber-500/20 text-amber-400 animate-pulse'
-                                                    : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                                            : sub.status === 'TLE'
+                                                ? 'bg-amber-500/10 border-amber-500/20 text-amber-400 animate-pulse'
+                                                : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
                                             }`}>
                                             {sub.status}
                                         </span>
