@@ -791,3 +791,870 @@
 //   );
 // }
 
+//v3
+import React, { useState, useEffect } from 'react';
+import { 
+  BookOpen, 
+  Code, 
+  Layers, 
+  Cpu, 
+  Globe, 
+  Clock, 
+  Zap, 
+  Plus, 
+  ChevronDown, 
+  ChevronUp, 
+  CheckCircle2, 
+  Lock, 
+  Play, 
+  Pause, 
+  Award, 
+  Terminal, 
+  ExternalLink, 
+  TrendingUp, 
+  Sparkles,
+  Search,
+  BookMarked,
+  Hourglass,
+  ArrowRight,
+  X,
+  BarChart3
+} from 'lucide-react';
+
+// --- MOCK DATA FOR THE STUDIO ---
+const INITIAL_TECHNOLOGIES = [
+  {
+    id: 'nextjs',
+    name: 'Next.js',
+    category: 'Frontend Framework',
+    progress: 68,
+    targetHours: 40,
+    hoursCompleted: 27.2,
+    level: 'Intermediate',
+    status: 'In Progress',
+    activeTopic: 'App Router Server Actions & Optimistic Updates',
+    color: 'from-black to-slate-800',
+    accentColor: 'rgb(56, 189, 248)',
+    icon: Layers,
+    topics: [
+      { name: 'Routing & Layouts', completed: true },
+      { name: 'Data Fetching & Caching', completed: true },
+      { name: 'Server Actions', completed: false },
+      { name: 'Advanced Middleware', completed: false },
+    ]
+  },
+  {
+    id: 'system-design',
+    name: 'System Design',
+    category: 'Architecture',
+    progress: 35,
+    targetHours: 60,
+    hoursCompleted: 21,
+    level: 'Beginner',
+    status: 'In Progress',
+    activeTopic: 'Horizontal vs Vertical Scaling & Load Balancers',
+    color: 'from-indigo-900 to-slate-900',
+    accentColor: 'rgb(129, 140, 248)',
+    icon: Cpu,
+    topics: [
+      { name: 'Scaling Fundamentals', completed: true },
+      { name: 'Load Balancing Algorithms', completed: false },
+      { name: 'Caching Strategies (Redis)', completed: false },
+      { name: 'Database Sharding', completed: false },
+    ]
+  },
+  {
+    id: 'react-advanced',
+    name: 'React.js Mastery',
+    category: 'Frontend',
+    progress: 100,
+    targetHours: 50,
+    hoursCompleted: 50,
+    level: 'Advanced',
+    status: 'Completed',
+    completionDate: 'June 24, 2026',
+    activeTopic: 'All Core Milestones Finished',
+    color: 'from-cyan-950 to-slate-900',
+    accentColor: 'rgb(34, 211, 238)',
+    icon: Code,
+    topics: [
+      { name: 'Concurrent Rendering', completed: true },
+      { name: 'Custom Hooks Architecture', completed: true },
+      { name: 'State Machine Integration', completed: true },
+      { name: 'Fiber Architecture Deep Dive', completed: true },
+    ]
+  },
+  {
+    id: 'docker',
+    name: 'Docker & Containers',
+    category: 'DevOps',
+    progress: 0,
+    targetHours: 25,
+    hoursCompleted: 0,
+    level: 'Beginner',
+    status: 'Not Started',
+    activeTopic: 'Introduction to Containerization',
+    color: 'from-blue-950 to-slate-900',
+    accentColor: 'rgb(96, 165, 250)',
+    icon: Terminal,
+    topics: [
+      { name: 'Images & Containers Basics', completed: false },
+      { name: 'Dockerfile Optimization', completed: false },
+      { name: 'Docker Compose Orchestration', completed: false },
+      { name: 'Multi-stage Builds', completed: false },
+    ]
+  }
+];
+
+const TIMELINE_MILESTONES = [
+  { tech: 'Next.js', topic: 'Implemented Optimistic UI on Form Mutation', duration: '45m', xp: '+60 XP', time: '4:15 PM' },
+  { tech: 'Next.js', topic: 'Deep dive into Server Actions secure endpoints', duration: '1h 30m', xp: '+120 XP', time: '11:00 AM' },
+  { tech: 'System Design', topic: 'Reviewed Consistent Hashing protocols', duration: '1h 10m', xp: '+90 XP', time: 'Yesterday' },
+  { tech: 'React.js Mastery', topic: 'Completed final assignment on Scheduler Profile API', duration: '2h 15m', xp: '+200 XP', time: '3 days ago' },
+];
+
+const ROADMAP_STEPS = [
+  { id: 1, name: 'HTML & CSS Foundations', status: 'completed' },
+  { id: 2, name: 'Modern JavaScript (ES6+)', status: 'completed' },
+  { id: 3, name: 'React UI Engineering', status: 'completed' },
+  { id: 4, name: 'Next.js Core & SSR', status: 'current' },
+  { id: 5, name: 'State Management (Zustand/Redux)', status: 'locked' },
+  { id: 6, name: 'Production Architectures', status: 'locked' },
+];
+
+const DOCK_RESOURCES = [
+  { name: 'React Docs', icon: Code, url: '#' },
+  { name: 'Next.js Docs', icon: Layers, url: '#' },
+  { name: 'MDN Web Docs', icon: Globe, url: '#' },
+  { name: 'YouTube Tech', icon: Play, url: '#' },
+  { name: 'DevDocs', icon: BookMarked, url: '#' },
+];
+
+export default function LearningStudio() {
+  // States
+  const [technologies, setTechnologies] = useState(INITIAL_TECHNOLOGIES);
+  const [expandedTile, setExpandedTile] = useState('nextjs');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [timerSeconds, setTimerSeconds] = useState(8100); // Start at 2h 15m
+  const [dockHoveredIndex, setDockHoveredIndex] = useState(null);
+
+  // New path form fields state
+  const [newPath, setNewPath] = useState({
+    name: '', category: 'Frontend', difficulty: 'Beginner', targetHours: '30', primaryResource: '', notes: '', expectedDate: ''
+  });
+
+  // Simple interval effect for the animated countdown/countup timer widget
+  useEffect(() => {
+    let interval = null;
+    if (timerRunning) {
+      interval = setInterval(() => {
+        setTimerSeconds(prev => prev + 1);
+      }, 1000);
+    } else {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [timerRunning]);
+
+  const formatTimer = (totalSeconds) => {
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    return `${hrs}h ${mins.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`;
+  };
+
+  const handleAddPathSubmit = (e) => {
+    e.preventDefault();
+    if (!newPath.name) return;
+
+    const addedTech = {
+      id: newPath.name.toLowerCase().replace(/\s+/g, '-'),
+      name: newPath.name,
+      category: newPath.category,
+      progress: 0,
+      targetHours: parseInt(newPath.targetHours) || 30,
+      hoursCompleted: 0,
+      level: newPath.difficulty,
+      status: 'Not Started',
+      activeTopic: 'Initial resource: ' + (newPath.primaryResource || 'Documentation'),
+      color: 'from-slate-800 to-slate-900',
+      accentColor: 'rgb(168, 85, 247)',
+      icon: BookOpen,
+      topics: [
+        { name: 'Introduction Strategy', completed: false },
+        { name: 'Core Concepts Sandbox', completed: false },
+        { name: 'Milestone Build Execution', completed: false }
+      ]
+    };
+
+    setTechnologies([addedTech, ...technologies]);
+    setIsModalOpen(false);
+    setNewPath({ name: '', category: 'Frontend', difficulty: 'Beginner', targetHours: '30', primaryResource: '', notes: '', expectedDate: '' });
+  };
+
+  return (
+    <div className="min-h-screen bg-[#0B0F19] text-slate-100 font-sans selection:bg-indigo-500/30 overflow-x-hidden relative pb-32">
+      
+      {/* BACKGROUND EFFECTS / AMBIENT LIGHTING */}
+      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-indigo-600/10 to-transparent rounded-full blur-[120px] pointer-events-none animate-pulse duration-[8000ms]" />
+      <div className="absolute top-[60vh] right-10 w-[400px] h-[400px] bg-gradient-to-br from-cyan-500/5 to-purple-500/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-10 left-1/3 w-[600px] h-[600px] bg-gradient-to-tr from-emerald-500/5 to-blue-500/5 rounded-full blur-[150px] pointer-events-none" />
+
+      {/* HEADER / NAVIGATION BAR */}
+      <header className="border-b border-slate-900 bg-slate-950/40 backdrop-blur-md sticky top-0 z-40 px-8 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <Terminal className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <span className="font-black text-lg tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400">CODESPARK</span>
+            <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-400 block -mt-1">Studio Core</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-6 text-sm text-slate-400">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-900/60 rounded-full border border-slate-800">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-xs font-mono text-slate-300">STUDIO_ENV // LIVE</span>
+          </div>
+        </div>
+      </header>
+
+      {/* MAIN ASYMMETRICAL WORKSPACE CONTAINER */}
+      <main className="max-w-[1600px] mx-auto px-6 lg:px-12 pt-8 grid grid-cols-1 xl:grid-cols-12 gap-8 relative z-10">
+        
+        {/* ==================== LEFT AREA (8 COLUMNS): HERO & CORE BUILDERS ==================== */}
+        <div className="xl:col-span-8 flex flex-col gap-10">
+          
+          {/* SECTION 1: LEARNING STUDIO HERO */}
+          <section className="relative overflow-hidden rounded-3xl border border-slate-800/60 bg-gradient-to-br from-slate-900/70 via-slate-900/40 to-indigo-950/20 backdrop-blur-xl p-8 lg:p-10 group shadow-2xl">
+            {/* Animated backdrop particles / gradient lines simulated via Tailwind */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b10_1px,transparent_1px),linear-gradient(to_bottom,#1e293b10_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+            
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold uppercase tracking-wider mb-4 animate-pulse">
+                  <Sparkles className="w-3.5 h-3.5" /> Engine Initialized
+                </div>
+                <h1 className="text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-2">
+                  Welcome to your Studio.
+                </h1>
+                <p className="text-slate-400 max-w-xl text-base leading-relaxed">
+                  Synthesizing environments for execution. Your current primary trajectory target is <span className="text-cyan-400 font-semibold underline decoration-cyan-400/30 underline-offset-4">Next.js Framework Architecture</span>.
+                </p>
+              </div>
+
+              {/* Live Metric Array */}
+              <div className="flex items-center gap-4 bg-slate-950/50 backdrop-blur-md p-4 rounded-2xl border border-slate-800/80 min-w-[260px] self-start md:self-auto">
+                <div className="grid grid-cols-2 gap-4 w-full">
+                  <div className="border-r border-slate-800/80 pr-2">
+                    <span className="text-[11px] uppercase font-bold tracking-wider text-slate-500 block">Streak Engine</span>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-2xl font-black font-mono text-amber-400 animate-bounce">18</span>
+                      <span className="text-xs text-slate-400">days</span>
+                    </div>
+                  </div>
+                  <div className="pl-2">
+                    <span className="text-[11px] uppercase font-bold tracking-wider text-slate-500 block">Accumulated XP</span>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-2xl font-black font-mono text-indigo-400">4,920</span>
+                      <span className="text-xs text-slate-500">XP</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Decorative Floating Tech Icons */}
+            <div className="mt-8 pt-6 border-t border-slate-800/40 flex flex-wrap gap-4 items-center justify-between text-xs text-slate-500">
+              <div className="flex items-center gap-6">
+                <span className="flex items-center gap-1.5 hover:text-cyan-400 transition-colors"><Code className="w-3.5 h-3.5 animate-spin duration-10000" /> React Engine v19</span>
+                <span className="flex items-center gap-1.5 hover:text-yellow-400 transition-colors"><Layers className="w-3.5 h-3.5 animate-bounce duration-5000" /> Vercel Compiler</span>
+                <span className="flex items-center gap-1.5 hover:text-purple-400 transition-colors"><Cpu className="w-3.5 h-3.5" /> Node Cluster Node</span>
+              </div>
+              <div className="text-slate-400 font-mono text-[11px] bg-slate-900/60 px-2.5 py-1 rounded border border-slate-800">
+                ACTIVE_FOCUS // PRODUCTION_READY
+              </div>
+            </div>
+          </section>
+
+          {/* SECTION 2 & 3: THE LEARNING LIBRARY (VISUAL CENTERPIECE) */}
+          <section className="flex flex-col gap-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-indigo-400" /> Learning Library
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">Macro-architecture paths designated for system mastery</p>
+              </div>
+
+              {/* SECTION 3 ACTION BUTTON */}
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium text-sm rounded-xl transition-all duration-300 shadow-lg shadow-indigo-600/20 hover:shadow-indigo-500/30 hover:-translate-y-0.5 group active:translate-y-0"
+              >
+                <Plus className="w-4 h-4 transition-transform group-hover:rotate-90 duration-300" />
+                <span>Add Learning Path</span>
+              </button>
+            </div>
+
+            {/* Premium Expandable Technology Tiles Column */}
+            <div className="flex flex-col gap-4">
+              {technologies.map((tech) => {
+                const isExpanded = expandedTile === tech.id;
+                const IconComponent = tech.icon || Code;
+                const isCompleted = tech.status === 'Completed';
+
+                return (
+                  <div
+                    key={tech.id}
+                    className={`group relative rounded-2xl transition-all duration-500 ease-out overflow-hidden border ${
+                      isExpanded 
+                        ? 'bg-slate-900/90 border-slate-700 shadow-2xl shadow-indigo-950/40' 
+                        : 'bg-slate-900/40 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900/60 hover:shadow-lg'
+                    }`}
+                  >
+                    {/* Active/Hover Ambient Subtle Left Indicator Glow */}
+                    <div 
+                      className="absolute left-0 top-0 bottom-0 w-[4px] transition-all duration-300"
+                      style={{ 
+                        backgroundColor: tech.accentColor,
+                        opacity: isExpanded ? 1 : 0.3
+                      }} 
+                    />
+
+                    {/* Main Header Container Row */}
+                    <div 
+                      onClick={() => setExpandedTile(isExpanded ? null : tech.id)}
+                      className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer select-none"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${tech.color} border border-slate-800 flex items-center justify-center p-2.5 shadow-inner group-hover:scale-105 transition-transform duration-300`}>
+                          <IconComponent className="w-full h-full" style={{ color: tech.accentColor }} />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-lg font-bold text-white tracking-tight group-hover:text-indigo-300 transition-colors">{tech.name}</h3>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700/50">{tech.category}</span>
+                          </div>
+                          <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5 font-mono">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-600" style={{ backgroundColor: tech.accentColor }} />
+                            {tech.activeTopic}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Right aligned status markers */}
+                      <div className="flex items-center justify-between md:justify-end gap-6 border-t border-slate-800/40 md:border-none pt-3 md:pt-0">
+                        <div className="flex gap-8 items-center">
+                          {/* Hours & Level Details */}
+                          <div className="text-right hidden sm:block">
+                            <span className="text-[10px] text-slate-500 uppercase block font-bold tracking-wider">Allocation Engine</span>
+                            <span className="text-xs font-semibold text-slate-300 font-mono">{tech.hoursCompleted}h <span className="text-slate-500">/ {tech.targetHours}h</span></span>
+                          </div>
+
+                          <div className="text-right">
+                            <span className="text-[10px] text-slate-500 uppercase block font-bold tracking-wider">Status Matrix</span>
+                            {isCompleted ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-400 font-mono">
+                                <Award className="w-3 h-3" /> Mastered
+                              </span>
+                            ) : (
+                              <span className={`text-xs font-semibold font-mono ${tech.status === 'Not Started' ? 'text-slate-500' : 'text-cyan-400'}`}>
+                                {tech.status}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Interactive Circular/Linear Minimal Progress Display */}
+                          <div className="w-24 bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800/80 relative">
+                            <div 
+                              className="h-full bg-gradient-to-r transition-all duration-1000 rounded-full" 
+                              style={{ 
+                                width: `${tech.progress}%`,
+                                backgroundImage: `linear-gradient(to right, ${tech.accentColor}, #a855f7)`
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Expand Icon */}
+                        <div className="text-slate-400 p-1 hover:text-white transition-colors">
+                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Smooth Expandable Content Panel */}
+                    <div 
+                      className={`transition-all duration-500 ease-in-out border-t border-slate-800/60 bg-slate-950/40 ${
+                        isExpanded ? 'max-h-[400px] opacity-100 p-6' : 'max-h-0 opacity-0 pointer-events-none'
+                      }`}
+                    >
+                      {isCompleted ? (
+                        <div className="bg-gradient-to-r from-amber-500/10 to-transparent border border-amber-500/20 p-4 rounded-xl flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-amber-500/10 text-amber-400 rounded-lg">
+                              <Award className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-bold text-amber-300">Technology Fully Mastered</h4>
+                              <p className="text-xs text-slate-400">All core criteria verified. Certified optimization complete on {tech.completionDate}.</p>
+                            </div>
+                          </div>
+                          <span className="text-xs font-mono px-3 py-1 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-md uppercase tracking-wider font-bold">GOLD_ACCENT_VERIFIED</span>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          
+                          {/* Segment Left: Topic Checkbox Syllabus Architecture */}
+                          <div className="md:col-span-2 space-y-2.5">
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Target Curriculum Blocks</h4>
+                            {tech.topics.map((topic, idx) => (
+                              <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg bg-slate-900/60 border border-slate-800/80 hover:bg-slate-900 transition-colors">
+                                <div className="flex items-center gap-2.5">
+                                  <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${topic.completed ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'border-slate-700 bg-slate-950'}`}>
+                                    {topic.completed && <CheckCircle2 className="w-3 h-3" />}
+                                  </div>
+                                  <span className={`text-xs ${topic.completed ? 'text-slate-400 line-through' : 'text-slate-200'}`}>{topic.name}</span>
+                                </div>
+                                <span className="text-[10px] font-mono text-slate-500">{topic.completed ? 'VERIFIED' : 'PENDING'}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Segment Right: Control Hub Action */}
+                          <div className="flex flex-col justify-between bg-slate-900/40 border border-slate-800 p-4 rounded-xl">
+                            <div>
+                              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Current Focus Phase</span>
+                              <div className="text-sm font-bold text-slate-200 mt-1">{tech.level} Velocity</div>
+                              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">Studio tracks metrics automatically based on session activation windows.</p>
+                            </div>
+
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTimerRunning(true);
+                              }}
+                              className="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-indigo-600 text-slate-200 hover:text-white transition-all rounded-xl font-medium text-xs tracking-wider uppercase border border-slate-700 hover:border-indigo-500 group"
+                            >
+                              <Play className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                              <span>Resume Learning Engine</span>
+                            </button>
+                          </div>
+
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* SECTION 6: KNOWLEDGE ROADMAP */}
+          <section className="bg-slate-900/30 border border-slate-800/60 rounded-3xl p-6 lg:p-8 backdrop-blur-xl">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-purple-400" /> Knowledge Roadmap Trajectory
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">Sequential node unlocks for standard Fullstack Frontend Engineering track</p>
+            </div>
+
+            {/* Map Path Presentation Component */}
+            <div className="flex flex-wrap items-center gap-3 py-4 overflow-x-auto">
+              {ROADMAP_STEPS.map((step, idx) => {
+                const isCompleted = step.status === 'completed';
+                const isCurrent = step.status === 'current';
+                
+                return (
+                  <React.Fragment key={step.id}>
+                    {/* Node */}
+                    <div 
+                      className={`px-4 py-3 rounded-xl border relative transition-all duration-300 ${
+                        isCompleted 
+                          ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300 shadow-inner' 
+                          : isCurrent 
+                            ? 'bg-indigo-950/50 border-indigo-500 text-white shadow-lg shadow-indigo-500/10 animate-pulse' 
+                            : 'bg-slate-900/40 border-slate-800 text-slate-500'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                          isCompleted ? 'bg-emerald-500/20 text-emerald-400' : isCurrent ? 'bg-indigo-500 text-white' : 'bg-slate-800 text-slate-600'
+                        }`}>
+                          {isCompleted ? '✔' : step.id}
+                        </div>
+                        <span className="text-xs font-semibold tracking-wide whitespace-nowrap">{step.name}</span>
+                      </div>
+
+                      {/* Accent highlight rings */}
+                      {isCurrent && (
+                        <span className="absolute -inset-px rounded-xl border border-indigo-400 animate-ping opacity-20 pointer-events-none" />
+                      )}
+                    </div>
+
+                    {/* Separator Arrow */}
+                    {idx < ROADMAP_STEPS.length - 1 && (
+                      <ArrowRight className={`w-4 h-4 flex-shrink-0 ${isCompleted ? 'text-emerald-600/50' : 'text-slate-700'}`} />
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* SECTION 5: LEARNING JOURNEY (TIMELINE METRIC) */}
+          <section className="bg-slate-900/20 border border-slate-900 rounded-3xl p-6 lg:p-8">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <Clock className="w-5 h-5 text-cyan-400" /> Learning Journey Milestones
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">Chronological block completions across paths</p>
+            </div>
+
+            {/* Vertical Custom Timeline */}
+            <div className="relative border-l-2 border-slate-800 pl-6 space-y-6 ml-2">
+              {TIMELINE_MILESTONES.map((milestone, idx) => (
+                <div key={idx} className="relative group">
+                  {/* Point Indicator Node */}
+                  <div className="absolute -left-[31px] top-1.5 w-3.5 h-3.5 rounded-full bg-slate-950 border-2 border-indigo-400 group-hover:bg-indigo-400 transition-colors duration-300" />
+                  
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-900/40 hover:bg-slate-900/80 border border-slate-800/80 rounded-xl p-4 transition-all duration-300">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-indigo-400 font-mono">{milestone.tech}</span>
+                        <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">{milestone.time}</span>
+                      </div>
+                      <p className="text-sm text-slate-200 mt-1 font-medium">{milestone.topic}</p>
+                    </div>
+                    <div className="flex items-center gap-3 self-end sm:self-auto text-xs font-mono">
+                      <span className="text-slate-400 flex items-center gap-1"><Hourglass className="w-3 h-3" /> {milestone.duration}</span>
+                      <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded border border-emerald-500/20 font-bold">{milestone.xp}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+        </div>
+
+        {/* ==================== RIGHT AREA (4 COLUMNS): LIVE INTERACTIVE HUB & INSIGHTS ==================== */}
+        <div className="xl:col-span-4 flex flex-col gap-10">
+          
+          {/* SECTION 4: TODAY'S LEARNING SESSION */}
+          <section className="rounded-3xl border border-slate-800/80 bg-slate-900/50 backdrop-blur-xl p-6 relative overflow-hidden shadow-xl">
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+              <Zap className="w-24 h-24 text-indigo-500" />
+            </div>
+
+            <div className="mb-6">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 block">Workspace Monitor</span>
+              <h2 className="text-lg font-bold text-white">Today's Studio Session</h2>
+            </div>
+
+            {/* Dynamic Interactive Timer Widget UI */}
+            <div className="flex flex-col items-center justify-center py-6 bg-slate-950/60 rounded-2xl border border-slate-800/80 mb-6">
+              
+              {/* Circular Graphic Core Frame */}
+              <div className="relative w-40 h-40 flex items-center justify-center mb-4">
+                {/* SVG Ring Frame Track */}
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="44" stroke="#1e293b" strokeWidth="4" fill="transparent" />
+                  <circle 
+                    cx="50" 
+                    cy="50" 
+                    r="44" 
+                    stroke="url(#timerGradient)" 
+                    strokeWidth="4" 
+                    fill="transparent" 
+                    strokeDasharray="276" 
+                    strokeDashoffset={timerRunning ? "110" : "180"} 
+                    className="transition-all duration-1000 ease-in-out"
+                  />
+                  <defs>
+                    <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#6366f1" />
+                      <stop offset="100%" stopColor="#06b6d4" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+
+                {/* Internal Metrics Column */}
+                <div className="absolute flex flex-col items-center justify-center text-center">
+                  <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Active Engine</span>
+                  <span className="text-lg font-black font-mono tracking-tight text-white mt-0.5">{formatTimer(timerSeconds)}</span>
+                  <span className="text-[11px] font-mono font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full mt-1.5">+180 XP</span>
+                </div>
+
+                {/* Subtle Breathing Ambient Shadow Aura */}
+                <div className={`absolute inset-4 rounded-full bg-indigo-500/5 mix-blend-screen pointer-events-none ${timerRunning ? 'animate-ping opacity-30' : 'opacity-0'}`} />
+              </div>
+
+              {/* Engine Interaction Controls Toggle Button */}
+              <button
+                onClick={() => setTimerRunning(!timerRunning)}
+                className={`px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 flex items-center gap-2 shadow-md ${
+                  timerRunning 
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30' 
+                    : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-600/10'
+                }`}
+              >
+                {timerRunning ? (
+                  <>
+                    <Pause className="w-3.5 h-3.5" /> <span>Pause Tracking Session</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-3.5 h-3.5" /> <span>Initialize Learning Engine</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Quick Session Aggregates */}
+            <div className="grid grid-cols-2 gap-3 font-mono text-xs">
+              <div className="bg-slate-950/40 border border-slate-800 p-3 rounded-xl">
+                <span className="text-slate-500 text-[10px] block uppercase font-bold">Target Context</span>
+                <span className="text-slate-200 font-semibold block mt-0.5">Next.js Framework</span>
+              </div>
+              <div className="bg-slate-950/40 border border-slate-800 p-3 rounded-xl">
+                <span className="text-slate-500 text-[10px] block uppercase font-bold">Session Segment</span>
+                <span className="text-slate-200 font-semibold block mt-0.5">3 Iterations</span>
+              </div>
+            </div>
+          </section>
+
+          {/* SECTION 7: LEARNING RESOURCES (MACOS FLOATING DOCK DYNAMIC DESIGN) */}
+          <section className="bg-slate-900/20 border border-slate-900 rounded-3xl p-6 flex flex-col items-center">
+            <div className="w-full text-left mb-4">
+              <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Resource Teleport Dock</h2>
+              <p className="text-xs text-slate-500">Hover for magnification micro-interactions</p>
+            </div>
+
+            {/* Simulated macOS Dock Container */}
+            <div className="bg-slate-950/80 border border-slate-800 px-4 py-3 rounded-2xl flex items-center gap-4 shadow-inner max-w-full overflow-x-auto">
+              {DOCK_RESOURCES.map((res, idx) => {
+                const ResIcon = res.icon;
+                const isHovered = dockHoveredIndex === idx;
+                const isNeighbor = dockHoveredIndex !== null && Math.abs(dockHoveredIndex - idx) === 1;
+                
+                // Calculate size based on simulated proximity hover
+                let sizeClass = "w-10 h-10";
+                if (isHovered) sizeClass = "w-14 h-14 bg-indigo-600 text-white border-indigo-400";
+                else if (isNeighbor) sizeClass = "w-12 h-12 bg-slate-800 text-slate-200 border-slate-700";
+
+                return (
+                  <a
+                    key={res.name}
+                    href={res.url}
+                    onMouseEnter={() => setDockHoveredIndex(idx)}
+                    onMouseLeave={() => setDockHoveredIndex(null)}
+                    className={`rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center p-2.5 transition-all duration-300 ease-out shadow-md group relative ${sizeClass}`}
+                    title={res.name}
+                  >
+                    <ResIcon className="w-full h-full transition-transform group-hover:scale-105" />
+                    
+                    {/* Tiny tooltips */}
+                    {isHovered && (
+                      <span className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-slate-950 border border-slate-800 px-2 py-0.5 rounded text-[10px] text-white font-mono whitespace-nowrap shadow-xl">
+                        {res.name}
+                      </span>
+                    )}
+                  </a>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* SECTION 9: LEARNING INSIGHTS (MINIMAL TYPOGRAPHY APPROACH) */}
+          <section className="bg-slate-900/40 border border-slate-800/80 backdrop-blur-xl rounded-3xl p-6">
+            <div className="mb-5">
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-emerald-400" /> Analytical Architecture Insights
+              </h2>
+              <p className="text-xs text-slate-500">System performance metrics without boilerplate graphing dashboards</p>
+            </div>
+
+            {/* Metric Blueprint Rows */}
+            <div className="space-y-4">
+              {[
+                { label: 'Total Dedicated Matrix Time', val: '98.4 hours', change: 'Optimal Capacity' },
+                { label: 'Weekly Velocity Threshold', val: '14.5 hours', change: '+2.1h variance' },
+                { label: 'Average Learning Session Span', val: '1h 48m', change: 'Stable Depth' },
+                { label: 'Peak Capacity Window Focus', val: 'React.js Mastery', change: '100% Core' }
+              ].map((insight, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-slate-950/40 border border-slate-900 hover:border-slate-800/60 transition-colors">
+                  <div>
+                    <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wide block">{insight.label}</span>
+                    <span className="text-sm font-bold text-slate-200 mt-0.5 block">{insight.val}</span>
+                  </div>
+                  <span className="text-[10px] font-mono bg-slate-900 border border-slate-800 px-2 py-1 rounded text-slate-400">
+                    {insight.change}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* SECTION 8: RECENT LEARNING TELEMETRY FEED */}
+          <section className="bg-slate-900/10 border border-slate-900/80 rounded-3xl p-6">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Stream Activity Log</h3>
+            <div className="space-y-3">
+              {[
+                { label: 'Next.js Routing Engine Matrix', meta: 'Completed 45m session', time: '10m ago', state: 'SUCCESS' },
+                { label: 'System Design Redundancy Cache', meta: 'Added 2 markdown documents', time: '4h ago', state: 'APPENDED' },
+                { label: 'Docker Multi-stage Architecture', meta: 'Initialized root configuration', time: '1 day ago', state: 'STAGED' }
+              ].map((feed, idx) => (
+                <div key={idx} className="p-3 bg-slate-950/20 border border-slate-900/60 rounded-xl flex items-start justify-between gap-4 hover:bg-slate-950/60 transition-colors">
+                  <div>
+                    <div className="text-xs font-bold text-slate-300">{feed.label}</div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">{feed.meta}</div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <span className="text-[9px] block font-mono text-slate-600">{feed.time}</span>
+                    <span className="text-[9px] font-mono font-bold text-indigo-400 bg-indigo-500/5 px-1 py-0.5 rounded block mt-1">{feed.state}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+        </div>
+      </main>
+
+      {/* ==================== SECTION 3 MODAL: ADD LEARNING PATH OVERLAY ==================== */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-opacity duration-300">
+          <div 
+            className="w-full max-w-lg bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 rounded-2xl shadow-2xl p-6 relative overflow-hidden transform scale-100 transition-transform duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Ambient Corner Light */}
+            <div className="absolute -top-12 -right-12 w-24 h-24 bg-purple-500/10 rounded-full blur-xl pointer-events-none" />
+            
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-5">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Plus className="w-5 h-5 text-purple-400" /> Catalog New Learning Path
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">Define structured long-term target blueprints for CODESPARK tracking</p>
+              </div>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddPathSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">Technology Designation Name</label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder="e.g., TypeScript Architecture, Rust Core, Redis"
+                  value={newPath.name}
+                  onChange={(e) => setNewPath({...newPath, name: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all font-sans"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">Category Dimension</label>
+                  <select 
+                    value={newPath.category}
+                    onChange={(e) => setNewPath({...newPath, category: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 transition-all"
+                  >
+                    <option value="Frontend">Frontend Core</option>
+                    <option value="Backend Framework">Backend System</option>
+                    <option value="Architecture">Architecture / Design</option>
+                    <option value="DevOps">DevOps Infrastructure</option>
+                    <option value="Language Mechanics">Language Mechanics</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">Target Scope Hours</label>
+                  <input 
+                    type="number" 
+                    placeholder="e.g., 40"
+                    value={newPath.targetHours}
+                    onChange={(e) => setNewPath({...newPath, targetHours: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 transition-all font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">Difficulty Baseline</label>
+                  <select 
+                    value={newPath.difficulty}
+                    onChange={(e) => setNewPath({...newPath, difficulty: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 transition-all"
+                  >
+                    <option value="Beginner">Beginner Tier</option>
+                    <option value="Intermediate">Intermediate Matrix</option>
+                    <option value="Advanced">Advanced Mastery</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">Expected Target Resolution</label>
+                  <input 
+                    type="date" 
+                    value={newPath.expectedDate}
+                    onChange={(e) => setNewPath({...newPath, expectedDate: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 transition-all font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">Primary Learning Resource Core Endpoint</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g., Official Documentation API Guide, Course URL"
+                  value={newPath.primaryResource}
+                  onChange={(e) => setNewPath({...newPath, primaryResource: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">Architectural Notes (Optional)</label>
+                <textarea 
+                  rows="2"
+                  placeholder="Specify particular goals or focus vectors here..."
+                  value={newPath.notes}
+                  onChange={(e) => setNewPath({...newPath, notes: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 transition-all resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end items-center gap-3 pt-2 border-t border-slate-800/80 mt-5">
+                <button 
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white transition-all rounded-xl text-xs font-semibold uppercase tracking-wider"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white transition-all rounded-xl text-xs font-semibold uppercase tracking-wider shadow-md shadow-purple-950/40"
+                >
+                  Synthesize Strategy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
