@@ -127,18 +127,7 @@ function Sidebar({
 
             {/* Sidebar Container */}
             <aside
-                className="
-    fixed
-    top-4
-    left-4
-    bottom-4
-    w-[270px]
-    rounded-3xl
-    border border-[#1F2937]
-    bg-[#111827]
-    overflow-hidden
-    flex flex-col
-  "
+                className="fixed top-4 left-4 bottom-4 w-[270px] rounded-3xl border border-[#1F2937] bg-[#111827] overflow-hidden flex flex-col "
             >
                 {/* Top Header Section */}
                 <div className="h-16 flex items-center justify-between px-4 border-b border-[#1F2937] shrink-0">
