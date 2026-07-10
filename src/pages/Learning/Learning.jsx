@@ -217,33 +217,17 @@ export default function LearningStudio() {
             <ResourceDock items={DOCK_RESOURCES} />
 
             {/* --- SECTION 1: IMPRESSIVE STUDIO HERO --- */}
-            <section
-    className="
-        relative
-        w-full
-        min-h-[60vh]
-        flex
-        flex-col
-        justify-center
-        px-6
-        md:px-12
-        lg:px-24
-        overflow-hidden
-        bg-gradient-to-b
-        from-transparent
-        via-[#0F172A]/20
-        to-transparent
-    "
+            <section  className="relative w-full min-h-[60vh] flex flex-col justify-center px-6 md:px-12 lg:px-24 overflow-hidden bg-gradient-to-b from-transparent via-[#0F172A]/20 to-transparent"
     onMouseMove={handleHeroParallax}
 >
                 {/* Layered Deep Ambient Light Orbs */}
                 <div className="absolute inset-0 pointer-events-none z-0">
                     <div
-                        className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] bg-amber-500/5 rounded-full blur-[140px]"
+                        className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] rounded-full blur-[140px]"
                         style={{ animation: 'studio-ambient-drift 25s infinite alternate ease-in-out' }}
                     />
                     <div
-                        className="absolute bottom-[-20%] right-[-10%] w-[800px] h-[800px] bg-indigo-600/5 rounded-full blur-[160px]"
+                        className="absolute bottom-[-20%] right-[-10%] w-[800px] h-[800px]rounded-full blur-[160px]"
                         style={{ animation: 'studio-ambient-drift 30s infinite alternate-reverse ease-in-out' }}
                     />
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#111827_1px,transparent_1px),linear-gradient(to_bottom,#111827_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_40%,#000_30%,transparent_100%)] opacity-30" />
