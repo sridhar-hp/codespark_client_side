@@ -134,8 +134,8 @@ function Navbar({ onMenuClick, pageTitle = "Dashboard" }) {
             <div className="flex-1 max-w-lg px-4 hidden md:block">
                 <div
                     className={`relative flex items-center w-full h-10 rounded-xl border bg-[#111827] overflow-hidden transition-all duration-200 ${isSearchFocused
-                            ? 'border-amber-500 ring-1 ring-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.1)]'
-                            : 'border-[#1F2937] hover:border-[#374151]'
+                        ? 'border-amber-500 ring-1 ring-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.1)]'
+                        : 'border-[#1F2937] hover:border-[#374151]'
                         }`}
                 >
                     <div className="pl-3 text-[#9CA3AF]">
