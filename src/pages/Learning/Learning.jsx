@@ -217,9 +217,9 @@ export default function LearningStudio() {
             <ResourceDock items={DOCK_RESOURCES} />
 
             {/* --- SECTION 1: IMPRESSIVE STUDIO HERO --- */}
-            <section  className="relative w-full min-h-[60vh] flex flex-col justify-center px-6 md:px-12 lg:px-24 overflow-hidden bg-gradient-to-b from-transparent via-[#0F172A]/20 to-transparent"
-    onMouseMove={handleHeroParallax}
->
+            <section className="relative w-full min-h-[60vh] flex flex-col justify-center px-6 md:px-12 lg:px-24 overflow-hidden bg-gradient-to-b from-transparent via-[#0F172A]/20 to-transparent"
+                onMouseMove={handleHeroParallax}
+            >
                 {/* Layered Deep Ambient Light Orbs */}
                 <div className="absolute inset-0 pointer-events-none z-0">
                     <div
@@ -332,10 +332,10 @@ export default function LearningStudio() {
                                     key={path.id}
                                     onClick={() => setExpandedTile(path.id)}
                                     className={`relative overflow-hidden rounded-3xl border transition-all duration-500 cursor-pointer flex flex-col ${isCompleted
-                                            ? 'bg-gradient-to-br from-[#111827] to-[#111827] border-amber-500/40 shadow-[0_0_30px_rgba(245,158,11,0.05)]'
-                                            : isExpanded
-                                                ? 'bg-[#111827] border-amber-500/60 shadow-[0_10px_40px_rgba(0,0,0,0.4)] scale-[1.02] z-10'
-                                                : 'bg-[#111827]/60 border-[#1F2937] hover:border-[#374151] hover:bg-[#111827] opacity-80 hover:opacity-100'
+                                        ? 'bg-gradient-to-br from-[#111827] to-[#111827] border-amber-500/40 shadow-[0_0_30px_rgba(245,158,11,0.05)]'
+                                        : isExpanded
+                                            ? 'bg-[#111827] border-amber-500/60 shadow-[0_10px_40px_rgba(0,0,0,0.4)] scale-[1.02] z-10'
+                                            : 'bg-[#111827]/60 border-[#1F2937] hover:border-[#374151] hover:bg-[#111827] opacity-80 hover:opacity-100'
                                         }`}
                                 >
                                     {/* Glassmorphism Header */}
@@ -509,14 +509,14 @@ export default function LearningStudio() {
                                         style={{ left: `${node.x}%`, top: `${node.y}%` }}
                                     >
                                         <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 mb-2 transition-colors duration-300 ${node.status === 'completed' ? 'bg-amber-500/20 border-amber-500 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.4)]' :
-                                                node.status === 'active' ? 'bg-white border-white text-[#0B1120] shadow-[0_0_20px_rgba(255,255,255,0.3)] animate-pulse' :
-                                                    'bg-[#111827] border-[#374151] text-[#6B7280]'
+                                            node.status === 'active' ? 'bg-white border-white text-[#0B1120] shadow-[0_0_20px_rgba(255,255,255,0.3)] animate-pulse' :
+                                                'bg-[#111827] border-[#374151] text-[#6B7280]'
                                             }`}>
                                             {node.status === 'completed' ? <CheckCircle2 className="w-4 h-4" /> : <div className="w-2 h-2 rounded-full bg-current" />}
                                         </div>
                                         <span className={`text-[10px] font-bold px-2 py-1 rounded-md border backdrop-blur-md transition-colors ${node.status === 'completed' ? 'bg-[#111827]/80 text-amber-400 border-amber-500/20' :
-                                                node.status === 'active' ? 'bg-[#111827] text-white border-[#374151]' :
-                                                    'bg-[#0B1120] text-[#6B7280] border-[#1F2937]'
+                                            node.status === 'active' ? 'bg-[#111827] text-white border-[#374151]' :
+                                                'bg-[#0B1120] text-[#6B7280] border-[#1F2937]'
                                             }`}>
                                             {node.label}
                                         </span>
