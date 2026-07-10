@@ -38,8 +38,8 @@ function TaskCard() {
                                 </span>
                             </div>
                             <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-1 rounded-md ${task.priority === 'High' ? 'bg-rose-500/10 text-rose-400' :
-                                    task.priority === 'Medium' ? 'bg-amber-500/10 text-amber-400' :
-                                        'bg-[#1F2937] text-[#9CA3AF]'
+                                task.priority === 'Medium' ? 'bg-amber-500/10 text-amber-400' :
+                                    'bg-[#1F2937] text-[#9CA3AF]'
                                 }`}>
                                 {task.priority}
                             </span>
