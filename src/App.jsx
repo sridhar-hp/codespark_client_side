@@ -14,7 +14,7 @@ import Learning from "./pages/Learning/Learning";
 import Communication from "./pages/Communication/Communication";
 import LinkedIn from "./pages/Linkedin/LinkedIn";
 import Analytics from "./pages/Analytics/Analytics";
-// import Journal from "./pages/Journal";
+import Journal from "./pages/Journal/Journal";
 // import Reports from "./pages/Reports";
 // import Achievements from "./pages/Achievements";
 // import Notifications from "./pages/Notifications";
@@ -43,9 +43,9 @@ export default function App() {
                     <Route path="/communication" element={<Communication />} />
                     <Route path="/linkedin" element={<LinkedIn />} />
                     <Route path="/analytics" element={<Analytics />} />
+          <Route path="/journal" element={<Journal />} />
 
                     {/*  
-          <Route path="/journal" element={<Journal />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/notifications" element={<Notifications />} />
