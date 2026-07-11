@@ -40,8 +40,8 @@ export default function App() {
                     <Route path="/github" element={<GitHub />} />
                     <Route path="/leetcode" element={<LeetCode />} />
                     <Route path="/learning" element={<Learning />} />
-          <Route path="/communication" element={<Communication />} />
-          <Route path="/linkedin" element={<LinkedIn />} />
+                    <Route path="/communication" element={<Communication />} />
+                    <Route path="/linkedin" element={<LinkedIn />} />
 
                     {/*  
           <Route path="/analytics" element={<Analytics />} />
