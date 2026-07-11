@@ -43,8 +43,8 @@ export default function App() {
                     <Route path="/communication" element={<Communication />} />
                     <Route path="/linkedin" element={<LinkedIn />} />
                     <Route path="/analytics" element={<Analytics />} />
-          <Route path="/journal" element={<Journal />} />
-          <Route path="/achievements" element={<Achievements />} />
+                    <Route path="/journal" element={<Journal />} />
+                    <Route path="/achievements" element={<Achievements />} />
 
 
                     {/*  
