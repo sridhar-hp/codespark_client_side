@@ -12,7 +12,7 @@ import GitHub from "./pages/GithubPage/GitHub";
 import LeetCode from "./pages/LeetCode/LeetCode";
 import Learning from "./pages/Learning/Learning";
 import Communication from "./pages/Communication/Communication";
-// import LinkedIn from "./pages/LinkedIn";
+import LinkedIn from "./pages/LinkedIn";
 // import Analytics from "./pages/Analytics";
 // import Journal from "./pages/Journal";
 // import Reports from "./pages/Reports";
@@ -41,9 +41,9 @@ export default function App() {
                     <Route path="/leetcode" element={<LeetCode />} />
                     <Route path="/learning" element={<Learning />} />
           <Route path="/communication" element={<Communication />} />
+          <Route path="/linkedin" element={<LinkedIn />} />
 
                     {/*  
-          <Route path="/linkedin" element={<LinkedIn />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/journal" element={<Journal />} />
           <Route path="/reports" element={<Reports />} />
