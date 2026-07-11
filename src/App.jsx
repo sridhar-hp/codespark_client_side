@@ -16,7 +16,7 @@ import LinkedIn from "./pages/Linkedin/LinkedIn";
 import Analytics from "./pages/Analytics/Analytics";
 import Journal from "./pages/Journal/Journal";
 // import Reports from "./pages/Reports";
-import Achievements from "./pages/Achievements";
+import Achievements from "./pages/Achievements/Achievements";
 // import Notifications from "./pages/Notifications";
 // import Settings from "./pages/Settings";
 // import Profile from "./pages/Profile";
