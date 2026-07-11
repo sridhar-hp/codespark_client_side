@@ -1081,7 +1081,7 @@ export default function AnalyticsPage() {
     }, []);
 
     return (
-        <div className="min-h-screen w-full" style={{ background: C.bg, color: C.text }}>
+        <div className="min-h-screen w-full" style={{ color: C.text }}>
             <style>{`
         @keyframes floatParticle { 0%,100% { transform: translateY(0) translateX(0); opacity:.6 } 50% { transform: translateY(-14px) translateX(6px); opacity:1 } }
         @keyframes floatCard { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
