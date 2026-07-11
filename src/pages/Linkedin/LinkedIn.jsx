@@ -1,677 +1,1207 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
-    User, Briefcase, GraduationCap, MapPin, Link2, Code, Star, Trophy,
-    Target, ChevronDown, ChevronUp, Eye, Search, TrendingUp, Award,
-    PenTool, Download, Share2, Github, ExternalLink, Activity, CheckCircle,
-    Clock, X, Settings, Plus, FileText, Send, Terminal, Database, Cloud,
-    Zap, Shield, Play, ArrowRight, Check, Layout, BarChart, Users, MessageSquare,
-    Cpu, Server, Code2, Globe, Laptop
-} from 'lucide-react';
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
+  ResponsiveContainer, Tooltip,
+} from "recharts";
+import {
+  User, Briefcase, GraduationCap, FolderKanban, Award, FileText, Globe, Github,
+  Code2, MessageSquare, ChevronDown, ChevronUp, X, Download, Share2, Sparkles,
+  Target, TrendingUp, TrendingDown, Users, Eye, Search, ArrowUpRight, ArrowDownRight,
+  ExternalLink, Play, Pencil, CheckCircle2, Circle, Lock, Rocket, Layers, Star,
+  Zap, Compass, ClipboardList, BarChart3, Plus, RefreshCw, ChevronRight, Building2,
+  GitBranch, Mic, PenSquare, Network,
+} from "lucide-react";
 
-// --- MOCK DATA ---
-const CAREER_DATA = {
-    profile: {
-        name: "Developer",
-        role: "Full Stack Developer & BCA Student",
-        level: "Level 14 - Junior Engineer",
-        score: 8450,
-        visibility: "High",
-        strength: 85,
-        goal: "MERN Stack Internship",
-        quote: "Building scalable web experiences and mastering data structures."
-    },
-    skills: [
-        { name: 'React', xp: 2400, color: 'text-[#0A66C2]', bg: 'bg-[#0A66C2]' },
-        { name: 'Tailwind CSS', xp: 1850, color: 'text-teal-400', bg: 'bg-teal-400' },
-        { name: 'MongoDB', xp: 1200, color: 'text-green-500', bg: 'bg-green-500' },
-        { name: 'Data Structures', xp: 3100, color: 'text-amber-500', bg: 'bg-amber-500' },
-        { name: 'Algorithms', xp: 2800, color: 'text-purple-500', bg: 'bg-purple-500' }
-    ],
-    experience: [
-        {
-            id: 1,
-            role: "MERN Stack Intern (Applicant)",
-            company: "Across The Globe",
-            duration: "Present",
-            description: "Applying advanced React and MongoDB principles to build highly responsive user interfaces and robust database schemas.",
-            type: "Internship"
-        },
-        {
-            id: 2,
-            role: "Full Stack Candidate",
-            company: "3W Business Private Limited",
-            duration: "Recent",
-            description: "Engaged in technical evaluations focusing on modern web development practices and full-stack architecture.",
-            type: "Recruitment"
-        }
-    ],
-    education: [
-        {
-            id: 1,
-            degree: "Bachelor of Computer Applications (BCA)",
-            institution: "Jamal Mohamed College",
-            focus: "Computer Science, Programming Languages, Web Development",
-            year: "Expected 2026"
-        }
-    ],
-    projects: [
-        {
-            id: 1,
-            title: "Leave Management System",
-            tech: ["React", "Vite", "Tailwind CSS"],
-            role: "Frontend Architect",
-            xp: 450,
-            completion: 100,
-            image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=400&q=80",
-            description: "A comprehensive dashboard featuring sliding panel animations and robust state management for academic leave tracking."
-        },
-        {
-            id: 2,
-            title: "AI Agent Deployment",
-            tech: ["Python", "Multi-agent Systems", "Kaggle"],
-            role: "AI Developer",
-            xp: 800,
-            completion: 100,
-            image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=400&q=80",
-            description: "Deployed custom AI tools and multi-agent systems via Google's Intensive AI course architecture."
-        }
-    ],
-    timeline: [
-        { id: 1, type: 'post', title: "Mastering React Sliding Panels", reach: 1205, likes: 84, comments: 12, time: "2h ago" },
-        { id: 2, type: 'certificate', title: "Completed: Google AI Agents Intensive", reach: 3400, likes: 210, comments: 45, time: "1d ago" },
-        { id: 3, type: 'project', title: "Deployed Leave Management Dashboard v1.0", reach: 890, likes: 56, comments: 8, time: "3d ago" }
-    ],
-    roadmap: [
-        { level: "Student", status: "completed" },
-        { level: "Intern", status: "active" },
-        { level: "Junior Developer", status: "locked" },
-        { level: "Software Engineer", status: "locked" },
-        { level: "Senior Developer", status: "locked" }
-    ]
+/* =========================================================
+   DESIGN TOKENS
+   ========================================================= */
+const C = {
+  bg: "#0B1120",
+  surface: "#111827",
+  surface2: "#0F172A",
+  border: "#1F2937",
+
+  amber: "#F59E0B",
+  amberLight: "#FBBF24",
+
+  cyan: "#06B6D4",
+
+  success: "#10B981",
+  warning: "#F97316",
+  danger: "#EF4444",
+
+  text: "#F9FAFB",
+  textSecondary: "#9CA3AF",
+  textMuted: "#6B7280",
 };
 
-// --- HELPER COMPONENTS ---
+/* =========================================================
+   MOCK DATA
+   ========================================================= */
+const PROFILE = {
+  name: "Aarav Mehta",
+  headline: "Full-Stack Developer · Building at the edge of React & Systems Design",
+  role: "Software Engineer Intern @ Nimbus Labs",
+  quote: "Ship small, learn fast, compound daily.",
+  readiness: 82,
+  recruiterVisibility: 68,
+  profileStrength: 76,
+  goal: "Land a Software Engineer II role by Q1 2027",
+};
 
-const Card = ({ children, className = "", noPadding = false }) => (
-    <div className={`bg-[#111827]/90 backdrop-blur-xl border border-[#1F2937] rounded-[24px] sm:rounded-[32px] overflow-hidden transition-all duration-300 hover:border-[#F59E0B]/20 hover:shadow-[0_8px_32px_rgba(245,158,11,0.05)] ${noPadding ? '' : 'p-6 sm:p-8'} ${className}`}>
-        {children}
-    </div>
-);
+const COMPLETENESS_ITEMS = [
+  { id: "photo", label: "Profile Photo", icon: User, pct: 100, status: "Complete", accent: "amber" },
+  { id: "headline", label: "Headline", icon: PenSquare, pct: 100, status: "Complete", accent: "amber" },
+  { id: "about", label: "About", icon: FileText, pct: 90, status: "Almost There", accent: "amber" },
+  { id: "projects", label: "Projects", icon: FolderKanban, pct: 80, status: "Good", accent: "cyan" },
+  { id: "experience", label: "Experience", icon: Briefcase, pct: 70, status: "Good", accent: "cyan" },
+  { id: "education", label: "Education", icon: GraduationCap, pct: 100, status: "Complete", accent: "success" },
+  { id: "skills", label: "Skills", icon: Code2, pct: 85, status: "Good", accent: "cyan" },
+  { id: "resume", label: "Resume", icon: FileText, pct: 60, status: "Needs Work", accent: "amber" },
+  { id: "certificates", label: "Certificates", icon: Award, pct: 50, status: "Needs Work", accent: "warning" },
+  { id: "portfolio", label: "Portfolio", icon: Globe, pct: 65, status: "Good", accent: "cyan" },
+  { id: "github", label: "GitHub", icon: Github, pct: 95, status: "Complete", accent: "success" },
+  { id: "leetcode", label: "LeetCode", icon: Code2, pct: 75, status: "Good", accent: "cyan" },
+  { id: "communication", label: "Communication", icon: MessageSquare, pct: 55, status: "Needs Work", accent: "danger" },
+];
 
-const SectionTitle = ({ title, icon: Icon, subtitle }) => (
-    <div className="mb-6 sm:mb-8">
-        <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-[#0F172A] rounded-xl border border-[#1F2937] text-amber-500">
-                <Icon size={20} />
-            </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-[#F9FAFB] tracking-tight">{title}</h2>
-        </div>
-        {subtitle && <p className="text-[#9CA3AF] text-sm sm:text-base ml-12">{subtitle}</p>}
-    </div>
-);
+const PROFILE_SECTIONS = [
+  {
+    id: "headline", title: "Headline", icon: PenSquare,
+    preview: "Full-Stack Developer · Building at the edge of React & Systems Design",
+    detail: "A headline is the first signal a recruiter reads. This one leads with stack specificity and a point of view rather than a generic title.",
+  },
+  {
+    id: "about", title: "About", icon: FileText,
+    preview: "Developer focused on performant, well-tested product engineering...",
+    detail: "Third-year CS student with 3 shipped production apps, 340+ solved algorithmic problems, and a growing focus on distributed systems. Currently interning on the platform team at Nimbus Labs, working on internal developer tooling.",
+  },
+  {
+    id: "experience", title: "Experience", icon: Briefcase,
+    preview: "Software Engineer Intern @ Nimbus Labs — Jun 2026 – Present",
+    detail: "Building internal CLI tooling used by 40+ engineers; reduced deploy configuration time by 35%. Previously: Frontend Contractor @ Studio Loop (contract, 2025).",
+  },
+  {
+    id: "education", title: "Education", icon: GraduationCap,
+    preview: "B.Tech Computer Science — Class of 2027",
+    detail: "Coursework in Distributed Systems, Operating Systems, and Applied Machine Learning. Dean's List, 2025.",
+  },
+  {
+    id: "projects", title: "Projects", icon: FolderKanban,
+    preview: "4 featured projects · 3 in production",
+    detail: "Includes CODESPARK itself, a real-time collaborative editor, a distributed job queue, and an open-source CLI with 200+ GitHub stars.",
+  },
+  {
+    id: "skills", title: "Skills", icon: Code2,
+    preview: "React, TypeScript, Node.js, PostgreSQL, AWS +12 more",
+    detail: "Top endorsed: React (advanced), System Design (intermediate), SQL (advanced). Recently added: Rust (learning).",
+  },
+  {
+    id: "resume", title: "Resume", icon: FileText,
+    preview: "Last updated 12 days ago · ATS Score 78/100",
+    detail: "Resume covers 2 internships and 4 projects. Missing quantified impact metrics in the second bullet of the most recent role.",
+  },
+  {
+    id: "certificates", title: "Certificates", icon: Award,
+    preview: "3 certificates · 2 in progress",
+    detail: "AWS Cloud Practitioner (2025), Meta Frontend Developer (2025). In progress: Systems Design Specialization.",
+  },
+];
 
-const Button = ({ children, variant = 'primary', className = "", onClick, icon: Icon }) => {
-    const baseStyle = "relative inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all duration-300 overflow-hidden group active:scale-95";
-    const variants = {
-        primary: "bg-amber-500 text-[#0B1120] hover:bg-amber-400 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)]",
-        secondary: "bg-[#0A66C2] text-white hover:bg-[#0A66C2]/90 hover:shadow-[0_0_20px_rgba(10,102,194,0.3)]",
-        outline: "bg-transparent border border-[#1F2937] text-[#E5E7EB] hover:bg-[#1F2937] hover:border-[#374151]",
-        ghost: "bg-transparent text-[#9CA3AF] hover:text-[#F9FAFB] hover:bg-[#1F2937]/50"
+const FEATURED_PROJECTS = [
+  {
+    id: "p1", title: "CODESPARK", role: "Founder / Lead Engineer", duration: "8 mo",
+    stack: ["React", "Tailwind", "Node.js", "Postgres"], completion: 78, xp: 4200,
+    desc: "A developer productivity OS unifying tasks, learning, and career tracking into one workspace.",
+  },
+  {
+    id: "p2", title: "Realtime Canvas", role: "Full-Stack Engineer", duration: "3 mo",
+    stack: ["React", "WebSockets", "Redis"], completion: 100, xp: 2600,
+    desc: "A collaborative whiteboard supporting 50+ concurrent users with CRDT-based conflict resolution.",
+  },
+  {
+    id: "p3", title: "QueueForge", role: "Backend Engineer", duration: "2 mo",
+    stack: ["Go", "RabbitMQ", "Docker"], completion: 100, xp: 1900,
+    desc: "A distributed job queue with at-least-once delivery guarantees and horizontal worker scaling.",
+  },
+  {
+    id: "p4", title: "flowcli", role: "Open Source Maintainer", duration: "6 mo",
+    stack: ["Rust", "Clap"], completion: 60, xp: 1500,
+    desc: "A CLI for scripting dev-environment setup, now with 200+ GitHub stars and 8 external contributors.",
+  },
+];
+
+const PROFILE_MATRIX = [
+  {
+    skill: "Resume", value: 78,
+    reason: "Your resume covers 2 internships and 4 projects with clear structure, but the most recent role is missing quantified impact metrics.",
+    actions: ["Add measurable outcomes to your 2 most recent bullet points", "Run it through the ATS keyword checker", "Trim the summary to 2 lines"],
+  },
+  {
+    skill: "Projects", value: 82,
+    reason: "Four featured projects are live, three fully shipped to production, with strong tech-stack diversity across the frontend and backend.",
+    actions: ["Add a live demo link to your remaining unlinked project", "Write a short case study for QueueForge", "Highlight metrics like users or load handled"],
+  },
+  {
+    skill: "Experience", value: 70,
+    reason: "One active internship and one prior contract role are logged, but descriptions are brief and lack scope or team context.",
+    actions: ["Expand your Nimbus Labs entry with team size and scope", "Add a one-line outcome for each role", "List technologies used per role"],
+  },
+  {
+    skill: "Education", value: 100,
+    reason: "Your education section is fully complete with degree, coursework, and honors listed.",
+    actions: ["Nothing required — consider adding relevant coursework as skills tags"],
+  },
+  {
+    skill: "GitHub", value: 95,
+    reason: "Strong GitHub signal: consistent commit history, 500+ lifetime commits, and an actively maintained open-source CLI.",
+    actions: ["Pin your top 4 repositories", "Add a profile README", "Respond to open issues on flowcli"],
+  },
+  {
+    skill: "Portfolio", value: 65,
+    reason: "Your portfolio site exists and covers most projects, but two case studies are still using placeholder content.",
+    actions: ["Finish the Realtime Canvas case study", "Add architecture diagrams to QueueForge", "Link portfolio directly from your resume header"],
+  },
+  {
+    skill: "Communication", value: 58,
+    reason: "This is your lowest-scoring signal — fewer async written updates and mock interview reps than other categories.",
+    actions: ["Complete 3 more mock interviews", "Write a weekly build-in-public update", "Practice a 60-second project pitch"],
+  },
+  {
+    skill: "Certificates", value: 50,
+    reason: "Two certificates are complete, but the Systems Design specialization is still in progress at 40%.",
+    actions: ["Finish the remaining 2 modules of Systems Design", "Add certificate badges to your profile header", "Set a target completion date"],
+  },
+];
+
+const NETWORK_STATS = [
+  { id: "connections", label: "Connections", value: 486, growth: 6.2, icon: Users },
+  { id: "followers", label: "Followers", value: 312, growth: 4.1, icon: Star },
+  { id: "following", label: "Following", value: 198, growth: 1.4, icon: Compass },
+  { id: "recruiterViews", label: "Recruiter Views", value: 34, growth: 18.5, icon: Eye },
+  { id: "searchAppearances", label: "Search Appearances", value: 121, growth: 9.7, icon: Search },
+  { id: "profileViews", label: "Profile Views", value: 742, growth: -2.1, icon: TrendingUp },
+];
+
+const CAREER_ROADMAP = [
+  { id: "student", label: "Student", status: "done" },
+  { id: "intern", label: "Intern", status: "done" },
+  { id: "junior", label: "Junior Developer", status: "current" },
+  { id: "swe", label: "Software Engineer", status: "next" },
+  { id: "senior", label: "Senior Developer", status: "locked" },
+  { id: "lead", label: "Tech Lead", status: "locked" },
+  { id: "architect", label: "Architect", status: "locked" },
+];
+
+const ROADMAP_DETAILS = {
+  student: "Completed core CS coursework and built first production-grade project.",
+  intern: "Completed a Software Engineering internship at Nimbus Labs, shipping internal tooling.",
+  junior: "Currently operating at Junior Developer level — owning small features end-to-end with light guidance.",
+  swe: "Target role. Requires: 2 more shipped features with measurable impact, resume ATS score above 85.",
+  senior: "Requires 2+ years experience, system design ownership, and mentoring track record.",
+  lead: "Requires cross-team technical leadership and roadmap ownership.",
+  architect: "Requires org-wide technical strategy and platform-level architecture ownership.",
+};
+
+const ACTIVITY_TIMELINE = [
+  { id: "a1", title: "Shipped CODESPARK v2 Analytics", type: "Recent Project", date: "2 days ago", icon: FolderKanban, detail: "Refactored the analytics module with a new pulse-grid visualization and modal system." },
+  { id: "a2", title: "Earned AWS Cloud Practitioner", type: "Certificate", date: "1 week ago", icon: Award, detail: "Completed the AWS Cloud Practitioner exam with a score of 891/1000." },
+  { id: "a3", title: "Updated portfolio case study", type: "Portfolio Update", date: "2 weeks ago", icon: Globe, detail: "Rewrote the QueueForge case study with architecture diagrams and load-test results." },
+  { id: "a4", title: "Crossed 500 commits milestone", type: "GitHub Milestone", date: "3 weeks ago", icon: Github, detail: "Reached 500 lifetime commits across 20 public and private repositories." },
+  { id: "a5", title: "Completed Systems Design module 3", type: "Learning Progress", date: "1 month ago", icon: GraduationCap, detail: "Finished the load-balancing and caching module with a 94% quiz score." },
+  { id: "a6", title: "Completed mock interview #12", type: "Interview Practice", date: "1 month ago", icon: Mic, detail: "Behavioral + system design mock, scored 8.2/10 on structured feedback." },
+];
+
+const RECRUITER_INSIGHTS = [
+  { id: "resume", title: "Resume Score", icon: FileText, value: 78, accent: C.amber, recommendation: "Add quantified impact metrics to your two most recent bullet points." },
+  { id: "keyword", title: "Keyword Score", icon: Search, value: 71, accent: C.cyan, recommendation: "Include more target-role keywords like 'distributed systems' and 'CI/CD'." },
+  { id: "strength", title: "Profile Strength", icon: Zap, value: 76, accent: C.success, recommendation: "Complete your certificates section to unlock full profile strength." },
+  { id: "portfolio", title: "Portfolio Quality", icon: Globe, value: 82, accent: C.cyan, recommendation: "Add live demo links to two projects currently missing them." },
+  { id: "interview", title: "Interview Readiness", icon: Mic, value: 65, accent: C.warning, recommendation: "Complete 5 more mock interviews to reach the 'ready' threshold." },
+  { id: "communication", title: "Communication Score", icon: MessageSquare, value: 58, accent: C.danger, recommendation: "Increase async written updates — this is your lowest-scoring signal." },
+  { id: "quality", title: "Project Quality", icon: FolderKanban, value: 88, accent: C.success, recommendation: "Excellent. Consider open-sourcing one more project for added credibility." },
+];
+
+const CAREER_GOALS = [
+  { id: "g1", title: "Improve Resume", icon: FileText, xp: 300, progress: 60, status: "In Progress" },
+  { id: "g2", title: "Publish Project", icon: Rocket, xp: 450, progress: 100, status: "Complete" },
+  { id: "g3", title: "Add Certificate", icon: Award, xp: 250, progress: 30, status: "In Progress" },
+  { id: "g4", title: "Complete Portfolio", icon: Globe, xp: 400, progress: 65, status: "In Progress" },
+  { id: "g5", title: "Increase Network", icon: Users, xp: 200, progress: 45, status: "In Progress" },
+  { id: "g6", title: "Practice Interview", icon: Mic, xp: 350, progress: 20, status: "Not Started" },
+];
+
+const CAREER_ANALYTICS = [
+  { id: "applications", label: "Applications", value: 24, growth: 12.0 },
+  { id: "interviews", label: "Interviews", value: 9, growth: 8.5 },
+  { id: "offers", label: "Offers", value: 2, growth: 100 },
+  { id: "acceptance", label: "Acceptance Rate", value: "22%", growth: 5.3 },
+  { id: "portfolio", label: "Portfolio Growth", value: "+18%", growth: 18 },
+  { id: "connection", label: "Connection Growth", value: "+6.2%", growth: 6.2 },
+  { id: "skill", label: "Skill Growth", value: "+11.4%", growth: 11.4 },
+  { id: "progress", label: "Professional Progress", value: "76%", growth: 4.0 },
+];
+
+/* =========================================================
+   HOOKS
+   ========================================================= */
+function useCountUp(target, duration = 1400, start = true) {
+  const [value, setValue] = useState(0);
+  const raf = useRef(null);
+  useEffect(() => {
+    if (!start) return;
+    let startTime = null;
+    const step = (ts) => {
+      if (!startTime) startTime = ts;
+      const progress = Math.min((ts - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(target * eased);
+      if (progress < 1) raf.current = requestAnimationFrame(step);
     };
+    raf.current = requestAnimationFrame(step);
+    return () => raf.current && cancelAnimationFrame(raf.current);
+  }, [target, duration, start]);
+  return Math.round(value).toLocaleString();
+}
 
-    return (
-        <button onClick={onClick} className={`${baseStyle} ${variants[variant]} ${className}`}>
-            <span className="absolute inset-0 w-full h-full bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out rounded-xl blur-sm" />
-            <span className="relative z-10 flex items-center gap-2">
-                {Icon && <Icon size={18} className={variant === 'primary' ? 'text-[#0B1120]' : ''} />}
-                {children}
-            </span>
+function useInView(threshold = 0.2) {
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const obs = new IntersectionObserver(([e]) => e.isIntersecting && setInView(true), { threshold });
+    obs.observe(node);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return [ref, inView];
+}
+
+/* =========================================================
+   SHARED UI PRIMITIVES
+   ========================================================= */
+function SectionHeader({ eyebrow, title, subtitle, right }) {
+  return (
+    <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
+      <div>
+        <div className="text-xs font-semibold tracking-[0.2em] uppercase mb-2" style={{ color: C.amber }}>{eyebrow}</div>
+        <h2 className="text-2xl md:text-3xl font-bold" style={{ color: C.text }}>{title}</h2>
+        {subtitle && <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>{subtitle}</p>}
+      </div>
+      {right}
+    </div>
+  );
+}
+
+function SpotlightCard({ children, className = "", style = {} }) {
+  const ref = useRef(null);
+  const [pos, setPos] = useState({ x: 50, y: 50 });
+  const onMouseMove = (e) => {
+    const rect = ref.current.getBoundingClientRect();
+    setPos({ x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100 });
+  };
+  return (
+    <div
+      ref={ref}
+      onMouseMove={onMouseMove}
+      className={`relative overflow-hidden rounded-[28px] border transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-[#F59E0B]/40 ${className}`}
+      style={{
+        background: "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))",
+        borderColor: C.border,
+        boxShadow: "0 0 0 0 rgba(0,0,0,0)",
+        ...style,
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.boxShadow = `0 0 0 1px rgba(245,158,11,0.28), 0 18px 40px -20px rgba(6,182,212,0.25)`)}
+      onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 0 0 0 rgba(0,0,0,0)")}
+    >
+      <div
+        className="pointer-events-none absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-300"
+        style={{ background: `radial-gradient(240px circle at ${pos.x}% ${pos.y}%, rgba(245,158,11,0.10), transparent 60%), radial-gradient(420px circle at ${pos.x}% ${pos.y}%, rgba(6,182,212,0.06), transparent 70%)` }}
+      />
+      <div className="relative">{children}</div>
+    </div>
+  );
+}
+
+function Button({ icon: Icon, children, onClick, tone = "default", size = "md" }) {
+  const [ripples, setRipples] = useState([]);
+  const styles = {
+    default: { border: C.border, color: C.text, bg: "rgba(255,255,255,0.02)" },
+    primary: { border: "rgba(245,158,11,0.5)", color: "#0B1120", bg: `linear-gradient(135deg, ${C.amber}, ${C.warning})` },
+    amber: { border: "rgba(245,158,11,0.4)", color: C.amber, bg: "rgba(245,158,11,0.06)" },
+  }[tone];
+  const pad = size === "sm" ? "px-3 py-2 text-xs" : "px-4 py-2.5 text-sm";
+
+  const handleClick = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const id = Date.now() + Math.random();
+    setRipples((r) => [...r, { id, x: e.clientX - rect.left, y: e.clientY - rect.top }]);
+    setTimeout(() => setRipples((r) => r.filter((rp) => rp.id !== id)), 600);
+    onClick && onClick();
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`relative overflow-hidden inline-flex items-center gap-2 rounded-2xl font-medium border transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${pad}`}
+      style={{ borderColor: styles.border, color: styles.color, background: styles.bg, "--tw-ring-color": C.amber, "--tw-ring-offset-color": C.bg }}
+    >
+      {Icon && <Icon size={16} />}
+      {children}
+      {ripples.map((r) => (
+        <span key={r.id} className="absolute rounded-full pointer-events-none"
+          style={{ left: r.x, top: r.y, width: 8, height: 8, background: "rgba(255,255,255,0.35)", transform: "translate(-50%,-50%)", animation: "ripple 600ms ease-out forwards" }} />
+      ))}
+    </button>
+  );
+}
+
+function Modal({ open, onClose, title, children }) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={title}>
+      <div className="absolute inset-0" style={{ background: "rgba(3,7,18,0.75)", backdropFilter: "blur(8px)", animation: "fadeIn 200ms ease-out" }} onClick={onClose} />
+      <div className="relative w-full max-w-lg rounded-[28px] border p-6 md:p-8"
+        style={{
+          background: "linear-gradient(180deg, rgba(17,24,39,0.95), rgba(15,23,42,0.95))",
+          borderColor: C.border, boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+          animation: "scaleIn 220ms cubic-bezier(0.16,1,0.3,1)",
+        }}>
+        <div className="flex items-start justify-between mb-4">
+          <h3 className="text-xl font-bold" style={{ color: C.text }}>{title}</h3>
+          <button onClick={onClose} aria-label="Close" className="p-2 rounded-full focus:outline-none focus-visible:ring-2"
+            style={{ color: C.textSecondary, "--tw-ring-color": C.amber }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+            <X size={20} />
+          </button>
+        </div>
+        <div style={{ color: C.textSecondary }}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function Toast({ message, show }) {
+  if (!show) return null;
+  return (
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] px-5 py-3 rounded-2xl border text-sm font-medium"
+      style={{ background: "rgba(17,24,39,0.95)", borderColor: C.border, color: C.text, animation: "toastIn 250ms ease-out", boxShadow: "0 10px 30px rgba(0,0,0,0.4)" }}>
+      {message}
+    </div>
+  );
+}
+
+function ProgressBar({ value, color = C.amber, height = 6 }) {
+  return (
+    <div className="rounded-full overflow-hidden" style={{ background: C.border, height }}>
+      <div className="h-full rounded-full" style={{ width: `${value}%`, background: color, transition: "width 1.2s cubic-bezier(0.16,1,0.3,1)" }} />
+    </div>
+  );
+}
+
+/* =========================================================
+   SECTION 1 — CAREER HERO
+   ========================================================= */
+function CareerHero({ notify, openModal }) {
+  const readiness = useCountUp(PROFILE.readiness, 1600);
+  const visibility = useCountUp(PROFILE.recruiterVisibility, 1600);
+  const strength = useCountUp(PROFILE.profileStrength, 1600);
+  const floatIcons = [Briefcase, Github, Code2, Award, Globe, GraduationCap];
+
+  return (
+    <section className="relative overflow-hidden rounded-[32px] border" style={{ borderColor: C.border }}>
+      <div className="absolute inset-0" style={{ background: `radial-gradient(120% 100% at 85% 0%, rgba(245,158,11,0.16), transparent 55%), radial-gradient(90% 80% at 5% 20%, rgba(6,182,212,0.10), transparent 50%), ${C.surface}` }} />
+      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(11,17,32,0) 0%, rgba(11,17,32,0.5) 100%)" }} />
+      {floatIcons.map((Icon, i) => (
+        <div key={i} className="absolute pointer-events-none opacity-20"
+          style={{ left: `${8 + i * 16}%`, top: `${10 + (i % 3) * 22}%`, animation: `floatIcon ${7 + i}s ease-in-out infinite`, animationDelay: `${i * 0.5}s` }}>
+          <Icon size={22} style={{ color: i % 2 === 0 ? C.amber : C.cyan }} />
+        </div>
+      ))}
+
+      <div className="relative p-6 md:p-12">
+        <div className="grid lg:grid-cols-[auto_1fr] gap-8 items-start mb-10">
+          <div className="relative shrink-0 mx-auto lg:mx-0">
+            <div className="w-24 h-24 md:w-28 md:h-28 rounded-[28px] flex items-center justify-center text-3xl font-bold"
+              style={{ background: `linear-gradient(135deg, ${C.amber}, ${C.warning})`, color: "#0B1120", boxShadow: "0 12px 40px rgba(245,158,11,0.35)" }}>
+              AM
+            </div>
+            <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center border-4"
+              style={{ background: C.success, borderColor: C.surface }}>
+              <CheckCircle2 size={14} color="#fff" />
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center gap-2 text-xs font-semibold tracking-[0.2em] uppercase mb-3" style={{ color: C.amber }}>
+              <Sparkles size={14} /> Career Intelligence
+            </div>
+            <h1 className="text-2xl md:text-4xl font-bold mb-2" style={{ color: C.text }}>{PROFILE.name}</h1>
+            <p className="text-sm md:text-base mb-1 max-w-xl" style={{ color: C.textSecondary }}>{PROFILE.headline}</p>
+            <p className="text-xs mb-4" style={{ color: C.textMuted }}>{PROFILE.role}</p>
+            <p className="text-sm italic mb-6" style={{ color: C.amber }}>"{PROFILE.quote}"</p>
+
+            <div className="flex flex-wrap gap-3">
+              <Button icon={Pencil} tone="primary" onClick={() => openModal("editProfile")}>Edit Profile</Button>
+              <Button icon={Download} onClick={() => notify("Resume downloaded")}>Download Resume</Button>
+              <Button icon={Share2} onClick={() => openModal("sharePortfolio")}>Share Portfolio</Button>
+              <Button icon={BarChart3} tone="amber" onClick={() => openModal("careerInsights")}>Career Insights</Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: "Career Readiness", value: readiness, suffix: "%", icon: Target, color: C.amber },
+            { label: "Recruiter Visibility", value: visibility, suffix: "%", icon: Eye, color: C.cyan },
+            { label: "Profile Strength", value: strength, suffix: "%", icon: Zap, color: C.success },
+            { label: "Current Goal", value: null, icon: Compass, color: C.amber, text: PROFILE.goal },
+          ].map((s) => (
+            <div key={s.label} className="rounded-2xl p-4 border" style={{ borderColor: C.border, background: "rgba(255,255,255,0.02)" }}>
+              <s.icon size={16} style={{ color: s.color }} className="mb-2" />
+              {s.value !== null ? (
+                <div className="text-xl font-bold" style={{ color: C.text }}>{s.value}{s.suffix}</div>
+              ) : (
+                <div className="text-xs font-semibold leading-snug" style={{ color: C.text }}>{s.text}</div>
+              )}
+              <div className="text-[11px] mt-0.5" style={{ color: C.textMuted }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* =========================================================
+   SECTION 2 — PROFILE COMPLETENESS
+   ========================================================= */
+function CompletenessRow({ item, openModal }) {
+  const [expanded, setExpanded] = useState(false);
+  const Icon = item.icon;
+  const statusColor = item.pct >= 90 ? C.success : item.pct >= 65 ? C.amber : C.danger;
+  const accentMap = { amber: C.amber, cyan: C.cyan, success: C.success, warning: C.warning, danger: C.danger };
+  const barColor = accentMap[item.accent] || C.amber;
+  return (
+    <div className="border-b last:border-b-0" style={{ borderColor: C.border }}>
+      <div className="flex items-center gap-4 py-4">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${barColor}1A` }}>
+          <Icon size={17} style={{ color: barColor }} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-sm font-medium" style={{ color: C.text }}>{item.label}</span>
+            <span className="text-xs font-semibold shrink-0 ml-2" style={{ color: statusColor }}>{item.pct}%</span>
+          </div>
+          <ProgressBar value={item.pct} color={barColor} height={5} />
+        </div>
+        <span className="hidden sm:block text-xs px-2.5 py-1 rounded-full shrink-0" style={{ background: `${statusColor}1A`, color: statusColor }}>
+          {item.status}
+        </span>
+        <button onClick={() => setExpanded((e) => !e)} className="p-2 rounded-lg shrink-0 focus:outline-none focus-visible:ring-2"
+          style={{ color: C.textMuted, "--tw-ring-color": C.amber }} aria-label="Toggle details">
+          {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
-    );
+      </div>
+      <div className="grid overflow-hidden transition-all duration-300" style={{ gridTemplateRows: expanded ? "1fr" : "0fr" }}>
+        <div className="min-h-0 overflow-hidden pb-4 flex items-center justify-between text-xs" style={{ color: C.textSecondary }}>
+          <span>Improving this section increases overall recruiter visibility.</span>
+          <button onClick={() => openModal("editProfile")} className="font-semibold flex items-center gap-1 focus:outline-none" style={{ color: C.amber }}>
+            Edit <Pencil size={12} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProfileCompleteness({ openModal }) {
+  const overall = Math.round(COMPLETENESS_ITEMS.reduce((s, i) => s + i.pct, 0) / COMPLETENESS_ITEMS.length);
+  return (
+    <section>
+      <SectionHeader eyebrow="Section 02" title="Profile Completeness" subtitle="Thirteen signals recruiters and systems use to evaluate your profile."
+        right={<div className="text-right"><div className="text-2xl font-bold" style={{ color: C.amber }}>{overall}%</div><div className="text-[11px]" style={{ color: C.textMuted }}>Overall</div></div>} />
+      <SpotlightCard className="px-6 md:px-8">
+        {COMPLETENESS_ITEMS.map((item) => <CompletenessRow key={item.id} item={item} openModal={openModal} />)}
+      </SpotlightCard>
+    </section>
+  );
+}
+
+/* =========================================================
+   SECTION 3 — PROFESSIONAL PROFILE
+   ========================================================= */
+function ProfileSectionCard({ data, openModal }) {
+  const [expanded, setExpanded] = useState(false);
+  const Icon = data.icon;
+  return (
+    <SpotlightCard className="p-6">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(245,158,11,0.1)" }}>
+          <Icon size={18} style={{ color: C.amber }} />
+        </div>
+        <div className="font-semibold" style={{ color: C.text }}>{data.title}</div>
+      </div>
+      <p className="text-sm mb-4" style={{ color: C.textSecondary }}>{data.preview}</p>
+
+      <div className="grid overflow-hidden transition-all duration-300" style={{ gridTemplateRows: expanded ? "1fr" : "0fr" }}>
+        <p className="min-h-0 overflow-hidden text-xs pb-4" style={{ color: C.textMuted }}>{data.detail}</p>
+      </div>
+
+      <div className="flex items-center gap-2 text-xs font-semibold">
+        <button onClick={() => setExpanded((e) => !e)} className="flex items-center gap-1 focus:outline-none" style={{ color: C.amber }}>
+          {expanded ? "Collapse" : "View More"} {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+        </button>
+        <span style={{ color: C.border }}>·</span>
+        <button onClick={() => openModal("preview", data)} className="focus:outline-none" style={{ color: C.textSecondary }}>Preview</button>
+        <span style={{ color: C.border }}>·</span>
+        <button onClick={() => openModal("editProfile")} className="focus:outline-none" style={{ color: C.textSecondary }}>Edit</button>
+      </div>
+    </SpotlightCard>
+  );
+}
+
+function ProfessionalProfile({ openModal }) {
+  return (
+    <section>
+      <SectionHeader eyebrow="Section 03" title="Professional Profile" subtitle="The building blocks recruiters read first." />
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {PROFILE_SECTIONS.map((s) => <ProfileSectionCard key={s.id} data={s} openModal={openModal} />)}
+      </div>
+    </section>
+  );
+}
+
+/* =========================================================
+   SECTION 4 — FEATURED PROJECTS
+   ========================================================= */
+function ProjectCard({ data, notify, openModal }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <SpotlightCard className="p-6 min-w-[300px] max-w-[340px] shrink-0">
+      <div className="h-28 rounded-2xl mb-4 flex items-center justify-center" style={{ background: `linear-gradient(135deg, rgba(6,182,212,0.16), rgba(245,158,11,0.10))` }}>
+        <Layers size={28} style={{ color: C.amber }} />
+      </div>
+      <div className="flex items-center justify-between mb-1">
+        <div className="font-semibold" style={{ color: C.text }}>{data.title}</div>
+        <span className="text-xs" style={{ color: C.amber }}>+{data.xp} XP</span>
+      </div>
+      <div className="text-xs mb-3" style={{ color: C.textMuted }}>{data.role} · {data.duration}</div>
+      <p className="text-sm mb-3" style={{ color: C.textSecondary }}>{data.desc}</p>
+      <div className="flex flex-wrap gap-1.5 mb-4">
+        {data.stack.map((s) => (
+          <span key={s} className="text-[11px] px-2 py-1 rounded-full border" style={{ borderColor: C.border, color: C.textSecondary }}>{s}</span>
+        ))}
+      </div>
+
+      <div className="mb-4">
+        <div className="flex items-center justify-between text-xs mb-1" style={{ color: C.textMuted }}>
+          <span>Completion</span><span>{data.completion}%</span>
+        </div>
+        <ProgressBar value={data.completion} color={data.completion === 100 ? C.success : C.amber} />
+      </div>
+
+      <div className="grid overflow-hidden transition-all duration-300 mb-3" style={{ gridTemplateRows: expanded ? "1fr" : "0fr" }}>
+        <div className="min-h-0 overflow-hidden text-xs space-y-1.5" style={{ color: C.textSecondary }}>
+          <div>Role: <span style={{ color: C.text }}>{data.role}</span></div>
+          <div>Duration: <span style={{ color: C.text }}>{data.duration}</span></div>
+          <div>XP Earned: <span style={{ color: C.text }}>{data.xp}</span></div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button onClick={() => notify(`Opening ${data.title} on GitHub`)} className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-xl border focus:outline-none focus-visible:ring-2"
+          style={{ borderColor: C.border, color: C.text, "--tw-ring-color": C.amber }}>
+          <Github size={13} /> GitHub
+        </button>
+        <button onClick={() => notify(`Opening ${data.title} live demo`)} className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-xl border focus:outline-none focus-visible:ring-2"
+          style={{ borderColor: C.border, color: C.text, "--tw-ring-color": C.amber }}>
+          <ExternalLink size={13} /> Live Demo
+        </button>
+        <button onClick={() => setExpanded((e) => !e)} className="ml-auto text-xs font-semibold flex items-center gap-1 focus:outline-none" style={{ color: C.amber }}>
+          {expanded ? "Collapse" : "View Details"} {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+        </button>
+      </div>
+    </SpotlightCard>
+  );
+}
+
+function FeaturedProjects({ notify, openModal }) {
+  return (
+    <section>
+      <SectionHeader eyebrow="Section 04" title="Featured Projects" subtitle="A curated showcase, scrollable and recruiter-ready." />
+      <div className="flex gap-5 overflow-x-auto pb-3 -mx-1 px-1">
+        {FEATURED_PROJECTS.map((p) => <ProjectCard key={p.id} data={p} notify={notify} openModal={openModal} />)}
+      </div>
+    </section>
+  );
+}
+
+/* =========================================================
+   SECTION 5 — SKILL MATRIX
+   ========================================================= */
+function ProfileMatrixDot(props) {
+  const { cx, cy, payload, activeSkill, onSelect } = props;
+  if (cx == null || cy == null) return null;
+  const isActive = payload.skill === activeSkill;
+  return (
+    <g
+      style={{ cursor: "pointer" }}
+      onClick={() => onSelect(payload.skill)}
+      tabIndex={0}
+      role="button"
+      aria-label={`${payload.skill}: ${payload.value} out of 100`}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(payload.skill); } }}
+    >
+      {/* larger invisible hit area for easier clicking/tapping */}
+      <circle cx={cx} cy={cy} r={14} fill="transparent" />
+      <circle
+        cx={cx} cy={cy} r={isActive ? 7 : 5}
+        fill={isActive ? C.amber : C.cyan}
+        stroke={C.bg} strokeWidth={2}
+        style={{ transition: "r 200ms ease, fill 200ms ease" }}
+      />
+      {isActive && <circle cx={cx} cy={cy} r={12} fill="none" stroke={C.amber} strokeWidth={1.5} opacity={0.5} />}
+    </g>
+  );
+}
+
+function ProfileMatrix() {
+  const [ref, inView] = useInView();
+  const [activeSkill, setActiveSkill] = useState(null);
+
+  const overall = Math.round(PROFILE_MATRIX.reduce((sum, d) => sum + d.value, 0) / PROFILE_MATRIX.length);
+  const sorted = [...PROFILE_MATRIX].sort((a, b) => b.value - a.value);
+  const strongest = sorted[0];
+  const weakest = sorted[sorted.length - 1];
+  const active = PROFILE_MATRIX.find((d) => d.skill === activeSkill);
+
+  const handleSelect = useCallback((skill) => {
+    setActiveSkill((cur) => (cur === skill ? null : skill));
+  }, []);
+
+  return (
+    <section ref={ref}>
+      <SectionHeader eyebrow="Section 05" title="Profile Matrix" subtitle="How complete and compelling your professional profile is, section by section." />
+      <SpotlightCard className="p-6 md:p-8">
+        <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-8">
+          <div>
+            <div className="h-96">
+              {inView && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart data={PROFILE_MATRIX} outerRadius="75%">
+                    <PolarGrid stroke={C.border} />
+                    <PolarAngleAxis dataKey="skill" stroke={C.textSecondary} fontSize={12} />
+                    <PolarRadiusAxis angle={30} domain={[0, 100]} stroke={C.border} tick={false} axisLine={false} />
+                    <Radar
+                      dataKey="value" stroke={C.cyan} fill={C.cyan} fillOpacity={0.22} strokeWidth={2}
+                      animationDuration={1400} isAnimationActive
+                      dot={(dotProps) => <ProfileMatrixDot key={dotProps.payload.skill} {...dotProps} activeSkill={activeSkill} onSelect={handleSelect} />}
+                      activeDot={false}
+                    />
+                    <Tooltip content={<ProfileMatrixTooltip />} />
+                  </RadarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+            <p className="text-center text-xs mt-1" style={{ color: C.textMuted }}>Click any point on the chart to see the score breakdown.</p>
+          </div>
+
+          <div className="flex flex-col gap-5">
+            <div className="rounded-2xl p-5 border" style={{ borderColor: C.border }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold tracking-wide uppercase" style={{ color: C.textMuted }}>Profile Strength</span>
+                <Zap size={16} style={{ color: C.amber }} />
+              </div>
+              <div className="text-3xl font-bold mb-2" style={{ color: C.text }}>{overall}%</div>
+              <ProgressBar value={overall} color={C.amber} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-2xl p-4 border" style={{ borderColor: C.border }}>
+                <div className="flex items-center gap-1.5 text-xs font-semibold mb-1.5" style={{ color: C.success }}>
+                  <ArrowUpRight size={13} /> Strongest
+                </div>
+                <div className="text-sm font-semibold" style={{ color: C.text }}>{strongest.skill}</div>
+                <div className="text-xs" style={{ color: C.textMuted }}>{strongest.value}/100</div>
+              </div>
+              <div className="rounded-2xl p-4 border" style={{ borderColor: C.border }}>
+                <div className="flex items-center gap-1.5 text-xs font-semibold mb-1.5" style={{ color: C.danger }}>
+                  <ArrowDownRight size={13} /> Weakest
+                </div>
+                <div className="text-sm font-semibold" style={{ color: C.text }}>{weakest.skill}</div>
+                <div className="text-xs" style={{ color: C.textMuted }}>{weakest.value}/100</div>
+              </div>
+            </div>
+
+            <div className="grid overflow-hidden transition-all duration-300" style={{ gridTemplateRows: active ? "1fr" : "0fr" }}>
+              <div className="min-h-0 overflow-hidden">
+                {active && (
+                  <div className="rounded-2xl p-5 border" style={{ borderColor: C.cyan + "55", background: "rgba(14,165,233,0.06)", animation: "fadeIn 250ms ease-out" }}>
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <div className="text-sm font-semibold" style={{ color: C.text }}>{active.skill}</div>
+                        <div className="text-xs" style={{ color: C.cyan }}>{active.value}/100</div>
+                      </div>
+                      <button onClick={() => setActiveSkill(null)} aria-label="Close detail" className="p-1.5 rounded-lg focus:outline-none focus-visible:ring-2"
+                        style={{ color: C.textMuted, "--tw-ring-color": C.cyan }}>
+                        <X size={15} />
+                      </button>
+                    </div>
+                    <p className="text-xs mb-3" style={{ color: C.textSecondary }}>{active.reason}</p>
+                    <div className="text-[11px] font-semibold uppercase tracking-wide mb-2" style={{ color: C.textMuted }}>Ways to improve</div>
+                    <ul className="space-y-1.5">
+                      {active.actions.map((a, i) => (
+                        <li key={i} className="flex items-start gap-2 text-xs" style={{ color: C.textSecondary }}>
+                          <ChevronRight size={12} className="mt-0.5 shrink-0" style={{ color: C.amber }} /> {a}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {!active && (
+              <div className="rounded-2xl p-5 border border-dashed text-xs" style={{ borderColor: C.border, color: C.textMuted }}>
+                Select a category on the radar to see why it's scored the way it is and what to do next.
+              </div>
+            )}
+          </div>
+        </div>
+      </SpotlightCard>
+    </section>
+  );
+}
+
+function ProfileMatrixTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0].payload;
+  return (
+    <div className="rounded-xl border px-3 py-2 text-xs" style={{ background: "rgba(17,24,39,0.95)", borderColor: C.border, color: C.text }}>
+      {d.skill}: {d.value}/100
+    </div>
+  );
+}
+
+/* =========================================================
+   SECTION 6 — NETWORK INSIGHTS
+   ========================================================= */
+function NetworkStat({ data, openModal, inView }) {
+  const value = useCountUp(data.value, 1400, inView);
+  const Icon = data.icon;
+  const up = data.growth >= 0;
+  return (
+    <SpotlightCard className="p-5">
+      <div className="flex items-center justify-between mb-3">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(6,182,212,0.1)" }}>
+          <Icon size={16} style={{ color: C.cyan }} />
+        </div>
+        <span className="flex items-center gap-0.5 text-xs font-semibold" style={{ color: up ? C.success : C.danger }}>
+          {up ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}{Math.abs(data.growth)}%
+        </span>
+      </div>
+      <div className="text-xl font-bold" style={{ color: C.text }}>{value}</div>
+      <div className="text-[11px] mt-1 mb-3" style={{ color: C.textMuted }}>{data.label}</div>
+      <button onClick={() => openModal("networkDetail", data)} className="text-xs font-semibold focus:outline-none" style={{ color: C.amber }}>View Details</button>
+    </SpotlightCard>
+  );
+}
+
+function NetworkInsights({ openModal }) {
+  const [ref, inView] = useInView();
+  return (
+    <section ref={ref}>
+      <SectionHeader eyebrow="Section 06" title="Network Insights" subtitle="How visible and connected your profile is right now." />
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {NETWORK_STATS.map((s) => <NetworkStat key={s.id} data={s} openModal={openModal} inView={inView} />)}
+      </div>
+    </section>
+  );
+}
+
+/* =========================================================
+   SECTION 7 — CAREER ROADMAP
+   ========================================================= */
+function CareerRoadmap() {
+  const [openId, setOpenId] = useState(null);
+  const [ref, inView] = useInView();
+
+  const styleFor = (status) => {
+    if (status === "done") return { ring: C.success, fill: C.success, icon: CheckCircle2, opacity: 1 };
+    if (status === "current") return { ring: C.amber, fill: C.amber, icon: Circle, opacity: 1 };
+    if (status === "next") return { ring: C.cyan, fill: "transparent", icon: Circle, opacity: 1 };
+    return { ring: C.border, fill: "transparent", icon: Lock, opacity: 0.5 };
+  };
+
+  return (
+    <section ref={ref}>
+      <SectionHeader eyebrow="Section 07" title="Career Roadmap" subtitle="The path from student to architect, mapped." />
+      <SpotlightCard className="p-6 md:p-10">
+        <div className="flex flex-col md:flex-row md:items-start gap-0 md:gap-2">
+          {CAREER_ROADMAP.map((m, i) => {
+            const s = styleFor(m.status);
+            const Icon = s.icon;
+            const isOpen = openId === m.id;
+            return (
+              <React.Fragment key={m.id}>
+                <div className="flex md:flex-col items-center md:items-center gap-3 md:gap-2 md:flex-1 md:text-center">
+                  <button
+                    onClick={() => setOpenId(isOpen ? null : m.id)}
+                    className="relative w-12 h-12 rounded-2xl flex items-center justify-center border-2 shrink-0 focus:outline-none focus-visible:ring-2"
+                    style={{
+                      borderColor: s.ring, background: m.status === "current" ? "rgba(245,158,11,0.12)" : C.surface,
+                      opacity: s.opacity, "--tw-ring-color": s.ring,
+                      animation: m.status === "current" && inView ? "pulseNode 2s ease-in-out infinite" : "none",
+                    }}
+                  >
+                    <Icon size={18} style={{ color: s.ring }} />
+                  </button>
+                  <div className="md:mt-1">
+                    <div className="text-sm font-semibold" style={{ color: m.status === "locked" ? C.textMuted : C.text }}>{m.label}</div>
+                    <div className="text-[11px] capitalize" style={{ color: s.ring }}>{m.status === "next" ? "up next" : m.status}</div>
+                  </div>
+                </div>
+                {i < CAREER_ROADMAP.length - 1 && (
+                  <div className="hidden md:block flex-1 h-0.5 mt-6 rounded-full" style={{ background: m.status === "done" ? C.success : C.border }} />
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        <div className="mt-8 grid gap-3">
+          {CAREER_ROADMAP.filter((m) => openId === m.id).map((m) => (
+            <div key={m.id} className="rounded-2xl p-4 border text-sm" style={{ borderColor: C.border, color: C.textSecondary, animation: "fadeIn 250ms ease-out" }}>
+              {ROADMAP_DETAILS[m.id]}
+            </div>
+          ))}
+        </div>
+      </SpotlightCard>
+    </section>
+  );
+}
+
+/* =========================================================
+   SECTION 8 — PROFESSIONAL ACTIVITY
+   ========================================================= */
+function ActivityItem({ item, index, inView }) {
+  const [expanded, setExpanded] = useState(false);
+  const Icon = item.icon;
+  return (
+    <div
+      className="flex gap-4 relative pb-8 last:pb-0"
+      style={{ opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(10px)", transition: `all 400ms ease-out ${index * 90}ms` }}
+    >
+      <div className="flex flex-col items-center shrink-0">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center border" style={{ borderColor: C.border, background: C.surface }}>
+          <Icon size={15} style={{ color: C.amber }} />
+        </div>
+        <div className="w-px flex-1 mt-1" style={{ background: C.border }} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <button onClick={() => setExpanded((e) => !e)} className="w-full text-left focus:outline-none">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm font-semibold" style={{ color: C.text }}>{item.title}</span>
+            {expanded ? <ChevronUp size={14} style={{ color: C.amber }} /> : <ChevronDown size={14} style={{ color: C.textMuted }} />}
+          </div>
+          <div className="text-xs mt-1" style={{ color: C.textMuted }}>{item.type} · {item.date}</div>
+        </button>
+        <div className="grid overflow-hidden transition-all duration-300" style={{ gridTemplateRows: expanded ? "1fr" : "0fr" }}>
+          <p className="min-h-0 overflow-hidden text-sm pt-2" style={{ color: C.textSecondary }}>{item.detail}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProfessionalActivity() {
+  const [ref, inView] = useInView();
+  return (
+    <section ref={ref}>
+      <SectionHeader eyebrow="Section 08" title="Professional Activity" subtitle="A running record of everything moving your career forward." />
+      <SpotlightCard className="p-6 md:p-8">
+        {ACTIVITY_TIMELINE.map((item, i) => <ActivityItem key={item.id} item={item} index={i} inView={inView} />)}
+      </SpotlightCard>
+    </section>
+  );
+}
+
+/* =========================================================
+   SECTION 9 — RECRUITER INSIGHTS
+   ========================================================= */
+function RecruiterCard({ data }) {
+  const [expanded, setExpanded] = useState(false);
+  const Icon = data.icon;
+  return (
+    <SpotlightCard className="p-5">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${data.accent}1A` }}>
+          <Icon size={18} style={{ color: data.accent }} />
+        </div>
+        <div className="flex-1">
+          <div className="text-sm font-semibold" style={{ color: C.text }}>{data.title}</div>
+          <div className="text-xs" style={{ color: C.textMuted }}>{data.value}/100</div>
+        </div>
+      </div>
+      <ProgressBar value={data.value} color={data.accent} />
+      <button onClick={() => setExpanded((e) => !e)} className="mt-3 text-xs font-semibold flex items-center gap-1 focus:outline-none" style={{ color: data.accent }}>
+        {expanded ? "Collapse" : "View Details"} {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+      </button>
+      <div className="grid overflow-hidden transition-all duration-300" style={{ gridTemplateRows: expanded ? "1fr" : "0fr" }}>
+        <p className="min-h-0 overflow-hidden text-xs pt-3" style={{ color: C.textSecondary }}>{data.recommendation}</p>
+      </div>
+    </SpotlightCard>
+  );
+}
+
+function RecruiterInsights() {
+  return (
+    <section>
+      <SectionHeader eyebrow="Section 09" title="Recruiter Insights" subtitle="How your profile reads to the people making hiring decisions." />
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {RECRUITER_INSIGHTS.map((r) => <RecruiterCard key={r.id} data={r} />)}
+      </div>
+    </section>
+  );
+}
+
+/* =========================================================
+   SECTION 10 — CAREER GOALS
+   ========================================================= */
+function GoalCard({ data, notify }) {
+  const [progress, setProgress] = useState(data.progress);
+  const isComplete = progress >= 100;
+  const Icon = data.icon;
+
+  const advance = () => {
+    if (isComplete) return;
+    setProgress((p) => Math.min(100, p + 20));
+    notify(`${data.title} progress updated`);
+  };
+
+  return (
+    <SpotlightCard className="p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: "rgba(245,158,11,0.1)" }}>
+          <Icon size={20} style={{ color: C.amber }} />
+        </div>
+        <span className="text-xs px-2.5 py-1 rounded-full" style={{ background: isComplete ? `${C.success}1A` : `${C.amber}1A`, color: isComplete ? C.success : C.amber }}>
+          {isComplete ? "Complete" : data.status}
+        </span>
+      </div>
+      <div className="font-semibold mb-1" style={{ color: C.text }}>{data.title}</div>
+      <div className="text-xs mb-3" style={{ color: C.textMuted }}>+{data.xp} XP on completion</div>
+      <div className="flex items-center justify-between text-xs mb-1" style={{ color: C.textMuted }}>
+        <span>Progress</span><span>{progress}%</span>
+      </div>
+      <ProgressBar value={progress} color={isComplete ? C.success : C.amber} />
+      <button
+        onClick={advance}
+        disabled={isComplete}
+        className="w-full mt-4 flex items-center justify-center gap-1.5 text-xs font-semibold py-2.5 rounded-xl border transition-colors focus:outline-none focus-visible:ring-2 disabled:opacity-50"
+        style={{ borderColor: C.border, color: isComplete ? C.success : C.amber, "--tw-ring-color": C.amber }}
+      >
+        {isComplete ? <><CheckCircle2 size={14} /> Completed</> : <><Play size={14} /> {progress > 0 ? "Continue" : "Start"}</>}
+      </button>
+    </SpotlightCard>
+  );
+}
+
+function CareerGoals({ notify }) {
+  return (
+    <section>
+      <SectionHeader eyebrow="Section 10" title="Career Goals" subtitle="Small, trackable moves that compound into a stronger profile." />
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {CAREER_GOALS.map((g) => <GoalCard key={g.id} data={g} notify={notify} />)}
+      </div>
+    </section>
+  );
+}
+
+/* =========================================================
+   SECTION 11 — CAREER ANALYTICS
+   ========================================================= */
+function AnalyticsStat({ data, inView }) {
+  const numeric = typeof data.value === "number" ? data.value : null;
+  const counted = useCountUp(numeric ?? 0, 1200, inView && numeric !== null);
+  const display = numeric !== null ? counted : data.value;
+  return (
+    <div className="rounded-2xl p-4 border" style={{ borderColor: C.border }}>
+      <div className="text-2xl font-bold" style={{ color: C.text }}>{display}</div>
+      <div className="text-[11px] mt-1 mb-2" style={{ color: C.textMuted }}>{data.label}</div>
+      <div className="flex items-center gap-1 text-xs font-semibold" style={{ color: C.success }}>
+        <ArrowUpRight size={12} /> {data.growth}%
+      </div>
+    </div>
+  );
+}
+
+function CareerAnalytics() {
+  const [ref, inView] = useInView();
+  return (
+    <section ref={ref}>
+      <SectionHeader eyebrow="Section 11" title="Career Analytics" subtitle="The application funnel and growth signals behind your search." />
+      <SpotlightCard className="p-6 md:p-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+          {CAREER_ANALYTICS.map((a) => <AnalyticsStat key={a.id} data={a} inView={inView} />)}
+        </div>
+      </SpotlightCard>
+    </section>
+  );
+}
+
+/* =========================================================
+   SECTION 12 — QUICK ACTIONS
+   ========================================================= */
+function QuickActions({ notify, openModal }) {
+  const [open, setOpen] = useState(false);
+  const actions = [
+    { label: "Update Resume", icon: FileText, action: () => openModal("editProfile") },
+    { label: "Edit Skills", icon: Code2, action: () => openModal("editProfile") },
+    { label: "Add Project", icon: Plus, action: () => notify("New project draft created") },
+    { label: "Share Portfolio", icon: Share2, action: () => openModal("sharePortfolio") },
+    { label: "Generate Resume", icon: RefreshCw, action: () => notify("Resume generated from latest profile data") },
+    { label: "Create Portfolio", icon: Globe, action: () => notify("Portfolio site scaffold created") },
+  ];
+
+  return (
+    <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3">
+      <div className="flex flex-col items-end gap-2 transition-all duration-300"
+        style={{ opacity: open ? 1 : 0, transform: open ? "translateY(0)" : "translateY(12px)", pointerEvents: open ? "auto" : "none" }}>
+        {actions.map((a) => (
+          <button key={a.label} onClick={a.action}
+            className="flex items-center gap-2 pl-4 pr-3 py-2.5 rounded-2xl border text-sm font-medium shadow-lg hover:-translate-y-0.5 transition-all focus:outline-none focus-visible:ring-2"
+            style={{ background: "rgba(17,24,39,0.95)", borderColor: C.border, color: C.text, "--tw-ring-color": C.amber }}>
+            {a.label} <a.icon size={16} style={{ color: C.amber }} />
+          </button>
+        ))}
+      </div>
+      <button onClick={() => setOpen((o) => !o)} aria-label="Quick career actions"
+        className="w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2"
+        style={{ background: `linear-gradient(135deg, ${C.amber}, ${C.warning})`, "--tw-ring-color": C.amber }}>
+        <div style={{ transform: open ? "rotate(45deg)" : "rotate(0deg)", transition: "transform 250ms ease" }}>
+          <Sparkles size={22} color="#0B1120" />
+        </div>
+      </button>
+    </div>
+  );
+}
+
+/* =========================================================
+   MODAL CONTENT ROUTER
+   ========================================================= */
+function ModalContent({ id, payload }) {
+  switch (id) {
+    case "editProfile":
+      return (
+        <div className="space-y-3 text-sm">
+          <p>This is a mock editing surface — in the connected phase, changes here sync back to your live profile.</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl p-3 border" style={{ borderColor: C.border }}>
+              <div className="text-xs" style={{ color: C.textMuted }}>Headline</div>
+              <div className="font-semibold text-xs mt-1" style={{ color: C.text }}>{PROFILE.headline}</div>
+            </div>
+            <div className="rounded-xl p-3 border" style={{ borderColor: C.border }}>
+              <div className="text-xs" style={{ color: C.textMuted }}>Current Role</div>
+              <div className="font-semibold text-xs mt-1" style={{ color: C.text }}>{PROFILE.role}</div>
+            </div>
+          </div>
+        </div>
+      );
+    case "sharePortfolio":
+      return <p className="text-sm">A shareable, read-only portfolio link has been generated. Anyone with the link can view your projects, skills, and resume summary.</p>;
+    case "careerInsights":
+      return (
+        <div className="space-y-2 text-sm">
+          <p>Your career readiness score blends profile completeness, project quality, and interview practice.</p>
+          <p>Biggest lever right now: <span style={{ color: C.text }} className="font-semibold">completing your certificates section</span>.</p>
+        </div>
+      );
+    case "preview":
+      return (
+        <div className="space-y-2 text-sm">
+          <p className="font-semibold" style={{ color: C.text }}>{payload?.title}</p>
+          <p>{payload?.detail}</p>
+        </div>
+      );
+    case "networkDetail":
+      return (
+        <div className="space-y-2 text-sm">
+          <p className="font-semibold" style={{ color: C.text }}>{payload?.label}</p>
+          <p>Current value: <span style={{ color: C.text }}>{payload?.value}</span>, {payload?.growth >= 0 ? "up" : "down"} {Math.abs(payload?.growth ?? 0)}% over the last 30 days.</p>
+        </div>
+      );
+    default:
+      return null;
+  }
+}
+
+const MODAL_TITLES = {
+  editProfile: "Edit Profile",
+  sharePortfolio: "Share Portfolio",
+  careerInsights: "Career Insights",
+  preview: "Preview",
+  networkDetail: "Network Detail",
 };
 
-export default function CareerHub() {
-    const [activeModal, setActiveModal] = useState(null);
-    const [expandedSections, setExpandedSections] = useState({});
-    const [mockLoading, setMockLoading] = useState(false);
+/* =========================================================
+   ROOT COMPONENT
+   ========================================================= */
+export default function CareerHubPage() {
+  const [modal, setModal] = useState(null);
+  const [modalPayload, setModalPayload] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: "" });
 
-    // Initial load stagger
-    const [mounted, setMounted] = useState(false);
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+  const openModal = useCallback((id, payload = null) => { setModal(id); setModalPayload(payload); }, []);
+  const closeModal = useCallback(() => { setModal(null); setModalPayload(null); }, []);
+  const notify = useCallback((message) => {
+    setToast({ show: true, message });
+    setTimeout(() => setToast({ show: false, message: "" }), 2400);
+  }, []);
 
-    const toggleExpand = (id) => {
-        setExpandedSections(prev => ({ ...prev, [id]: !prev[id] }));
-    };
-
-    const handleAction = (actionName) => {
-        setMockLoading(true);
-        setTimeout(() => {
-            setMockLoading(false);
-            setActiveModal(actionName);
-        }, 400);
-    };
-
-    const closeModal = () => setActiveModal(null);
-
-    // Close modal on escape key
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.key === 'Escape') closeModal();
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
-
-    return (
-        <div className="min-h-screen w-full bg-transparent text-[#F9FAFB] font-sans selection:bg-amber-500/30">
-            {/* --- INJECTED GLOBAL STYLES FOR ANIMATIONS --- */}
-            <style dangerouslySetInnerHTML={{
-                __html: `
-        @keyframes float {
-          0%, 100% { transform: translateY(0) rotate(0deg); }
-          50% { transform: translateY(-10px) rotate(2deg); }
+  return (
+    <div className="min-h-screen w-full" style={{ background: C.bg, color: C.text }}>
+      <style>{`
+        @keyframes floatIcon { 0%,100% { transform: translateY(0) rotate(0deg) } 50% { transform: translateY(-12px) rotate(4deg) } }
+        @keyframes ripple { from { width:8px; height:8px; opacity:.5 } to { width:220px; height:220px; opacity:0; transform:translate(-50%,-50%) } }
+        @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+        @keyframes scaleIn { from { opacity:0; transform:scale(.94) translateY(8px) } to { opacity:1; transform:scale(1) translateY(0) } }
+        @keyframes toastIn { from { opacity:0; transform:translate(-50%,12px) } to { opacity:1; transform:translate(-50%,0) } }
+        @keyframes pulseNode { 0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.45) } 50% { box-shadow: 0 0 0 8px rgba(245,158,11,0) } }
+        @media (prefers-reduced-motion: reduce) {
+          * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
         }
-        @keyframes pulse-glow {
-          0%, 100% { opacity: 0.5; box-shadow: 0 0 20px rgba(245,158,11,0.2); }
-          50% { opacity: 1; box-shadow: 0 0 40px rgba(245,158,11,0.6); }
-        }
-        @keyframes slide-up-fade {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes draw-radar {
-          from { stroke-dasharray: 0, 1000; opacity: 0; }
-          to { stroke-dasharray: 1000, 1000; opacity: 1; }
-        }
-        @keyframes shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-        @keyframes fill-bar {
-          from { width: 0; }
-        }
-        .animate-float { animation: float 6s ease-in-out infinite; }
-        .animate-pulse-glow { animation: pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        .animate-slide-up { animation: slide-up-fade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
-        .animate-radar { animation: draw-radar 2s ease-out forwards; }
-        .shimmer-bg {
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
-          background-size: 200% 100%;
-          animation: shimmer 3s infinite linear;
-        }
-        .glass-modal {
-          background: rgba(17, 24, 39, 0.7);
-          backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
-        }
-        /* Custom scrollbar for horizontal lists */
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      `}} />
+      `}</style>
 
-            <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex flex-col gap-8 sm:gap-12">
+      <main className="max-w-7xl mx-auto px-4 md:px-8 py-10 space-y-16">
+        <CareerHero notify={notify} openModal={openModal} />
+        <ProfileCompleteness openModal={openModal} />
+        <ProfessionalProfile openModal={openModal} />
+        <FeaturedProjects notify={notify} openModal={openModal} />
+        <ProfileMatrix />
+        <NetworkInsights openModal={openModal} />
+        <CareerRoadmap />
+        <ProfessionalActivity />
+        <RecruiterInsights />
+        <CareerGoals notify={notify} />
+        <CareerAnalytics />
+      </main>
 
-                {/* ========================================================= */}
-                {/* SECTION 1: PROFESSIONAL HERO                              */}
-                {/* ========================================================= */}
-                <section className={`relative rounded-[32px] overflow-hidden bg-[#111827]/50 border border-[#1F2937] p-8 sm:p-12 animate-slide-up`} style={{ animationDelay: '0.1s' }}>
-                    {/* Animated Ambient Background */}
-                    <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-                        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] bg-[#0A66C2]/10 rounded-full blur-[120px] mix-blend-screen" />
-                        <div className="absolute -bottom-[20%] -right-[10%] w-[50%] h-[50%] bg-[#F59E0B]/10 rounded-full blur-[120px] mix-blend-screen" />
-                        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] opacity-50" />
-                    </div>
+      <QuickActions notify={notify} openModal={openModal} />
 
-                    <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-                        {/* Left Col: Avatar & Status */}
-                        <div className="lg:col-span-4 flex flex-col items-center lg:items-start space-y-6">
-                            <div className="relative group">
-                                <div className="absolute inset-0 bg-gradient-to-tr from-amber-500 to-[#0A66C2] rounded-full blur-xl opacity-40 group-hover:opacity-70 transition-opacity duration-500 animate-pulse-glow" />
-                                <div className="relative w-40 h-40 rounded-full p-1 bg-gradient-to-tr from-amber-500 to-[#0A66C2]">
-                                    <div className="w-full h-full bg-[#111827] rounded-full flex items-center justify-center overflow-hidden border-4 border-[#0B1120]">
-                                        <User size={64} className="text-[#9CA3AF]" />
-                                    </div>
-                                </div>
-                                <div className="absolute -bottom-2 -right-2 bg-[#10B981] border-4 border-[#0B1120] w-8 h-8 rounded-full flex items-center justify-center" title="Open to Work">
-                                    <span className="w-3 h-3 bg-white rounded-full animate-ping" />
-                                    <span className="absolute w-3 h-3 bg-white rounded-full" />
-                                </div>
-                            </div>
+      <Modal open={!!modal} onClose={closeModal} title={MODAL_TITLES[modal] || ""}>
+        <ModalContent id={modal} payload={modalPayload} />
+      </Modal>
 
-                            <div className="text-center lg:text-left w-full">
-                                <h1 className="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-[#9CA3AF] mb-2 tracking-tight">
-                                    {CAREER_DATA.profile.name}
-                                </h1>
-                                <p className="text-lg text-amber-500 font-medium mb-4 flex items-center justify-center lg:justify-start gap-2">
-                                    <Terminal size={18} /> {CAREER_DATA.profile.role}
-                                </p>
-
-                                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 text-sm">
-                                    <span className="px-3 py-1.5 rounded-lg bg-[#1F2937] border border-[#374151] flex items-center gap-2 text-[#D1D5DB]">
-                                        <Target size={14} className="text-[#0A66C2]" /> {CAREER_DATA.profile.goal}
-                                    </span>
-                                    <span className="px-3 py-1.5 rounded-lg bg-[#1F2937] border border-[#374151] flex items-center gap-2 text-[#D1D5DB]">
-                                        <Eye size={14} className="text-[#10B981]" /> Recruiter Vis: {CAREER_DATA.profile.visibility}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Right Col: Metrics & Actions */}
-                        <div className="lg:col-span-8 flex flex-col space-y-8 w-full">
-
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full">
-                                <div className="bg-[#0F172A] border border-[#1F2937] rounded-2xl p-5 hover:border-[#0A66C2]/30 transition-colors group">
-                                    <p className="text-[#9CA3AF] text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
-                                        <Trophy size={14} /> Career Level
-                                    </p>
-                                    <p className="text-2xl font-bold text-white group-hover:text-[#0A66C2] transition-colors">{CAREER_DATA.profile.level.split('-')[0]}</p>
-                                </div>
-                                <div className="bg-[#0F172A] border border-[#1F2937] rounded-2xl p-5 hover:border-amber-500/30 transition-colors group">
-                                    <p className="text-[#9CA3AF] text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
-                                        <Star size={14} /> XP Score
-                                    </p>
-                                    <p className="text-2xl font-bold text-white group-hover:text-amber-500 transition-colors">{CAREER_DATA.profile.score}</p>
-                                </div>
-                                <div className="col-span-2 bg-[#0F172A] border border-[#1F2937] rounded-2xl p-5 relative overflow-hidden group hover:border-[#10B981]/30 transition-colors">
-                                    <div className="absolute inset-0 shimmer-bg opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    <div className="relative z-10 flex justify-between items-end">
-                                        <div>
-                                            <p className="text-[#9CA3AF] text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
-                                                <Activity size={14} /> Profile Strength
-                                            </p>
-                                            <p className="text-2xl font-bold text-white">{CAREER_DATA.profile.strength}%</p>
-                                        </div>
-                                        <div className="w-12 h-12 rounded-full border-4 border-[#1F2937] border-t-[#10B981] border-r-[#10B981] transform -rotate-45 flex items-center justify-center">
-                                            <span className="transform rotate-45 text-xs font-bold">Pro</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-[#1F2937]/30 border border-[#374151]/50 rounded-2xl p-5 border-l-4 border-l-amber-500 italic text-[#D1D5DB]">
-                                "{CAREER_DATA.profile.quote}"
-                            </div>
-
-                            <div className="flex flex-wrap items-center gap-4">
-                                <Button variant="primary" icon={PenTool} onClick={() => handleAction('Edit Profile')}>Edit Profile</Button>
-                                <Button variant="secondary" icon={Share2} onClick={() => handleAction('Share Profile')}>Share Profile</Button>
-                                <Button variant="outline" icon={Download} onClick={() => handleAction('Download Resume')}>Resume</Button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* ========================================================= */}
-                {/* TWO COLUMN LAYOUT                                         */}
-                {/* ========================================================= */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12">
-
-                    {/* MAIN CONTENT COLUMN (Left 8 cols) */}
-                    <div className="lg:col-span-8 flex flex-col gap-8 sm:gap-12">
-
-                        {/* ========================================================= */}
-                        {/* SECTION 7: CAREER ROADMAP                                 */}
-                        {/* ========================================================= */}
-                        <section className={`animate-slide-up`} style={{ animationDelay: '0.2s' }}>
-                            <SectionTitle title="Career Roadmap" icon={MapPin} subtitle="Your structural progression in tech" />
-                            <Card className="overflow-x-auto hide-scrollbar">
-                                <div className="flex items-center min-w-[600px] justify-between py-6 px-4 relative">
-                                    {/* Connecting Line */}
-                                    <div className="absolute top-1/2 left-8 right-8 h-1 bg-[#1F2937] -translate-y-1/2 z-0" />
-                                    <div className="absolute top-1/2 left-8 h-1 bg-amber-500 -translate-y-1/2 z-0 transition-all duration-1000" style={{ width: '40%', animation: 'fill-bar 1.5s ease-out' }} />
-
-                                    {CAREER_DATA.roadmap.map((node, i) => (
-                                        <div key={i} className="relative z-10 flex flex-col items-center gap-3">
-                                            <div className={`w-12 h-12 rounded-full border-4 flex items-center justify-center bg-[#111827] transition-all duration-300 
-                        ${node.status === 'completed' ? 'border-[#10B981] text-[#10B981]' :
-                                                    node.status === 'active' ? 'border-amber-500 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)] animate-pulse-glow' :
-                                                        'border-[#374151] text-[#6B7280]'}`}>
-                                                {node.status === 'completed' ? <Check size={20} /> :
-                                                    node.status === 'active' ? <Target size={20} /> :
-                                                        <span className="w-2 h-2 rounded-full bg-[#6B7280]" />}
-                                            </div>
-                                            <span className={`text-xs font-semibold whitespace-nowrap ${node.status === 'active' ? 'text-amber-500' : 'text-[#9CA3AF]'}`}>
-                                                {node.level}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </Card>
-                        </section>
-
-                        {/* ========================================================= */}
-                        {/* SECTION 4: FEATURED PROJECTS (Horizontal Carousel)        */}
-                        {/* ========================================================= */}
-                        <section className={`animate-slide-up`} style={{ animationDelay: '0.3s' }}>
-                            <SectionTitle title="Featured Projects" icon={Code2} subtitle="Production-level applications & deployments" />
-                            <div className="flex gap-6 overflow-x-auto hide-scrollbar pb-6 snap-x">
-                                {CAREER_DATA.projects.map(project => (
-                                    <Card key={project.id} noPadding className="min-w-[320px] sm:min-w-[400px] flex-shrink-0 snap-center group relative h-full flex flex-col">
-                                        <div className="h-48 overflow-hidden relative border-b border-[#1F2937]">
-                                            <div className="absolute inset-0 bg-gradient-to-t from-[#111827] to-transparent z-10" />
-                                            <img src={project.image} alt={project.title} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" />
-                                            <div className="absolute bottom-4 left-4 z-20 flex gap-2">
-                                                {project.tech.map((t, i) => (
-                                                    <span key={i} className="px-2 py-1 bg-[#0F172A]/80 backdrop-blur border border-[#374151] text-[10px] uppercase font-bold tracking-wider rounded-md text-amber-500">
-                                                        {t}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                        <div className="p-6 flex-1 flex flex-col justify-between bg-[#111827]">
-                                            <div>
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <h3 className="text-xl font-bold text-white group-hover:text-amber-500 transition-colors">{project.title}</h3>
-                                                    <span className="flex items-center gap-1 text-xs text-[#10B981] bg-[#10B981]/10 px-2 py-1 rounded-full"><Award size={12} /> {project.xp} XP</span>
-                                                </div>
-                                                <p className="text-sm text-[#9CA3AF] mb-4 line-clamp-2">{project.description}</p>
-                                            </div>
-                                            <div className="flex gap-3 mt-4">
-                                                <Button variant="outline" className="flex-1 text-xs py-2" icon={Github} onClick={() => handleAction('GitHub')}>Code</Button>
-                                                <Button variant="secondary" className="flex-1 text-xs py-2 bg-[#1F2937] text-white hover:bg-[#374151]" icon={ExternalLink} onClick={() => handleAction('Live Demo')}>Demo</Button>
-                                            </div>
-                                        </div>
-                                    </Card>
-                                ))}
-                            </div>
-                        </section>
-
-                        {/* ========================================================= */}
-                        {/* SECTION 3: PROFESSIONAL BRAND (Experience & Edu)          */}
-                        {/* ========================================================= */}
-                        <section className={`animate-slide-up`} style={{ animationDelay: '0.4s' }}>
-                            <SectionTitle title="Professional Brand" icon={Briefcase} subtitle="Experience, Education & Certifications" />
-                            <div className="space-y-4">
-
-                                {/* Experience Card */}
-                                <Card className="group cursor-pointer" onClick={() => toggleExpand('exp')}>
-                                    <div className="flex justify-between items-center mb-2">
-                                        <h3 className="text-lg font-bold text-white flex items-center gap-2"><Layout size={18} className="text-amber-500" /> Experience</h3>
-                                        {expandedSections['exp'] ? <ChevronUp size={20} className="text-[#9CA3AF]" /> : <ChevronDown size={20} className="text-[#9CA3AF]" />}
-                                    </div>
-
-                                    <div className={`grid transition-all duration-300 ease-in-out ${expandedSections['exp'] ? 'grid-rows-[1fr] opacity-100 mt-6' : 'grid-rows-[0fr] opacity-0'}`}>
-                                        <div className="overflow-hidden space-y-6">
-                                            {CAREER_DATA.experience.map(exp => (
-                                                <div key={exp.id} className="relative pl-6 border-l-2 border-[#1F2937] hover:border-amber-500 transition-colors">
-                                                    <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-[#111827] border-2 border-amber-500" />
-                                                    <h4 className="text-base font-bold text-white">{exp.role}</h4>
-                                                    <p className="text-sm text-[#0A66C2] mb-2 font-medium">{exp.company} • {exp.duration}</p>
-                                                    <p className="text-sm text-[#9CA3AF] leading-relaxed">{exp.description}</p>
-                                                </div>
-                                            ))}
-                                            <div className="flex justify-end gap-3 pt-4 border-t border-[#1F2937]">
-                                                <Button variant="outline" className="text-xs" icon={PenTool} onClick={(e) => { e.stopPropagation(); handleAction('Edit Experience'); }}>Edit</Button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Card>
-
-                                {/* Education Card */}
-                                <Card className="group cursor-pointer" onClick={() => toggleExpand('edu')}>
-                                    <div className="flex justify-between items-center mb-2">
-                                        <h3 className="text-lg font-bold text-white flex items-center gap-2"><GraduationCap size={18} className="text-[#0A66C2]" /> Education</h3>
-                                        {expandedSections['edu'] ? <ChevronUp size={20} className="text-[#9CA3AF]" /> : <ChevronDown size={20} className="text-[#9CA3AF]" />}
-                                    </div>
-
-                                    <div className={`grid transition-all duration-300 ease-in-out ${expandedSections['edu'] ? 'grid-rows-[1fr] opacity-100 mt-6' : 'grid-rows-[0fr] opacity-0'}`}>
-                                        <div className="overflow-hidden space-y-6">
-                                            {CAREER_DATA.education.map(edu => (
-                                                <div key={edu.id} className="relative pl-6 border-l-2 border-[#1F2937] hover:border-[#0A66C2] transition-colors">
-                                                    <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-[#111827] border-2 border-[#0A66C2]" />
-                                                    <h4 className="text-base font-bold text-white">{edu.degree}</h4>
-                                                    <p className="text-sm text-amber-500 mb-2 font-medium">{edu.institution} • {edu.year}</p>
-                                                    <p className="text-sm text-[#9CA3AF]">{edu.focus}</p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </Card>
-                            </div>
-                        </section>
-
-                        {/* ========================================================= */}
-                        {/* SECTION 6: POSTING ACTIVITY                               */}
-                        {/* ========================================================= */}
-                        <section className={`animate-slide-up`} style={{ animationDelay: '0.5s' }}>
-                            <SectionTitle title="Activity & Posts" icon={MessageSquare} subtitle="Recent thoughts and updates" />
-                            <Card>
-                                <div className="space-y-6">
-                                    {CAREER_DATA.timeline.map((item, i) => (
-                                        <div key={item.id} className="flex gap-4 p-4 rounded-2xl bg-[#0F172A] border border-[#1F2937] hover:border-[#374151] transition-all group">
-                                            <div className="mt-1">
-                                                {item.type === 'post' && <FileText className="text-[#0A66C2]" size={24} />}
-                                                {item.type === 'certificate' && <Award className="text-amber-500" size={24} />}
-                                                {item.type === 'project' && <Code className="text-[#10B981]" size={24} />}
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="flex justify-between items-start mb-1">
-                                                    <h4 className="text-sm font-bold text-white group-hover:text-amber-500 transition-colors">{item.title}</h4>
-                                                    <span className="text-xs text-[#6B7280] flex items-center gap-1"><Clock size={12} /> {item.time}</span>
-                                                </div>
-                                                <div className="flex gap-4 mt-3 pt-3 border-t border-[#1F2937]/50 text-xs text-[#9CA3AF]">
-                                                    <span className="flex items-center gap-1.5 hover:text-white cursor-pointer transition-colors"><Eye size={14} /> {item.reach}</span>
-                                                    <span className="flex items-center gap-1.5 hover:text-[#0A66C2] cursor-pointer transition-colors"><Star size={14} /> {item.likes}</span>
-                                                    <span className="flex items-center gap-1.5 hover:text-[#10B981] cursor-pointer transition-colors"><MessageSquare size={14} /> {item.comments}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    <Button variant="ghost" className="w-full text-sm py-3 mt-2" onClick={() => handleAction('View All Activity')}>View All Activity <ArrowRight size={16} /></Button>
-                                </div>
-                            </Card>
-                        </section>
-
-                    </div>
-
-                    {/* RIGHT SIDEBAR (4 cols) */}
-                    <div className="lg:col-span-4 flex flex-col gap-8 sm:gap-12">
-
-                        {/* ========================================================= */}
-                        {/* SECTION 10: SKILL RADAR                                   */}
-                        {/* ========================================================= */}
-                        <section className={`animate-slide-up`} style={{ animationDelay: '0.6s' }}>
-                            <SectionTitle title="Skill Matrix" icon={Zap} />
-                            <Card className="flex flex-col items-center justify-center p-8 aspect-square relative">
-                                {/* Custom CSS Radar implementation using concentric circles and absolute positioning */}
-                                <div className="relative w-full h-full max-w-[240px] max-h-[240px] rounded-full border border-[#1F2937] flex items-center justify-center bg-[#0F172A]/50">
-                                    <div className="absolute w-[75%] h-[75%] rounded-full border border-[#1F2937]" />
-                                    <div className="absolute w-[50%] h-[50%] rounded-full border border-[#1F2937]" />
-                                    <div className="absolute w-[25%] h-[25%] rounded-full border border-[#1F2937]" />
-
-                                    {/* Crosshairs */}
-                                    <div className="absolute w-full h-[1px] bg-[#1F2937] rotate-45" />
-                                    <div className="absolute w-full h-[1px] bg-[#1F2937] -rotate-45" />
-                                    <div className="absolute w-[1px] h-full bg-[#1F2937]" />
-                                    <div className="absolute w-full h-[1px] bg-[#1F2937]" />
-
-                                    {/* SVG Polygon for Skill Area */}
-                                    <svg className="absolute inset-0 w-full h-full animate-radar z-10" viewBox="0 0 100 100">
-                                        <polygon
-                                            points="50,15 85,35 75,85 25,75 15,40"
-                                            fill="rgba(245, 158, 11, 0.2)"
-                                            stroke="#F59E0B"
-                                            strokeWidth="1.5"
-                                            strokeLinejoin="round"
-                                        />
-                                    </svg>
-
-                                    {/* Nodes */}
-                                    <div className="absolute top-[10%] left-[50%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-20 group">
-                                        <div className="w-2 h-2 bg-amber-500 rounded-full group-hover:scale-150 transition-transform" />
-                                        <span className="text-[10px] font-bold text-[#D1D5DB] mt-1 bg-[#111827] px-1 rounded">React</span>
-                                    </div>
-                                    <div className="absolute top-[35%] right-[10%] translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-20 group">
-                                        <div className="w-2 h-2 bg-amber-500 rounded-full group-hover:scale-150 transition-transform" />
-                                        <span className="text-[10px] font-bold text-[#D1D5DB] mt-1 bg-[#111827] px-1 rounded">DSA</span>
-                                    </div>
-                                    <div className="absolute bottom-[10%] right-[20%] translate-x-1/2 translate-y-1/2 flex flex-col items-center z-20 group">
-                                        <div className="w-2 h-2 bg-amber-500 rounded-full group-hover:scale-150 transition-transform" />
-                                        <span className="text-[10px] font-bold text-[#D1D5DB] mt-1 bg-[#111827] px-1 rounded">MongoDB</span>
-                                    </div>
-                                    <div className="absolute bottom-[20%] left-[20%] -translate-x-1/2 translate-y-1/2 flex flex-col items-center z-20 group">
-                                        <div className="w-2 h-2 bg-amber-500 rounded-full group-hover:scale-150 transition-transform" />
-                                        <span className="text-[10px] font-bold text-[#D1D5DB] mt-1 bg-[#111827] px-1 rounded">Tailwind</span>
-                                    </div>
-                                    <div className="absolute top-[40%] left-[10%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-20 group">
-                                        <div className="w-2 h-2 bg-amber-500 rounded-full group-hover:scale-150 transition-transform" />
-                                        <span className="text-[10px] font-bold text-[#D1D5DB] mt-1 bg-[#111827] px-1 rounded">System</span>
-                                    </div>
-                                </div>
-                            </Card>
-                        </section>
-
-                        {/* ========================================================= */}
-                        {/* SECTION 8: RECRUITER INSIGHTS                             */}
-                        {/* ========================================================= */}
-                        <section className={`animate-slide-up`} style={{ animationDelay: '0.7s' }}>
-                            <SectionTitle title="Recruiter Insights" icon={Search} />
-                            <Card>
-                                <div className="space-y-5">
-                                    {[
-                                        { label: "Profile Quality", val: 85, color: "bg-[#10B981]" },
-                                        { label: "Resume Match", val: 70, color: "bg-amber-500" },
-                                        { label: "Keyword Hit Rate", val: 92, color: "bg-[#0A66C2]" }
-                                    ].map((insight, i) => (
-                                        <div key={i} className="group">
-                                            <div className="flex justify-between text-sm mb-2">
-                                                <span className="text-[#D1D5DB] font-medium">{insight.label}</span>
-                                                <span className="text-white font-bold">{insight.val}%</span>
-                                            </div>
-                                            <div className="h-2 w-full bg-[#1F2937] rounded-full overflow-hidden">
-                                                <div
-                                                    className={`h-full ${insight.color} rounded-full transition-all duration-1000 ease-out group-hover:opacity-80`}
-                                                    style={{ width: mounted ? `${insight.val}%` : '0%' }}
-                                                />
-                                            </div>
-                                        </div>
-                                    ))}
-                                    <Button variant="outline" className="w-full mt-4 text-xs py-2" onClick={() => handleAction('Analyze Profile')}>Run Analysis</Button>
-                                </div>
-                            </Card>
-                        </section>
-
-                        {/* ========================================================= */}
-                        {/* SECTION 5: NETWORK GROWTH                                 */}
-                        {/* ========================================================= */}
-                        <section className={`animate-slide-up`} style={{ animationDelay: '0.8s' }}>
-                            <SectionTitle title="Network" icon={Users} />
-                            <div className="grid grid-cols-2 gap-4">
-                                <Card noPadding className="p-4 bg-[#0F172A] flex flex-col justify-center items-center text-center">
-                                    <div className="w-10 h-10 rounded-full bg-[#0A66C2]/10 flex items-center justify-center mb-3">
-                                        <Users size={18} className="text-[#0A66C2]" />
-                                    </div>
-                                    <h4 className="text-2xl font-bold text-white">412</h4>
-                                    <p className="text-xs text-[#9CA3AF] mt-1">Connections</p>
-                                </Card>
-                                <Card noPadding className="p-4 bg-[#0F172A] flex flex-col justify-center items-center text-center">
-                                    <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center mb-3">
-                                        <TrendingUp size={18} className="text-amber-500" />
-                                    </div>
-                                    <h4 className="text-2xl font-bold text-white">1.2k</h4>
-                                    <p className="text-xs text-[#9CA3AF] mt-1">Profile Views</p>
-                                </Card>
-                            </div>
-                        </section>
-
-                        {/* ========================================================= */}
-                        {/* SECTION 9: WEEKLY CAREER GOALS                            */}
-                        {/* ========================================================= */}
-                        <section className={`animate-slide-up`} style={{ animationDelay: '0.9s' }}>
-                            <SectionTitle title="Weekly Goals" icon={CheckCircle} />
-                            <Card>
-                                <div className="space-y-3">
-                                    {[
-                                        { id: 1, text: "Update Resume Highlights", done: true, xp: 50 },
-                                        { id: 2, text: "Connect with 5 Developers", done: false, xp: 100 },
-                                        { id: 3, text: "Publish Tech Post", done: false, xp: 150 }
-                                    ].map(goal => (
-                                        <div key={goal.id}
-                                            className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer hover:bg-[#1F2937]/50
-                         ${goal.done ? 'bg-[#1F2937]/30 border-[#374151] opacity-70' : 'bg-[#0F172A] border-[#1F2937] hover:border-amber-500/50'}`}
-                                            onClick={() => handleAction(`Toggle Goal: ${goal.text}`)}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors
-                          ${goal.done ? 'bg-[#10B981] border-[#10B981] text-[#0B1120]' : 'border-[#6B7280]'}`}>
-                                                    {goal.done && <Check size={12} strokeWidth={4} />}
-                                                </div>
-                                                <span className={`text-sm ${goal.done ? 'line-through text-[#9CA3AF]' : 'text-white'}`}>{goal.text}</span>
-                                            </div>
-                                            <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-2 py-1 rounded">+{goal.xp}XP</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </Card>
-                        </section>
-
-                    </div>
-                </div>
-            </div>
-
-            {/* ========================================================= */}
-            {/* SECTION 12: QUICK ACTIONS (FLOATING DOCK)                 */}
-            {/* ========================================================= */}
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 animate-slide-up" style={{ animationDelay: '1.2s' }}>
-                <div className="flex items-center gap-2 p-2 rounded-2xl bg-[#111827]/80 backdrop-blur-xl border border-[#374151] shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
-                    {[
-                        { icon: Plus, label: "Add Project", action: "Create Project" },
-                        { icon: FileText, label: "Update Resume", action: "Upload Resume" },
-                        { icon: PenTool, label: "New Post", action: "Create Post" },
-                        { icon: Share2, label: "Share", action: "Share Portfolio" }
-                    ].map((action, idx) => (
-                        <button
-                            key={idx}
-                            onClick={() => handleAction(action.action)}
-                            className="p-3 sm:p-4 rounded-xl text-[#9CA3AF] hover:text-amber-500 hover:bg-[#1F2937] transition-all group relative"
-                        >
-                            <action.icon size={20} className="group-active:scale-90 transition-transform" />
-                            {/* Tooltip */}
-                            <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-[#0F172A] text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-[#374151]">
-                                {action.label}
-                            </span>
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            {/* ========================================================= */}
-            {/* MODALS                                                    */}
-            {/* ========================================================= */}
-            {activeModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 glass-modal animate-slide-up" style={{ animation: 'slide-up-fade 0.2s ease-out forwards' }}>
-                    <div className="absolute inset-0 bg-black/40" onClick={closeModal} />
-                    <Card className="relative z-10 w-full max-w-md shadow-[0_20px_60px_rgba(0,0,0,0.5)] scale-100">
-                        <button onClick={closeModal} className="absolute top-6 right-6 text-[#9CA3AF] hover:text-white transition-colors bg-[#1F2937] p-1.5 rounded-full">
-                            <X size={18} />
-                        </button>
-
-                        <div className="mb-8">
-                            <div className="w-12 h-12 rounded-full bg-[#1F2937] flex items-center justify-center text-amber-500 mb-4">
-                                <Settings size={24} />
-                            </div>
-                            <h2 className="text-2xl font-bold text-white mb-2">{activeModal}</h2>
-                            <p className="text-[#9CA3AF] text-sm">This is a simulated action within the CODESPARK Developer OS. All operations are mocked for this preview.</p>
-                        </div>
-
-                        <div className="flex gap-4">
-                            <Button variant="primary" className="flex-1" onClick={closeModal}>Confirm</Button>
-                            <Button variant="outline" className="flex-1" onClick={closeModal}>Cancel</Button>
-                        </div>
-                    </Card>
-                </div>
-            )}
-
-            {/* Global Loading Mock Overlay for interactions */}
-            {mockLoading && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#0B1120]/50 backdrop-blur-sm">
-                    <div className="w-12 h-12 border-4 border-[#1F2937] border-t-amber-500 rounded-full animate-spin" />
-                </div>
-            )}
-
-        </div>
-    );
+      <Toast show={toast.show} message={toast.message} />
+    </div>
+  );
 }
