@@ -1155,7 +1155,7 @@ const MODAL_TITLES = {
 /* =========================================================
    ROOT COMPONENT
    ========================================================= */
-export default function CareerHubPage() {
+export default function Linkedin() {
     const [modal, setModal] = useState(null);
     const [modalPayload, setModalPayload] = useState(null);
     const [toast, setToast] = useState({ show: false, message: "" });
@@ -1168,7 +1168,7 @@ export default function CareerHubPage() {
     }, []);
 
     return (
-        <div className="min-h-screen w-full" style={{ background: C.bg, color: C.text }}>
+        <div className="min-h-screen w-full" style={{ color: C.text }}>
             <style>{`
         @keyframes floatIcon { 0%,100% { transform: translateY(0) rotate(0deg) } 50% { transform: translateY(-12px) rotate(4deg) } }
         @keyframes ripple { from { width:8px; height:8px; opacity:.5 } to { width:220px; height:220px; opacity:0; transform:translate(-50%,-50%) } }
