@@ -16,7 +16,7 @@ import LinkedIn from "./pages/Linkedin/LinkedIn";
 import Analytics from "./pages/Analytics/Analytics";
 import Journal from "./pages/Journal/Journal";
 // import Reports from "./pages/Reports";
-// import Achievements from "./pages/Achievements";
+import Achievements from "./pages/Achievements";
 // import Notifications from "./pages/Notifications";
 // import Settings from "./pages/Settings";
 // import Profile from "./pages/Profile";
@@ -44,10 +44,11 @@ export default function App() {
                     <Route path="/linkedin" element={<LinkedIn />} />
                     <Route path="/analytics" element={<Analytics />} />
           <Route path="/journal" element={<Journal />} />
+          <Route path="/achievements" element={<Achievements />} />
+
 
                     {/*  
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/achievements" element={<Achievements />} />
+          
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/profile" element={<Profile />} /> */}
