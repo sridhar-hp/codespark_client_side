@@ -1068,7 +1068,7 @@ const MODAL_TITLES = {
 /* =========================================================
    ROOT COMPONENT
    ========================================================= */
-export default function AnalyticsPage() {
+export default function Analytics() {
     const [modal, setModal] = useState(null);
     const [toast, setToast] = useState({ show: false, message: "" });
 
