@@ -17,7 +17,7 @@ import Analytics from "./pages/Analytics/Analytics";
 import Journal from "./pages/Journal/Journal";
 import Achievements from "./pages/Achievements/Achievements";
 import Notifications from "./pages/Notifications";
-// import Settings from "./pages/Settings";
+import Settings from "./pages/Settings";
 // import Profile from "./pages/Profile";
 
 export default function App() {
@@ -45,11 +45,11 @@ export default function App() {
                     <Route path="/journal" element={<Journal />} />
                     <Route path="/achievements" element={<Achievements />} />
                     <Route path="/notifications" element={<Notifications />} />
+          <Route path="/settings" element={<Settings />} />
 
 
                     {/*  
           
-          <Route path="/settings" element={<Settings />} />
           <Route path="/profile" element={<Profile />} /> */}
 
                 </Route>
