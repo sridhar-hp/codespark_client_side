@@ -17,7 +17,7 @@ import Analytics from "./pages/Analytics/Analytics";
 import Journal from "./pages/Journal/Journal";
 import Achievements from "./pages/Achievements/Achievements";
 import Notifications from "./pages/Notifications/Notifications";
-import Settings from "./pages/Settings";
+import Settings from "./pages/Settings/Settings";
 // import Profile from "./pages/Profile";
 
 export default function App() {
