@@ -4,7 +4,7 @@ import {
   Settings, Monitor, Layout, Zap, Sun, Moon, Sparkles, Check, ChevronRight,
   Download, Trash2, Github, Linkedin, Calendar, Database, Search, Bell,
   Sliders, Layers, Activity, Lock, Globe, Clock, Command, Play, RotateCcw,
-  Code, Hexagon, Terminal, User, BookOpen, AlertCircle, RefreshCw
+  Code, Hexagon, Terminal, User, BookOpen, AlertCircle, RefreshCw, Palette
 } from 'lucide-react';
 
 // --- CONSTANTS & MAPPINGS ---
