@@ -249,7 +249,7 @@ export default function SettingsPage() {
 
     return (
         <div
-            className="min-h-screen bg-[#0B1120] text-[#F9FAFB] font-sans overflow-hidden selection:bg-[#F59E0B]/30"
+            className="min-h-screen text-[#F9FAFB] font-sans overflow-hidden selection:bg-[#F59E0B]/30"
             onMouseMove={handleMouseMove}
         >
             {/* Ambient Background */}
