@@ -44,7 +44,7 @@ export default function App() {
                     <Route path="/analytics" element={<Analytics />} />
                     <Route path="/journal" element={<Journal />} />
                     <Route path="/achievements" element={<Achievements />} />
-          <Route path="/notifications" element={<Notifications />} />
+                    <Route path="/notifications" element={<Notifications />} />
 
 
                     {/*  
