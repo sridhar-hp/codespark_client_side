@@ -687,7 +687,13 @@ export default function SettingsPage() {
                         <a href="#" className="hover:text-white transition-colors">GitHub Repository</a>
                     </div>
                     <div className="text-xs text-[#4B5563] pt-4">
-                        Version 2.4.1 (Build 8902) • © 2026 CodeSpark. All Rights Reserved.
+
+                        ⚡ CodeSpark
+
+                        Version 1.0.0 • Built with React + Express + MongoDB
+
+                        © 2026 CodeSpark. All rights reserved.
+
                     </div>
                 </footer>
 

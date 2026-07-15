@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useNavigate } from "react-router-dom";
-
+import LogoutModal from "../Modals/LogoutModal";
 import {
     Zap,
     ChevronLeft,
@@ -204,6 +204,13 @@ function Sidebar({
                 </button>
                 </div>
             </aside>
+            {showLogoutModal && (
+    <LogoutModal
+        onClose={() => setShowLogoutModal(false)}
+        onLogout={handleLogout}
+    />
+)}
+
         </>
     );
 }
