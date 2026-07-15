@@ -46,7 +46,7 @@ export default function App() {
                     <Route path="/achievements" element={<Achievements />} />
                     <Route path="/notifications" element={<Notifications />} />
                     <Route path="/settings" element={<Settings />} />
-          <Route path="/profile" element={<Profile />} />
+                    <Route path="/profile" element={<Profile />} />
 
                 </Route>
 
