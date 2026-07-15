@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
+
 import {
     Zap,
     ChevronLeft,
@@ -40,16 +42,17 @@ const MAIN_NAV_ITEMS = [
 
 const BOTTOM_NAV_ITEMS = [
     { path: '/profile', label: 'Profile', icon: User },
-    { path: '/logout', label: 'Logout', icon: LogOut, isDanger: true },
+    // { path: '/logout', label: 'Logout', icon: LogOut, isDanger: true },
 ];
-
 function Sidebar({
     isCollapsed = false,
     setIsCollapsed,
     isMobileOpen = false,
     setIsMobileOpen
 }) {
+    const navigate = useNavigate();
     const location = useLocation();
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     const handleNavClick = () => {
         if (setIsMobileOpen) setIsMobileOpen(false);
@@ -114,6 +117,20 @@ function Sidebar({
         </ul>
     );
 
+    const handleLogout = () => {
+
+        sessionStorage.clear();
+
+        localStorage.clear();
+
+        // later
+        // dispatch(logout());
+
+        // window.location.href = "/login";
+        navigate("/login");
+
+    };
+
     return (
         <>
             {/* Mobile Drawer Backdrop */}
@@ -170,6 +187,21 @@ function Sidebar({
                 {/* Bottom Section (Profile & Logout) */}
                 <div className="p-3 border-t border-[#1F2937] shrink-0 bg-[#111827]">
                     {renderNavLinks(BOTTOM_NAV_ITEMS)}
+                    <button
+                    onClick={() => setShowLogoutModal(true)}
+                    className="mt-2 flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border-l-2 border-transparent text-[#9CA3AF] hover:bg-red-500/10 hover:text-red-500 hover:border-red-500 group"
+                >
+                    <LogOut
+                        size={20}
+                        className="text-[#9CA3AF] group-hover:text-red-500 transition-colors"
+                    />
+
+                    {!isCollapsed && (
+                        <span>
+                            Logout
+                        </span>
+                    )}
+                </button>
                 </div>
             </aside>
         </>
