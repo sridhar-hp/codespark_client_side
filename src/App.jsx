@@ -18,7 +18,7 @@ import Journal from "./pages/Journal/Journal";
 import Achievements from "./pages/Achievements/Achievements";
 import Notifications from "./pages/Notifications/Notifications";
 import Settings from "./pages/Settings/Settings";
-// import Profile from "./pages/Profile";
+import Profile from "./pages/Profile";
 
 export default function App() {
     return (
@@ -46,11 +46,7 @@ export default function App() {
                     <Route path="/achievements" element={<Achievements />} />
                     <Route path="/notifications" element={<Notifications />} />
                     <Route path="/settings" element={<Settings />} />
-
-
-                    {/*  
-          
-          <Route path="/profile" element={<Profile />} /> */}
+          <Route path="/profile" element={<Profile />} />
 
                 </Route>
 
