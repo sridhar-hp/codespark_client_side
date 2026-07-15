@@ -587,8 +587,8 @@ export default function Notification() {
                                     key={chip}
                                     onClick={() => setActiveFilter(chip)}
                                     className={`relative rounded-full border px-3.5 py-1.5 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#F59E0B] ${active
-                                            ? "border-[#F59E0B]/40 text-[#0B1120]"
-                                            : "border-[#1F2937] text-[#9CA3AF] hover:border-[#1F2937] hover:text-[#F9FAFB]"
+                                        ? "border-[#F59E0B]/40 text-[#0B1120]"
+                                        : "border-[#1F2937] text-[#9CA3AF] hover:border-[#1F2937] hover:text-[#F9FAFB]"
                                         }`}
                                 >
                                     {active && (
