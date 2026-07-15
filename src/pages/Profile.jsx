@@ -778,7 +778,7 @@ export default function Profile() {
   return (
     <div
       className="min-h-screen w-full relative"
-      style={{ backgroundColor: COLORS.bg, color: COLORS.textPrimary }}
+      style={{ color: COLORS.textPrimary }}
     >
       {/* Ambient background */}
       <div
