@@ -676,85 +676,85 @@ export default function SettingsPage() {
 
                 {/* SECTION: ABOUT CODESPARK */}
                 {/* SECTION: ABOUT CODESPARK */}
-<footer className="mt-24 pt-12 pb-8 border-t border-[#1F2937]">
+                <footer className="mt-24 pt-12 pb-8 border-t border-[#1F2937]">
 
-    {/* Logo */}
-    <div className="flex justify-center items-center gap-3 mb-6">
-        <Command
-            size={24}
-            color={accentHex}
-        />
+                    {/* Logo */}
+                    <div className="flex justify-center items-center gap-3 mb-6">
+                        <Command
+                            size={24}
+                            color={accentHex}
+                        />
 
-        <h3 className="text-2xl font-bold tracking-tight text-[#F9FAFB]">
-            CodeSpark
-        </h3>
+                        <h3 className="text-2xl font-bold tracking-tight text-[#F9FAFB]">
+                            CodeSpark
+                        </h3>
 
-        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-[#1F2937] border border-[#374151] text-[#9CA3AF]">
-            v1.0.0
-        </span>
-    </div>
+                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-[#1F2937] border border-[#374151] text-[#9CA3AF]">
+                            v1.0.0
+                        </span>
+                    </div>
 
-    {/* Links */}
-    <div className="flex flex-wrap justify-center gap-8 text-sm text-[#9CA3AF]">
+                    {/* Links */}
+                    <div className="flex flex-wrap justify-center gap-8 text-sm text-[#9CA3AF]">
 
-        <a
-            href="#"
-            className="transition-all duration-200 hover:text-[#F59E0B] hover:-translate-y-0.5"
-        >
-            Release Notes
-        </a>
+                        <a
+                            href="#"
+                            className="transition-all duration-200 hover:text-[#F59E0B] hover:-translate-y-0.5"
+                        >
+                            Release Notes
+                        </a>
 
-        <a
-            href="#"
-            className="transition-all duration-200 hover:text-[#F59E0B] hover:-translate-y-0.5"
-        >
-            Privacy Policy
-        </a>
+                        <a
+                            href="#"
+                            className="transition-all duration-200 hover:text-[#F59E0B] hover:-translate-y-0.5"
+                        >
+                            Privacy Policy
+                        </a>
 
-        <a
-            href="#"
-            className="transition-all duration-200 hover:text-[#F59E0B] hover:-translate-y-0.5"
-        >
-            Terms of Service
-        </a>
+                        <a
+                            href="#"
+                            className="transition-all duration-200 hover:text-[#F59E0B] hover:-translate-y-0.5"
+                        >
+                            Terms of Service
+                        </a>
 
-        <a
-            href="#"
-            className="transition-all duration-200 hover:text-[#F59E0B] hover:-translate-y-0.5"
-        >
-            GitHub Repository
-        </a>
+                        <a
+                            href="#"
+                            className="transition-all duration-200 hover:text-[#F59E0B] hover:-translate-y-0.5"
+                        >
+                            GitHub Repository
+                        </a>
 
-    </div>
+                    </div>
 
-    {/* Divider */}
-    <div className="w-full max-w-xl mx-auto h-px bg-[#1F2937] my-8" />
+                    {/* Divider */}
+                    <div className="w-full max-w-xl mx-auto h-px bg-[#1F2937] my-8" />
 
-    {/* Version */}
-    <div className="flex justify-center items-center gap-2 text-sm text-[#9CA3AF]/80">
+                    {/* Version */}
+                    <div className="flex justify-center items-center gap-2 text-sm text-[#9CA3AF]/80">
 
-        <Command
-            size={16}
-            color={accentHex}
-        />
+                        <Command
+                            size={16}
+                            color={accentHex}
+                        />
 
-        <span>
-            CodeSpark Version <strong className="text-[#F9FAFB]">1.0.0</strong>
-        </span>
+                        <span>
+                            CodeSpark Version <strong className="text-[#F9FAFB]">1.0.0</strong>
+                        </span>
 
-    </div>
+                    </div>
 
-    {/* Tech Stack */}
-    <p className="mt-3 text-center text-sm text-[#6B7280]">
-        Built with React • Express • MongoDB
-    </p>
+                    {/* Tech Stack */}
+                    <p className="mt-3 text-center text-sm text-[#6B7280]">
+                        Built with React • Express • MongoDB
+                    </p>
 
-    {/* Copyright */}
-    <p className="mt-6 text-center text-xs text-[#4B5563]">
-        © {new Date().getFullYear()} CodeSpark. All rights reserved.
-    </p>
+                    {/* Copyright */}
+                    <p className="mt-6 text-center text-xs text-[#4B5563]">
+                        © {new Date().getFullYear()} CodeSpark. All rights reserved.
+                    </p>
 
-</footer>
+                </footer>
 
             </div>
         </div>
