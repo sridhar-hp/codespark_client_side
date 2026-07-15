@@ -33,7 +33,6 @@ const MAIN_NAV_ITEMS = [
     { path: '/linkedin', label: 'LinkedIn', icon: Linkedin },
     { path: '/analytics', label: 'Analytics', icon: BarChart3 },
     { path: '/journal', label: 'Journal', icon: Book },
-    // { path: '/reports', label: 'Reports', icon: FileText },
     { path: '/achievements', label: 'Achievements', icon: Trophy },
     { path: '/notifications', label: 'Notifications', icon: Bell },
     { path: '/settings', label: 'Settings', icon: Settings },
