@@ -188,28 +188,28 @@ function Sidebar({
                 <div className="p-3 border-t border-[#1F2937] shrink-0 bg-[#111827]">
                     {renderNavLinks(BOTTOM_NAV_ITEMS)}
                     <button
-                    onClick={() => setShowLogoutModal(true)}
-                    className="mt-2 flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border-l-2 border-transparent text-[#9CA3AF] hover:bg-red-500/10 hover:text-red-500 hover:border-red-500 group"
-                >
-                    <LogOut
-                        size={20}
-                        className="text-[#9CA3AF] group-hover:text-red-500 transition-colors"
-                    />
+                        onClick={() => setShowLogoutModal(true)}
+                        className="mt-2 flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border-l-2 border-transparent text-[#9CA3AF] hover:bg-red-500/10 hover:text-red-500 hover:border-red-500 group"
+                    >
+                        <LogOut
+                            size={20}
+                            className="text-[#9CA3AF] group-hover:text-red-500 transition-colors"
+                        />
 
-                    {!isCollapsed && (
-                        <span>
-                            Logout
-                        </span>
-                    )}
-                </button>
+                        {!isCollapsed && (
+                            <span>
+                                Logout
+                            </span>
+                        )}
+                    </button>
                 </div>
             </aside>
             {showLogoutModal && (
-    <LogoutModal
-        onClose={() => setShowLogoutModal(false)}
-        onLogout={handleLogout}
-    />
-)}
+                <LogoutModal
+                    onClose={() => setShowLogoutModal(false)}
+                    onLogout={handleLogout}
+                />
+            )}
 
         </>
     );
