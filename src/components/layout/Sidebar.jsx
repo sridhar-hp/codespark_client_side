@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useNavigate } from "react-router-dom";
+import useAuth from '../../hooks/useAuth';
 import LogoutModal from "../Modals/LogoutModal";
 import {
     Zap,
@@ -117,18 +118,16 @@ function Sidebar({
         </ul>
     );
 
-    const handleLogout = () => {
+    const { logout } = useAuth();
 
-        sessionStorage.clear();
-
-        localStorage.clear();
-
-        // later
-        // dispatch(logout());
-
-        // window.location.href = "/login";
-        navigate("/login");
-
+    const handleLogout = async () => {
+        try {
+            await logout();
+        } catch (err) {
+            console.error('Logout error:', err);
+        } finally {
+            navigate("/login");
+        }
     };
 
     return (

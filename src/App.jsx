@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Login from "./pages/Login";
 import Register from "./pages/RegisterPage";
-// import ForgotPassword from "./pages/ForgotPassword";
+import ProtectedRoute from "./routes/ProtectedRoute";
 
 import MainLayout from "./layouts/MainLayout";
 
@@ -29,25 +29,24 @@ export default function App() {
                 <Route path="/" element={<Login />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                {/* <Route path="/forgot-password" element={<ForgotPassword />} /> */}
 
-                {/* Main Application */}
-                <Route element={<MainLayout />}>
-
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/tasks" element={<Tasks />} />
-                    <Route path="/github" element={<GitHub />} />
-                    <Route path="/leetcode" element={<LeetCode />} />
-                    <Route path="/learning" element={<Learning />} />
-                    <Route path="/communication" element={<Communication />} />
-                    <Route path="/linkedin" element={<LinkedIn />} />
-                    <Route path="/analytics" element={<Analytics />} />
-                    <Route path="/journal" element={<Journal />} />
-                    <Route path="/achievements" element={<Achievements />} />
-                    <Route path="/notifications" element={<Notifications />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="/profile" element={<Profile />} />
-
+                {/* Protected Application Routes */}
+                <Route element={<ProtectedRoute />}>
+                    <Route element={<MainLayout />}>
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/tasks" element={<Tasks />} />
+                        <Route path="/github" element={<GitHub />} />
+                        <Route path="/leetcode" element={<LeetCode />} />
+                        <Route path="/learning" element={<Learning />} />
+                        <Route path="/communication" element={<Communication />} />
+                        <Route path="/linkedin" element={<LinkedIn />} />
+                        <Route path="/analytics" element={<Analytics />} />
+                        <Route path="/journal" element={<Journal />} />
+                        <Route path="/achievements" element={<Achievements />} />
+                        <Route path="/notifications" element={<Notifications />} />
+                        <Route path="/settings" element={<Settings />} />
+                        <Route path="/profile" element={<Profile />} />
+                    </Route>
                 </Route>
 
             </Routes>

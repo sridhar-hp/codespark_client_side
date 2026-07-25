@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import useAuth from '../hooks/useAuth';
 import {
     FaGithub,
     FaGoogle,
@@ -23,20 +25,39 @@ export default function RegisterPage() {
         confirmPassword: ''
     });
 
+    const [validationError, setValidationError] = useState('');
+    const navigate = useNavigate();
+    const { register, status, error } = useAuth();
+
     // UI Display States
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [focusedField, setFocusedField] = useState('');
 
-    // Local Input Processing Placeholder
     const handleInputChange = (e) => {
         const { id, value } = e.target;
         setFormData(prev => ({ ...prev, [id]: value }));
+        setValidationError('');
     };
 
-    const handleRegisterSubmit = (e) => {
+    const handleRegisterSubmit = async (e) => {
         e.preventDefault();
-        console.log('Registration UI execution payload:', formData);
+        setValidationError('');
+
+        if (formData.password !== formData.confirmPassword) {
+            setValidationError('Passwords do not match');
+            return;
+        }
+
+        try {
+            const name = formData.fullName.trim() || formData.username.trim();
+            const resultAction = await register(name, formData.email.trim(), formData.password);
+            if (!resultAction.error) {
+                navigate('/dashboard');
+            }
+        } catch (err) {
+            console.error('Registration error:', err);
+        }
     };
 
     const handleOAuthSignUp = (provider) => {
@@ -314,26 +335,39 @@ export default function RegisterPage() {
                             )}
                         </div>
 
+                        {(error || validationError) && (
+                            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs text-center font-medium">
+                                {validationError || error}
+                            </div>
+                        )}
+
                         {/* Main CTA Submission Controller Button */}
                         <button
                             type="submit"
-                            className="w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-[#0B1120] text-sm font-semibold shadow-xl shadow-amber-500/10 hover:shadow-amber-500/20 active:scale-[0.99] transform transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-amber-500/50 pt-2"
+                            disabled={status === 'loading'}
+                            className="w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 disabled:opacity-50 text-[#0B1120] text-sm font-semibold shadow-xl shadow-amber-500/10 hover:shadow-amber-500/20 active:scale-[0.99] transform transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-amber-500/50 pt-2 flex items-center justify-center gap-2"
                         >
-                            Create Account
+                            {status === 'loading' ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-[#0B1120] border-t-transparent rounded-full animate-spin" />
+                                    <span>Creating Account...</span>
+                                </>
+                            ) : (
+                                'Create Account'
+                            )}
                         </button>
                     </form>
 
                     {/* Alternative Auth Inter-Routing Footer */}
                     <div className="mt-6 text-center text-sm text-[#9CA3AF]">
                         <span>Already have an account? </span>
-                        <a
-                            href="#login"
+                        <Link
+                            to="/login"
                             className="font-semibold text-amber-500 hover:text-amber-400 transition-colors inline-flex items-center gap-0.5 group"
-                            onClick={(e) => { e.preventDefault(); console.log('Redirecting to legacy login portal component context.'); }}
                         >
                             Sign In
                             <span className="transform group-hover:translate-x-0.5 transition-transform">&rarr;</span>
-                        </a>
+                        </Link>
                     </div>
 
                 </div>

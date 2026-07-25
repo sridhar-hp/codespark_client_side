@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import useAuth from '../hooks/useAuth';
 
 import {
     FaGithub,
@@ -19,10 +21,19 @@ export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
 
-    // Placeholder handlers as requested (No auth/backend logic)
-    const handleEmailLogin = (e) => {
+    const navigate = useNavigate();
+    const { login, status, error } = useAuth();
+
+    const handleEmailLogin = async (e) => {
         e.preventDefault();
-        console.log('Email login triggered:', { email, rememberMe });
+        try {
+            const resultAction = await login(email, password);
+            if (login.fulfilled.match ? login.fulfilled.match(resultAction) : !resultAction.error) {
+                navigate('/dashboard');
+            }
+        } catch (err) {
+            console.error('Login failed:', err);
+        }
     };
 
     const handleOAuthLogin = (provider) => {
@@ -243,26 +254,39 @@ export default function LoginPage() {
                             </label>
                         </div>
 
+                        {error && (
+                            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs text-center font-medium">
+                                {error}
+                            </div>
+                        )}
+
                         {/* Form Execution Trigger Button */}
                         <button
                             type="submit"
-                            className="w-full py-3 px-4 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-[#0B1120] text-sm font-semibold shadow-xl shadow-amber-500/10 hover:shadow-amber-500/20 active:scale-[0.99] transform transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-amber-500/50 mt-2"
+                            disabled={status === 'loading'}
+                            className="w-full py-3 px-4 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 disabled:opacity-50 text-[#0B1120] text-sm font-semibold shadow-xl shadow-amber-500/10 hover:shadow-amber-500/20 active:scale-[0.99] transform transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-amber-500/50 mt-2 flex items-center justify-center gap-2"
                         >
-                            Sign In to Dashboard
+                            {status === 'loading' ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-[#0B1120] border-t-transparent rounded-full animate-spin" />
+                                    <span>Signing In...</span>
+                                </>
+                            ) : (
+                                'Sign In to Dashboard'
+                            )}
                         </button>
                     </form>
 
                     {/* Action Navigation Footer link */}
                     <div className="mt-8 text-center text-sm text-[#9CA3AF]">
                         <span>Don't have an account? </span>
-                        <a
-                            href="#signup"
+                        <Link
+                            to="/register"
                             className="font-semibold text-amber-500 hover:text-amber-400 transition-colors inline-flex items-center gap-1 group"
-                            onClick={(e) => { e.preventDefault(); console.log('Create account redirect triggered.'); }}
                         >
                             Create Account
                             <span className="transform group-hover:translate-x-0.5 transition-transform">&rarr;</span>
-                        </a>
+                        </Link>
                     </div>
 
                 </div>

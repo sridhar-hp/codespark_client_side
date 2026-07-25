@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, useInView, useReducedMotion } from "framer-motion";
+import useAuth from "../../hooks/useAuth";
 import {
     Github,
     MapPin,
@@ -328,6 +329,10 @@ const quickActions = [
 /* ------------------------------------------------------------------ */
 
 function IdentityCard() {
+    const { user } = useAuth();
+    const displayName = user?.name || "Developer";
+    const initials = displayName.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase() || "CS";
+
     return (
         <Card glow className="p-6 md:p-10">
             <div
@@ -351,7 +356,7 @@ function IdentityCard() {
                             color: "#0B1120",
                         }}
                     >
-                        AK
+                        {initials}
                     </div>
                     <div
                         className="absolute -bottom-2 -right-2 rounded-full px-2.5 py-1 text-[11px] font-semibold flex items-center gap-1"
@@ -367,7 +372,7 @@ function IdentityCard() {
                             className="text-3xl md:text-4xl font-bold tracking-tight"
                             style={{ color: COLORS.textPrimary }}
                         >
-                            Aarav Kapoor
+                            {displayName}
                         </h1>
                         <Pill tone="amber">
                             <Star size={12} aria-hidden="true" /> Rank #142
@@ -775,6 +780,12 @@ function QuickActions() {
 /* ------------------------------------------------------------------ */
 
 export default function Profile() {
+    const { fetchProfile } = useAuth();
+
+    useEffect(() => {
+        fetchProfile();
+    }, []);
+
     return (
         <div
             className="min-h-screen w-full relative"
