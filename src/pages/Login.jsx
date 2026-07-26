@@ -131,8 +131,8 @@ export default function LoginPage() {
                                 <div
                                     key={idx}
                                     className={`h-4 w-4 rounded-sm flex-shrink-0 transition-colors duration-500 ${lvl === 0 ? 'bg-[#1F2937]' :
-                                            lvl === 1 ? 'bg-amber-900/60' :
-                                                lvl === 2 ? 'bg-amber-600/70' : 'bg-amber-400'
+                                        lvl === 1 ? 'bg-amber-900/60' :
+                                            lvl === 2 ? 'bg-amber-600/70' : 'bg-amber-400'
                                         }`}
                                 />
                             ))}
