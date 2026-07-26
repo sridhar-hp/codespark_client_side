@@ -332,6 +332,9 @@ function IdentityCard() {
     const { user } = useAuth();
     const displayName = user?.name || "Developer";
     const initials = displayName.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase() || "CS";
+    const joinedDate = user?.createdAt
+        ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        : "March 2024";
 
     return (
         <Card glow className="p-6 md:p-10">
@@ -375,16 +378,16 @@ function IdentityCard() {
                             {displayName}
                         </h1>
                         <Pill tone="amber">
-                            <Star size={12} aria-hidden="true" /> Rank #142
+                            <Star size={12} aria-hidden="true" /> {user?.role ? user.role.toUpperCase() : 'USER'}
                         </Pill>
                     </div>
                     <p className="text-base mb-5" style={{ color: COLORS.textSecondary }}>
-                        Aspiring Full-Stack &amp; AI Engineer
+                        {user?.email || 'dev@codespark.app'}
                     </p>
 
                     <div className="flex flex-wrap gap-x-8 gap-y-4">
-                        <Stat icon={Zap} label="XP" value={12480} suffix=" XP" color={COLORS.amber} />
-                        <Stat icon={Flame} label="Current Streak" value={18} suffix=" days" color={COLORS.orange} />
+                        <Stat icon={Zap} label="XP" value={user?.stats?.xp || 12480} suffix=" XP" color={COLORS.amber} />
+                        <Stat icon={Flame} label="Current Streak" value={user?.stats?.streak || 18} suffix=" days" color={COLORS.orange} />
                         <Stat icon={Trophy} label="Current Rank" value={142} prefix="#" color={COLORS.cyan} />
                         <div className="flex flex-col gap-1">
                             <span className="text-xs font-medium" style={{ color: COLORS.textSecondary }}>
@@ -399,7 +402,7 @@ function IdentityCard() {
                                 Joined Since
                             </span>
                             <span className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: COLORS.textPrimary }}>
-                                <Calendar size={14} style={{ color: COLORS.amber }} aria-hidden="true" /> March 2024
+                                <Calendar size={14} style={{ color: COLORS.amber }} aria-hidden="true" /> {joinedDate}
                             </span>
                         </div>
                     </div>
@@ -780,7 +783,7 @@ function QuickActions() {
 /* ------------------------------------------------------------------ */
 
 export default function Profile() {
-    const { fetchProfile } = useAuth();
+    const { fetchProfile, status, error, user } = useAuth();
 
     useEffect(() => {
         fetchProfile();
@@ -802,6 +805,25 @@ export default function Profile() {
             />
 
             <main className="relative max-w-6xl mx-auto px-4 md:px-8 py-10 md:py-16 flex flex-col gap-14">
+                {status === 'loading' && !user && (
+                    <div className="flex items-center justify-center p-12 text-amber-500 gap-3 font-semibold">
+                        <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                        <span>Loading user profile...</span>
+                    </div>
+                )}
+
+                {error && !user && (
+                    <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-center justify-between">
+                        <span>Failed to load profile: {error}</span>
+                        <button
+                            onClick={() => fetchProfile()}
+                            className="px-3 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg text-xs font-semibold"
+                        >
+                            Retry
+                        </button>
+                    </div>
+                )}
+
                 <IdentityCard />
                 <Snapshot />
                 <Mission />
