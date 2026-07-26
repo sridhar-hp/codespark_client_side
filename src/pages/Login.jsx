@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 
@@ -22,14 +22,29 @@ export default function LoginPage() {
     const [rememberMe, setRememberMe] = useState(false);
 
     const navigate = useNavigate();
-    const { login, status, error } = useAuth();
+    const { login, isAuthenticated, accessToken, status, error, resetError } = useAuth();
+
+    // Redirect if user is already logged in
+    useEffect(() => {
+        const storedToken = localStorage.getItem('accessToken');
+        if (isAuthenticated || accessToken || storedToken) {
+            navigate('/dashboard', { replace: true });
+        }
+    }, [isAuthenticated, accessToken, navigate]);
+
+    // Clear previous auth error on unmount or input
+    useEffect(() => {
+        return () => {
+            if (resetError) resetError();
+        };
+    }, []);
 
     const handleEmailLogin = async (e) => {
         e.preventDefault();
         try {
-            const resultAction = await login(email, password);
-            if (login.fulfilled.match ? login.fulfilled.match(resultAction) : !resultAction.error) {
-                navigate('/dashboard');
+            const resultAction = await login(email.trim(), password);
+            if (!resultAction.error) {
+                navigate('/dashboard', { replace: true });
             }
         } catch (err) {
             console.error('Login failed:', err);
