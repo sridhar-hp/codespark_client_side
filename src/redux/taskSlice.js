@@ -72,6 +72,13 @@ const taskSlice = createSlice({
 
     // Toggle Task
     builder
+      .addCase(toggleTaskThunk.pending, (state, action) => {
+        const taskId = action.meta.arg;
+        const task = state.tasks.find((t) => t._id === taskId);
+        if (task) {
+          task.completed = !task.completed;
+        }
+      })
       .addCase(toggleTaskThunk.fulfilled, (state, action) => {
         const index = state.tasks.findIndex((t) => t._id === action.payload._id);
         if (index !== -1) {
@@ -79,6 +86,11 @@ const taskSlice = createSlice({
         }
       })
       .addCase(toggleTaskThunk.rejected, (state, action) => {
+        const taskId = action.meta.arg;
+        const task = state.tasks.find((t) => t._id === taskId);
+        if (task) {
+          task.completed = !task.completed;
+        }
         state.error = action.payload;
       });
 

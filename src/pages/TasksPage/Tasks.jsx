@@ -345,6 +345,8 @@ export default function App() {
                 id: editingTask.id,
                 title: taskPayload.title,
                 description: taskPayload.description,
+                category: taskPayload.category,
+                priority: taskPayload.priority,
                 dueDate: taskPayload.dueDate || undefined,
                 xpReward: taskPayload.xpReward
             })).unwrap().then(() => {
@@ -358,6 +360,8 @@ export default function App() {
             dispatch(createTaskThunk({
                 title: taskPayload.title,
                 description: taskPayload.description,
+                category: taskPayload.category,
+                priority: taskPayload.priority,
                 dueDate: taskPayload.dueDate || undefined,
                 xpReward: taskPayload.xpReward
             })).unwrap().then(() => {
