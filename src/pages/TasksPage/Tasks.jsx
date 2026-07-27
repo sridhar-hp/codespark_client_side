@@ -1,4 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+    fetchTasksThunk,
+    createTaskThunk,
+    updateTaskThunk,
+    toggleTaskThunk,
+    deleteTaskThunk
+} from '../../redux/taskThunks';
 import {
     Plus,
     Check,
@@ -21,7 +29,8 @@ import {
     Bookmark,
     CheckCircle2,
     Trash2,
-    Inbox
+    Inbox,
+    Pencil
 } from 'lucide-react';
 
 // --- PREMIUM HARDWARE-ACCELERATED KEYFRAMES ---
@@ -228,11 +237,15 @@ const INITIAL_TASKS = [
 ];
 
 export default function App() {
-    const [tasks, setTasks] = useState(INITIAL_TASKS);
+    const dispatch = useDispatch();
+    const { tasks: backendTasks, loading, error } = useSelector((state) => state.tasks);
+
     const [routine, setRoutine] = useState(INITIAL_ROUTINE);
     const [selectedFilter, setSelectedFilter] = useState('all');
     const [selectedCategory, setSelectedCategory] = useState('All Categories');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingTask, setEditingTask] = useState(null);
+    const [deletingTask, setDeletingTask] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchFocused, setSearchFocused] = useState(false);
 
@@ -245,20 +258,39 @@ export default function App() {
     // Custom Toast state for dynamic interactions feedback
     const [toasts, setToasts] = useState([]);
 
-    // Stats calculations derived from state to support live reactive mock updates
+    useEffect(() => {
+        dispatch(fetchTasksThunk());
+        setIsMounted(true);
+    }, [dispatch]);
+
+    // Map backend tasks to component format
+    const tasks = backendTasks.map(t => {
+        const isCompleted = t.completed;
+        const isOverdue = !isCompleted && t.dueDate && new Date(t.dueDate) < new Date();
+        const status = isCompleted ? 'Completed' : isOverdue ? 'Overdue' : 'Pending';
+        const formattedDueDate = t.dueDate ? new Date(t.dueDate).toISOString().split('T')[0] : '';
+
+        return {
+            ...t,
+            id: t._id,
+            status,
+            dueDateFormatted: formattedDueDate,
+            xpReward: t.xpReward || 0,
+            category: t.category || 'Development',
+            priority: t.priority || 'Medium',
+            estimatedTime: t.estimatedTime || 60,
+            description: t.description || '',
+        };
+    });
+
+    // Stats calculations derived from state
     const totalTasksCount = tasks.length;
     const completedTasksCount = tasks.filter(t => t.status === 'Completed').length;
     const completionRate = totalTasksCount > 0 ? Math.round((completedTasksCount / totalTasksCount) * 100) : 0;
 
-    // Calculate simulated XP earned today
     const [animatedProgress, setAnimatedProgress] = useState(0);
 
     useEffect(() => {
-        setIsMounted(true);
-    }, []);
-
-    useEffect(() => {
-        // Smooth progress ring initialization animation
         const timer = setTimeout(() => {
             setAnimatedProgress(completionRate);
         }, 150);
@@ -274,55 +306,77 @@ export default function App() {
     };
 
     const toggleTaskStatus = (taskId, event) => {
-        setTasks(prevTasks => {
-            return prevTasks.map(task => {
-                if (task.id === taskId) {
-                    const isCompleting = task.status !== 'Completed';
-                    const nextStatus = isCompleting ? 'Completed' : 'Pending';
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) return;
 
-                    if (isCompleting) {
-                        triggerToast(`+${task.xpReward} XP Earned! "${task.title}" Completed.`, 'xp');
+        dispatch(toggleTaskThunk(taskId)).unwrap().then((updatedTask) => {
+            if (updatedTask.completed) {
+                triggerToast(`+${updatedTask.xpReward || 0} XP Earned! "${updatedTask.title}" Completed.`, 'xp');
 
-                        // Fire modular sparkle burst around event target
-                        if (event) {
-                            const rect = event.currentTarget.getBoundingClientRect();
-                            const originX = rect.left + rect.width / 2 + window.scrollX;
-                            const originY = rect.top + rect.height / 2 + window.scrollY;
+                if (event) {
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    const originX = rect.left + rect.width / 2 + window.scrollX;
+                    const originY = rect.top + rect.height / 2 + window.scrollY;
 
-                            const sparks = Array.from({ length: 12 }).map((_, i) => ({
-                                id: `spark-${Date.now()}-${i}`,
-                                x: originX,
-                                y: originY,
-                                mx: (Math.cos((i / 12) * 2 * Math.PI) * (40 + Math.random() * 40)).toFixed(1),
-                                my: (Math.sin((i / 12) * 2 * Math.PI) * (40 + Math.random() * 40)).toFixed(1),
-                                color: i % 2 === 0 ? '#F59E0B' : '#10B981'
-                            }));
-                            setParticles(prev => [...prev, ...sparks]);
-                            setTimeout(() => {
-                                setParticles(prev => prev.filter(p => !sparks.find(s => s.id === p.id)));
-                            }, 800);
-                        }
-                    } else {
-                        triggerToast(`Task "${task.title}" marked as Pending.`, 'info');
-                    }
-
-                    return { ...task, status: nextStatus };
+                    const sparks = Array.from({ length: 12 }).map((_, i) => ({
+                        id: `spark-${Date.now()}-${i}`,
+                        x: originX,
+                        y: originY,
+                        mx: (Math.cos((i / 12) * 2 * Math.PI) * (40 + Math.random() * 40)).toFixed(1),
+                        my: (Math.sin((i / 12) * 2 * Math.PI) * (40 + Math.random() * 40)).toFixed(1),
+                        color: i % 2 === 0 ? '#F59E0B' : '#10B981'
+                    }));
+                    setParticles(prev => [...prev, ...sparks]);
+                    setTimeout(() => {
+                        setParticles(prev => prev.filter(p => !sparks.find(s => s.id === p.id)));
+                    }, 800);
                 }
-                return task;
-            });
+            } else {
+                triggerToast(`Task "${updatedTask.title}" marked as Pending.`, 'info');
+            }
+        }).catch((err) => {
+            triggerToast(err || 'Failed to toggle task', 'error');
         });
     };
 
-    const handleCreateTask = (newTask) => {
-        setTasks(prev => [
-            {
-                id: Date.now(),
-                ...newTask,
-                status: newTask.status || 'Pending'
-            },
-            ...prev
-        ]);
-        triggerToast(`Task "${newTask.title}" added successfully!`, 'success');
+    const handleSaveTask = (taskPayload) => {
+        if (editingTask) {
+            dispatch(updateTaskThunk({
+                id: editingTask.id,
+                title: taskPayload.title,
+                description: taskPayload.description,
+                dueDate: taskPayload.dueDate || undefined,
+                xpReward: taskPayload.xpReward
+            })).unwrap().then(() => {
+                triggerToast(`Task "${taskPayload.title}" updated successfully!`, 'success');
+                setIsModalOpen(false);
+                setEditingTask(null);
+            }).catch((err) => {
+                triggerToast(err || 'Failed to update task', 'error');
+            });
+        } else {
+            dispatch(createTaskThunk({
+                title: taskPayload.title,
+                description: taskPayload.description,
+                dueDate: taskPayload.dueDate || undefined,
+                xpReward: taskPayload.xpReward
+            })).unwrap().then(() => {
+                triggerToast(`Task "${taskPayload.title}" created successfully!`, 'success');
+                setIsModalOpen(false);
+            }).catch((err) => {
+                triggerToast(err || 'Failed to create task', 'error');
+            });
+        }
+    };
+
+    const handleConfirmDelete = () => {
+        if (!deletingTask) return;
+        dispatch(deleteTaskThunk(deletingTask.id)).unwrap().then(() => {
+            triggerToast(`Task "${deletingTask.title}" deleted`, 'info');
+            setDeletingTask(null);
+        }).catch((err) => {
+            triggerToast(err || 'Failed to delete task', 'error');
+        });
     };
 
     const toggleRoutineItem = (itemId, event) => {
@@ -358,29 +412,26 @@ export default function App() {
     };
 
     const filteredTasks = tasks.filter(task => {
-        // 1. Category Filter
         if (selectedCategory !== 'All Categories' && task.category !== selectedCategory) {
             return false;
         }
 
-        // 2. Search Query Filter
         if (searchQuery.trim() !== '') {
             const query = searchQuery.toLowerCase();
             const matchesTitle = task.title.toLowerCase().includes(query);
-            const matchesDesc = task.description.toLowerCase().includes(query);
+            const matchesDesc = (task.description || '').toLowerCase().includes(query);
             if (!matchesTitle && !matchesDesc) return false;
         }
 
-        // 3. Status Tab Filter
         switch (selectedFilter) {
             case 'today':
-                return task.assignDate === '2026-07-07';
+                return task.dueDateFormatted === new Date().toISOString().split('T')[0];
             case 'upcoming':
-                return task.dueDate > '2026-07-07' && task.status !== 'Completed';
+                return task.dueDateFormatted > new Date().toISOString().split('T')[0] && task.status !== 'Completed';
             case 'completed':
                 return task.status === 'Completed';
             case 'overdue':
-                return task.status === 'Overdue' || (task.dueDate < '2026-07-07' && task.status !== 'Completed');
+                return task.status === 'Overdue';
             case 'all':
             default:
                 return true;
@@ -701,26 +752,42 @@ export default function App() {
                             </span>
                         </div>
 
-                        {filteredTasks.length === 0 ? (
+                        {error && (
+                            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold flex items-center justify-between">
+                                <span>Error loading tasks: {error}</span>
+                                <button
+                                    onClick={() => dispatch(fetchTasksThunk())}
+                                    className="px-3 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-lg text-xs font-bold"
+                                >
+                                    Retry
+                                </button>
+                            </div>
+                        )}
+
+                        {loading && tasks.length === 0 ? (
+                            <div className="bg-[#111827]/40 border border-[#1F2937]/80 p-12 rounded-2xl text-center space-y-3">
+                                <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                                <p className="text-xs text-[#9CA3AF] font-semibold">Loading your tasks...</p>
+                            </div>
+                        ) : filteredTasks.length === 0 ? (
                             <div className="bg-[#111827]/40 border border-[#1F2937]/80 p-12 rounded-2xl text-center space-y-4">
                                 <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mx-auto text-slate-700" style={{ animation: 'float-inbox 3s infinite ease-in-out' }}>
                                     <Inbox className="w-8 h-8" />
                                 </div>
                                 <div className="space-y-1">
-                                    <h4 className="text-white font-bold text-base">No tasks matched</h4>
+                                    <h4 className="text-white font-bold text-base">No tasks found</h4>
                                     <p className="text-xs text-[#9CA3AF] max-w-sm mx-auto">
-                                        Try relaxing your category selection, search terms, or status filters to find your backlog items.
+                                        You don't have any tasks matching your filters yet. Create your first task to start tracking your progress!
                                     </p>
                                 </div>
                                 <button
                                     onClick={() => {
-                                        setSelectedCategory('All Categories');
-                                        setSelectedFilter('all');
-                                        setSearchQuery('');
+                                        setEditingTask(null);
+                                        setIsModalOpen(true);
                                     }}
-                                    className="px-4 py-2 bg-slate-800 text-white hover:bg-slate-750 text-xs font-bold rounded-xl transition-all cursor-pointer active:scale-95"
+                                    className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-[#0B1120] text-xs font-bold rounded-xl transition-all cursor-pointer active:scale-95"
                                 >
-                                    Reset Active Filters
+                                    + Create New Task
                                 </button>
                             </div>
                         ) : (
@@ -765,9 +832,11 @@ export default function App() {
                                                             />
                                                         )}
                                                     </h3>
-                                                    <p className={`text-xs leading-relaxed ${isCompleted ? 'text-[#4B5563]' : 'text-[#9CA3AF]'}`}>
-                                                        {task.description}
-                                                    </p>
+                                                    {task.description && (
+                                                        <p className={`text-xs leading-relaxed ${isCompleted ? 'text-[#4B5563]' : 'text-[#9CA3AF]'}`}>
+                                                            {task.description}
+                                                        </p>
+                                                    )}
 
                                                     {/* Attributes indicators tags row */}
                                                     <div className="flex flex-wrap items-center gap-2 pt-1">
@@ -803,25 +872,37 @@ export default function App() {
                                                 <div className="space-y-1 text-left sm:text-right">
                                                     <div className="text-[10px] text-[#6B7280] font-bold flex items-center sm:justify-end gap-1.5 uppercase transition-colors group-hover:text-slate-400">
                                                         <Calendar className="w-3 h-3" />
-                                                        <span>Due: {task.dueDate}</span>
-                                                    </div>
-                                                    <div className="text-[10px] text-[#6B7280] font-bold flex items-center sm:justify-end gap-1.5 uppercase transition-colors group-hover:text-slate-400">
-                                                        <Clock className="w-3 h-3" />
-                                                        <span>Estimated: {task.estimatedTime} min</span>
+                                                        <span>Due: {task.dueDateFormatted || 'No due date'}</span>
                                                     </div>
                                                 </div>
 
-                                                {/* Status visual box badge */}
-                                                <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg w-fit sm:ml-auto border transition-colors duration-300 ${isCompleted
-                                                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                                                    : isOverdue
-                                                        ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-                                                        : task.status === 'In Progress'
-                                                            ? 'bg-sky-500/10 border-sky-500/20 text-sky-400'
+                                                {/* Status visual box badge & action buttons */}
+                                                <div className="flex items-center gap-2 sm:ml-auto">
+                                                    <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg border transition-colors duration-300 ${isCompleted
+                                                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                                                        : isOverdue
+                                                            ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
                                                             : 'bg-slate-800 border-[#1F2937] text-[#9CA3AF]'
-                                                    }`}>
-                                                    {task.status}
-                                                </span>
+                                                        }`}>
+                                                        {task.status}
+                                                    </span>
+                                                    <button
+                                                        onClick={() => { setEditingTask(task); setIsModalOpen(true); }}
+                                                        className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-amber-500/20 text-[#9CA3AF] hover:text-amber-400 border border-[#1F2937] hover:border-amber-500/40 transition-colors cursor-pointer"
+                                                        aria-label="Edit task"
+                                                        title="Edit Task"
+                                                    >
+                                                        <Pencil className="w-3.5 h-3.5" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setDeletingTask(task)}
+                                                        className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-rose-500/20 text-[#9CA3AF] hover:text-rose-400 border border-[#1F2937] hover:border-rose-500/40 transition-colors cursor-pointer"
+                                                        aria-label="Delete task"
+                                                        title="Delete Task"
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
 
                                             </div>
                                         </CardGlow>
@@ -952,11 +1033,24 @@ export default function App() {
 
             </div>
 
-            {/* CREATE OBJECTIVE PORTAL */}
+            {/* CREATE / EDIT OBJECTIVE PORTAL */}
             {isModalOpen && (
                 <AddTaskModal
-                    onClose={() => setIsModalOpen(false)}
-                    onSubmit={handleCreateTask}
+                    onClose={() => {
+                        setIsModalOpen(false);
+                        setEditingTask(null);
+                    }}
+                    onSubmit={handleSaveTask}
+                    initialTask={editingTask}
+                />
+            )}
+
+            {/* DELETE CONFIRMATION PORTAL */}
+            {deletingTask && (
+                <DeleteTaskModal
+                    task={deletingTask}
+                    onClose={() => setDeletingTask(null)}
+                    onConfirm={handleConfirmDelete}
                 />
             )}
 
@@ -964,16 +1058,52 @@ export default function App() {
     );
 }
 
-function AddTaskModal({ onClose, onSubmit }) {
-    const [taskName, setTaskName] = useState('');
-    const [description, setDescription] = useState('');
-    const [category, setCategory] = useState('Development');
-    const [priority, setPriority] = useState('Medium');
-    const [assignDate, setAssignDate] = useState('2026-07-07');
-    const [dueDate, setDueDate] = useState('2026-07-09');
-    const [estimatedTime, setEstimatedTime] = useState(60);
-    const [xpReward, setXpReward] = useState(50);
-    const [repeat, setRepeat] = useState('Never');
+function DeleteTaskModal({ task, onClose, onConfirm }) {
+    if (!task) return null;
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0B1120]/80 backdrop-blur-md">
+            <div className="absolute inset-0" onClick={onClose} />
+            <div
+                className="bg-[#111827] border border-[#1F2937] rounded-3xl w-full max-w-md p-6 overflow-hidden shadow-2xl relative space-y-4"
+                style={{
+                    animation: 'modal-scale-spring 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards',
+                    boxShadow: '0 0 50px rgba(0, 0, 0, 0.4), 0 0 25px rgba(239, 68, 68, 0.05)'
+                }}
+            >
+                <div className="flex items-center gap-3 text-rose-500">
+                    <Trash2 className="w-6 h-6" />
+                    <h3 className="text-lg font-extrabold text-white">Delete Task</h3>
+                </div>
+                <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                    Are you sure you want to delete <span className="text-white font-bold">"{task.title}"</span>? This action cannot be undone.
+                </p>
+                <div className="flex gap-3 pt-2">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl transition-all cursor-pointer shadow-[0_2px_15px_rgba(239,68,68,0.2)]"
+                    >
+                        Confirm Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function AddTaskModal({ onClose, onSubmit, initialTask }) {
+    const [taskName, setTaskName] = useState(initialTask?.title || '');
+    const [description, setDescription] = useState(initialTask?.description || '');
+    const [category, setCategory] = useState(initialTask?.category || 'Development');
+    const [priority, setPriority] = useState(initialTask?.priority || 'Medium');
+    const [dueDate, setDueDate] = useState(initialTask?.dueDateFormatted || '');
+    const [estimatedTime, setEstimatedTime] = useState(initialTask?.estimatedTime || 60);
+    const [xpReward, setXpReward] = useState(initialTask?.xpReward || 50);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -984,15 +1114,10 @@ function AddTaskModal({ onClose, onSubmit }) {
             description,
             category,
             priority,
-            assignDate,
             dueDate,
             estimatedTime: Number(estimatedTime),
             xpReward: Number(xpReward),
-            repeat,
-            status: 'Pending'
         });
-
-        onClose();
     };
 
     return (
@@ -1010,13 +1135,15 @@ function AddTaskModal({ onClose, onSubmit }) {
                 {/* Modal Window Header */}
                 <div className="flex justify-between items-center px-6 py-5 border-b border-[#1F2937] bg-[#111827]/60">
                     <div className="flex items-center gap-2">
-                        <Plus className="w-5 h-5 text-amber-500" />
-                        <h2 className="text-lg font-extrabold text-white">Create New Task</h2>
+                        {initialTask ? <Pencil className="w-5 h-5 text-amber-500" /> : <Plus className="w-5 h-5 text-amber-500" />}
+                        <h2 className="text-lg font-extrabold text-white">
+                            {initialTask ? 'Edit Task' : 'Create New Task'}
+                        </h2>
                     </div>
                     <button
                         onClick={onClose}
                         className="p-1.5 rounded-lg text-[#9CA3AF] hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-                        aria-label="Close task creation modal"
+                        aria-label="Close task modal"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -1026,9 +1153,9 @@ function AddTaskModal({ onClose, onSubmit }) {
                 <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto scrollbar-thin">
 
                     {/* Task Name field */}
-                    <div className="space-y-1 transition-all duration-300" style={{ animation: 'toast-slide-in-bounce 0.4s ease-out forwards', animationDelay: '50ms' }}>
+                    <div className="space-y-1 transition-all duration-300">
                         <label htmlFor="modal-name" className="block text-xs font-bold text-[#9CA3AF] uppercase tracking-wider">
-                            Task Name
+                            Task Name *
                         </label>
                         <input
                             id="modal-name"
@@ -1042,14 +1169,14 @@ function AddTaskModal({ onClose, onSubmit }) {
                     </div>
 
                     {/* Description field */}
-                    <div className="space-y-1" style={{ animation: 'toast-slide-in-bounce 0.4s ease-out forwards', animationDelay: '100ms' }}>
+                    <div className="space-y-1">
                         <label htmlFor="modal-desc" className="block text-xs font-bold text-[#9CA3AF] uppercase tracking-wider">
                             Description
                         </label>
                         <textarea
                             id="modal-desc"
                             rows={3}
-                            placeholder="Provide a short description of goals and metrics..."
+                            placeholder="Provide a short description of goals..."
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             className="w-full bg-[#0B1120] border border-[#1F2937] rounded-xl px-4 py-2.5 text-xs font-semibold text-white placeholder-[#6B7280] focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all resize-none font-medium h-20"
@@ -1057,9 +1184,7 @@ function AddTaskModal({ onClose, onSubmit }) {
                     </div>
 
                     {/* Category & Priority parameters split group */}
-                    <div className="grid grid-cols-2 gap-4" style={{ animation: 'toast-slide-in-bounce 0.4s ease-out forwards', animationDelay: '150ms' }}>
-
-                        {/* Category dropdown field */}
+                    <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
                             <label htmlFor="modal-category" className="block text-xs font-bold text-[#9CA3AF] uppercase tracking-wider">
                                 Category
@@ -1079,7 +1204,6 @@ function AddTaskModal({ onClose, onSubmit }) {
                             </select>
                         </div>
 
-                        {/* Priority option selection field */}
                         <div className="space-y-1">
                             <label htmlFor="modal-priority" className="block text-xs font-bold text-[#9CA3AF] uppercase tracking-wider">
                                 Priority
@@ -1095,28 +1219,10 @@ function AddTaskModal({ onClose, onSubmit }) {
                                 <option value="Low">🟢 Low</option>
                             </select>
                         </div>
-
                     </div>
 
-                    {/* Assign Date & Due Date split parameters group */}
-                    <div className="grid grid-cols-2 gap-4" style={{ animation: 'toast-slide-in-bounce 0.4s ease-out forwards', animationDelay: '200ms' }}>
-
-                        {/* Assign Date */}
-                        <div className="space-y-1">
-                            <label htmlFor="modal-assign" className="block text-xs font-bold text-[#9CA3AF] uppercase tracking-wider">
-                                Assign Date
-                            </label>
-                            <input
-                                id="modal-assign"
-                                type="date"
-                                required
-                                value={assignDate}
-                                onChange={(e) => setAssignDate(e.target.value)}
-                                className="w-full bg-[#0B1120] border border-[#1F2937] rounded-xl px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10"
-                            />
-                        </div>
-
-                        {/* Due Date */}
+                    {/* Due Date & XP Reward parameters split group */}
+                    <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
                             <label htmlFor="modal-due" className="block text-xs font-bold text-[#9CA3AF] uppercase tracking-wider">
                                 Due Date
@@ -1124,36 +1230,12 @@ function AddTaskModal({ onClose, onSubmit }) {
                             <input
                                 id="modal-due"
                                 type="date"
-                                required
                                 value={dueDate}
                                 onChange={(e) => setDueDate(e.target.value)}
                                 className="w-full bg-[#0B1120] border border-[#1F2937] rounded-xl px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10"
                             />
                         </div>
 
-                    </div>
-
-                    {/* Estimated Time & XP Reward parameters split group */}
-                    <div className="grid grid-cols-2 gap-4" style={{ animation: 'toast-slide-in-bounce 0.4s ease-out forwards', animationDelay: '250ms' }}>
-
-                        {/* Estimated Time slider/numeric field */}
-                        <div className="space-y-1">
-                            <label htmlFor="modal-est" className="block text-xs font-bold text-[#9CA3AF] uppercase tracking-wider">
-                                Est. Time (min)
-                            </label>
-                            <input
-                                id="modal-est"
-                                type="number"
-                                required
-                                min={10}
-                                max={480}
-                                value={estimatedTime}
-                                onChange={(e) => setEstimatedTime(e.target.value)}
-                                className="w-full bg-[#0B1120] border border-[#1F2937] rounded-xl px-4 py-2.5 text-xs font-semibold text-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10"
-                            />
-                        </div>
-
-                        {/* XP Reward field */}
                         <div className="space-y-1">
                             <label htmlFor="modal-xp" className="block text-xs font-bold text-[#9CA3AF] uppercase tracking-wider">
                                 XP Reward
@@ -1161,37 +1243,17 @@ function AddTaskModal({ onClose, onSubmit }) {
                             <input
                                 id="modal-xp"
                                 type="number"
-                                required
-                                min={10}
+                                min={0}
                                 max={500}
                                 value={xpReward}
                                 onChange={(e) => setXpReward(e.target.value)}
                                 className="w-full bg-[#0B1120] border border-[#1F2937] rounded-xl px-4 py-2.5 text-xs font-semibold text-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10"
                             />
                         </div>
-
-                    </div>
-
-                    {/* Repeat frequency selection */}
-                    <div className="space-y-1" style={{ animation: 'toast-slide-in-bounce 0.4s ease-out forwards', animationDelay: '300ms' }}>
-                        <label htmlFor="modal-repeat" className="block text-xs font-bold text-[#9CA3AF] uppercase tracking-wider">
-                            Repeat Cycle
-                        </label>
-                        <select
-                            id="modal-repeat"
-                            value={repeat}
-                            onChange={(e) => setRepeat(e.target.value)}
-                            className="w-full bg-[#0B1120] border border-[#1F2937] rounded-xl px-3 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10"
-                        >
-                            <option value="Never">🔁 Never</option>
-                            <option value="Daily">🔁 Daily</option>
-                            <option value="Weekly">🔁 Weekly</option>
-                            <option value="Monthly">🔁 Monthly</option>
-                        </select>
                     </div>
 
                     {/* Modal Action Controls footer row */}
-                    <div className="flex gap-3 pt-4 border-t border-[#1F2937] mt-6" style={{ animation: 'toast-slide-in-bounce 0.4s ease-out forwards', animationDelay: '350ms' }}>
+                    <div className="flex gap-3 pt-4 border-t border-[#1F2937] mt-6">
                         <button
                             type="button"
                             onClick={onClose}
@@ -1203,7 +1265,7 @@ function AddTaskModal({ onClose, onSubmit }) {
                             type="submit"
                             className="flex-1 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-[#0B1120] font-bold text-xs rounded-xl transition-all shadow-[0_2px_15px_rgba(245,158,11,0.1)] cursor-pointer active:scale-95 hover:scale-[1.02]"
                         >
-                            Create Task
+                            {initialTask ? 'Save Changes' : 'Create Task'}
                         </button>
                     </div>
 
