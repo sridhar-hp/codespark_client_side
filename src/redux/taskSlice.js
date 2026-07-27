@@ -13,6 +13,13 @@ const initialState = {
   error: null,
 };
 
+const formatError = (payload, fallback) => {
+  if (!payload) return fallback;
+  if (typeof payload === 'string') return payload;
+  if (typeof payload === 'object') return payload.message || fallback;
+  return String(payload);
+};
+
 const taskSlice = createSlice({
   name: 'tasks',
   initialState,
@@ -34,7 +41,7 @@ const taskSlice = createSlice({
       })
       .addCase(fetchTasksThunk.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || 'Failed to fetch tasks';
+        state.error = formatError(action.payload, 'Failed to fetch tasks');
       });
 
     // Create Task
@@ -49,7 +56,7 @@ const taskSlice = createSlice({
       })
       .addCase(createTaskThunk.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || 'Failed to create task';
+        state.error = formatError(action.payload, 'Failed to create task');
       });
 
     // Update Task
@@ -67,7 +74,7 @@ const taskSlice = createSlice({
       })
       .addCase(updateTaskThunk.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || 'Failed to update task';
+        state.error = formatError(action.payload, 'Failed to update task');
       });
 
     // Toggle Task
@@ -91,7 +98,7 @@ const taskSlice = createSlice({
         if (task) {
           task.completed = !task.completed;
         }
-        state.error = action.payload;
+        state.error = formatError(action.payload, 'Failed to toggle task');
       });
 
     // Delete Task
@@ -100,7 +107,7 @@ const taskSlice = createSlice({
         state.tasks = state.tasks.filter((t) => t._id !== action.payload);
       })
       .addCase(deleteTaskThunk.rejected, (state, action) => {
-        state.error = action.payload || 'Failed to delete task';
+        state.error = formatError(action.payload, 'Failed to delete task');
       });
   },
 });

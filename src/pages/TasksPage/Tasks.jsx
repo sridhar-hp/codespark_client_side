@@ -298,8 +298,15 @@ export default function App() {
     }, [completionRate]);
 
     const triggerToast = (message, type = 'success') => {
-        const id = Date.now();
-        setToasts(prev => [...prev, { id, message, type }]);
+        let msg = message;
+        if (typeof message === 'object' && message !== null) {
+            msg = message.message || JSON.stringify(message);
+        } else {
+            msg = String(message || '');
+        }
+
+        const id = `${Date.now()}-${Math.random()}`;
+        setToasts(prev => [...prev, { id, message: msg, type }]);
         setTimeout(() => {
             setToasts(prev => prev.filter(t => t.id !== id));
         }, 4000);
@@ -503,7 +510,7 @@ export default function App() {
                         <div className="flex-shrink-0">
                             {toast.type === 'xp' ? <Sparkles className="w-5 h-5 text-amber-500 animate-pulse" /> : <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
                         </div>
-                        <p className="text-xs font-semibold tracking-wide">{toast.message}</p>
+                        <p className="text-xs font-semibold tracking-wide">{typeof toast.message === 'object' ? (toast.message?.message || JSON.stringify(toast.message)) : String(toast.message || '')}</p>
                     </div>
                 ))}
             </div>
@@ -758,7 +765,7 @@ export default function App() {
 
                         {error && (
                             <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold flex items-center justify-between">
-                                <span>Error loading tasks: {error}</span>
+                                <span>Error loading tasks: {typeof error === 'object' ? (error.message || JSON.stringify(error)) : String(error)}</span>
                                 <button
                                     onClick={() => dispatch(fetchTasksThunk())}
                                     className="px-3 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-lg text-xs font-bold"

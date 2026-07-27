@@ -814,7 +814,7 @@ export default function Profile() {
 
                 {error && !user && (
                     <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-center justify-between">
-                        <span>Failed to load profile: {error}</span>
+                        <span>Failed to load profile: {typeof error === 'object' ? (error.message || JSON.stringify(error)) : String(error)}</span>
                         <button
                             onClick={() => fetchProfile()}
                             className="px-3 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg text-xs font-semibold"
