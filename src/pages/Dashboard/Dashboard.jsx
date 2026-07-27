@@ -1,4 +1,7 @@
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Flame, GitPullRequest, Code, BookOpen, Crown } from 'lucide-react';
+import { fetchTodayProgressThunk } from '../../redux/dailyProgressThunks';
 import DashboardHeader from '../../components/dashboard/DashboardHeader';
 import StatCard from '../../components/dashboard/StatCard';
 import TaskCard from '../../components/dashboard/TaskCard';
@@ -9,6 +12,13 @@ import QuoteCard from '../../components/dashboard/QuoteCard';
 import AchievementCard from '../../components/dashboard/AchievementCard';
 
 function Dashboard() {
+    const dispatch = useDispatch();
+    const { todayProgress } = useSelector((state) => state.dailyProgress);
+
+    useEffect(() => {
+        dispatch(fetchTodayProgressThunk());
+    }, [dispatch]);
+
     return (
         <div className="p-6 md:p-8 max-w-[1400px] mx-auto w-full">
             <DashboardHeader />
@@ -40,7 +50,7 @@ function Dashboard() {
 
                     <div className="flex flex-col gap-4">
                         <ProgressCard title="XP Progression" type="bar" delay="200ms" />
-                        <ProgressCard title="Consistency Score" value={92} type="circle" delay="300ms" />
+                        <ProgressCard title="Daily Progress" value={todayProgress?.completionPercentage || 0} type="circle" delay="300ms" />
                     </div>
 
                     <div className="flex flex-col gap-3 mt-2">

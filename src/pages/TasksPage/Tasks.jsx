@@ -7,6 +7,8 @@ import {
     toggleTaskThunk,
     deleteTaskThunk
 } from '../../redux/taskThunks';
+import { fetchTodayProgressThunk, recordDailyProgressThunk } from '../../redux/dailyProgressThunks';
+import { updateLocalDailyProgress } from '../../redux/dailyProgressSlice';
 import {
     Plus,
     Check,
@@ -239,6 +241,7 @@ const INITIAL_TASKS = [
 export default function App() {
     const dispatch = useDispatch();
     const { tasks: backendTasks, loading, error } = useSelector((state) => state.tasks);
+    const { todayProgress } = useSelector((state) => state.dailyProgress);
 
     const [routine, setRoutine] = useState(INITIAL_ROUTINE);
     const [selectedFilter, setSelectedFilter] = useState('all');
@@ -260,6 +263,7 @@ export default function App() {
 
     useEffect(() => {
         dispatch(fetchTasksThunk());
+        dispatch(fetchTodayProgressThunk());
         setIsMounted(true);
     }, [dispatch]);
 
@@ -283,10 +287,16 @@ export default function App() {
         };
     });
 
-    // Stats calculations derived from state
-    const totalTasksCount = tasks.length;
-    const completedTasksCount = tasks.filter(t => t.status === 'Completed').length;
-    const completionRate = totalTasksCount > 0 ? Math.round((completedTasksCount / totalTasksCount) * 100) : 0;
+    useEffect(() => {
+        if (backendTasks) {
+            dispatch(updateLocalDailyProgress(backendTasks));
+        }
+    }, [backendTasks, dispatch]);
+
+    // Daily progress metric values
+    const totalTasksCount = todayProgress.totalTasks || tasks.length;
+    const completedTasksCount = todayProgress.completedTasks || tasks.filter(t => t.status === 'Completed').length;
+    const completionRate = todayProgress.completionPercentage || (totalTasksCount > 0 ? Math.round((completedTasksCount / totalTasksCount) * 100) : 0);
 
     const [animatedProgress, setAnimatedProgress] = useState(0);
 
@@ -317,6 +327,15 @@ export default function App() {
         if (!task) return;
 
         dispatch(toggleTaskThunk(taskId)).unwrap().then((updatedTask) => {
+            const delta = updatedTask.completed ? 1 : -1;
+            const xpDelta = updatedTask.completed ? (updatedTask.xpReward || 0) : -(updatedTask.xpReward || 0);
+
+            dispatch(recordDailyProgressThunk({
+                date: new Date().toISOString().split('T')[0],
+                tasksCompleted: delta,
+                xpEarned: xpDelta
+            }));
+
             if (updatedTask.completed) {
                 triggerToast(`+${updatedTask.xpReward || 0} XP Earned! "${updatedTask.title}" Completed.`, 'xp');
 
