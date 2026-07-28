@@ -1,6 +1,11 @@
+import { Link } from 'react-router-dom';
 import { Plus, Command, Sparkles } from 'lucide-react';
+import useAuth from '../../hooks/useAuth';
 
 function DashboardHeader() {
+    const { user } = useAuth();
+    const name = user?.name || 'Developer';
+
     return (
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 starting:opacity-0 starting:-translate-y-4 opacity-100 translate-y-0 transition-all duration-700 ease-out">
             <div>
@@ -10,7 +15,7 @@ function DashboardHeader() {
                 </div>
                 <h1 className="text-3xl font-bold text-white tracking-tight">Dashboard</h1>
                 <p className="text-[#9CA3AF] mt-1 text-sm">
-                    Good Evening, Sridhar 👋 Let's build something amazing today.
+                    Welcome back, {name} 👋 Let's build something amazing today.
                 </p>
             </div>
 
@@ -19,10 +24,13 @@ function DashboardHeader() {
                     <Command className="w-3.5 h-3.5 group-hover:text-amber-500 transition-colors" />
                     <span>Cmd + K</span>
                 </button>
-                <button className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-[#0B1120] transition-all text-sm font-semibold shadow-[0_0_15px_rgba(245,158,11,0.2)] hover:shadow-[0_0_20px_rgba(245,158,11,0.4)]">
+                <Link
+                    to="/tasks"
+                    className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-[#0B1120] transition-all text-sm font-semibold shadow-[0_0_15px_rgba(245,158,11,0.2)] hover:shadow-[0_0_20px_rgba(245,158,11,0.4)]"
+                >
                     <Plus className="w-4 h-4" />
                     <span>New Entry</span>
-                </button>
+                </Link>
             </div>
         </div>
     );

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Flame, GitPullRequest, Code, BookOpen, Crown } from 'lucide-react';
+import { Flame, GitPullRequest, Code, BookOpen, Crown, CheckSquare, CheckCircle2, Clock, Zap } from 'lucide-react';
+import { fetchTasksThunk } from '../../redux/taskThunks';
 import { fetchTodayProgressThunk } from '../../redux/dailyProgressThunks';
 import { fetchUserXPThunk } from '../../redux/xpThunks';
 import DashboardHeader from '../../components/dashboard/DashboardHeader';
@@ -14,24 +15,31 @@ import AchievementCard from '../../components/dashboard/AchievementCard';
 
 function Dashboard() {
     const dispatch = useDispatch();
+    const { tasks } = useSelector((state) => state.tasks);
     const { todayProgress } = useSelector((state) => state.dailyProgress);
-    const { totalXP } = useSelector((state) => state.xp);
+    const { totalXP, level } = useSelector((state) => state.xp);
 
     useEffect(() => {
+        dispatch(fetchTasksThunk());
         dispatch(fetchTodayProgressThunk());
         dispatch(fetchUserXPThunk());
     }, [dispatch]);
+
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter(t => t.completed).length;
+    const pendingTasks = totalTasks - completedTasks;
+    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
     return (
         <div className="p-6 md:p-8 max-w-[1400px] mx-auto w-full">
             <DashboardHeader />
 
-            {/* Section 1: Top Metrics - Linear style staggered grid */}
+            {/* Section 1: Top Metrics - Live Task Statistics */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-6">
-                <StatCard title="Current Streak" value="42 Days" icon={Flame} trend="+5%" trendUp={true} delay="0ms" />
-                <StatCard title="Contributions" value="128" icon={GitPullRequest} trend="+12%" trendUp={true} delay="100ms" />
-                <StatCard title="Problems Solved" value="154" icon={Code} trend="-2%" trendUp={false} delay="200ms" />
-                <StatCard title="Learning Hours" value="312h" icon={BookOpen} trend="+8%" trendUp={true} delay="300ms" />
+                <StatCard title="Total Tasks" value={totalTasks} icon={CheckSquare} trend="+0%" trendUp={true} delay="0ms" />
+                <StatCard title="Completed Tasks" value={completedTasks} icon={CheckCircle2} trend="+0%" trendUp={true} delay="100ms" />
+                <StatCard title="Pending Tasks" value={pendingTasks} icon={Clock} trend="0" trendUp={false} delay="200ms" />
+                <StatCard title="Completion Rate" value={`${completionRate}%`} icon={Zap} trend="+0%" trendUp={true} delay="300ms" />
             </div>
 
             {/* Main Complex Grid */}
@@ -52,8 +60,8 @@ function Dashboard() {
                     <QuoteCard delay="100ms" />
 
                     <div className="flex flex-col gap-4">
-                        <ProgressCard title="XP Progression" value={totalXP} type="bar" delay="200ms" />
-                        <ProgressCard title="Daily Progress" value={todayProgress?.completionPercentage || 0} type="circle" delay="300ms" />
+                        <ProgressCard title="XP Progression" value={totalXP} level={level} type="bar" delay="200ms" />
+                        <ProgressCard title="Daily Progress" value={todayProgress?.completionPercentage || completionRate} type="circle" delay="300ms" />
                     </div>
 
                     <div className="flex flex-col gap-3 mt-2">
