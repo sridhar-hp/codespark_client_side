@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Link, useLocation } from 'react-router-dom';
+import { fetchUserXPThunk } from '../../redux/xpThunks';
 import {
     Menu,
     Search,
@@ -39,7 +41,15 @@ const MOCK_NOTIFICATIONS = [
     }
 ];
 
-function Navbar({ onMenuClick, pageTitle = "Dashboard" }) {
+export default function Navbar({ onMenuClick, title }) {
+    const dispatch = useDispatch();
+    const { totalXP, level } = useSelector((state) => state.xp);
+
+    useEffect(() => {
+        dispatch(fetchUserXPThunk());
+    }, [dispatch]);
+
+    const location = useLocation();
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -48,15 +58,19 @@ function Navbar({ onMenuClick, pageTitle = "Dashboard" }) {
     const searchInputRef = useRef(null);
     const notifRef = useRef(null);
     const profileRef = useRef(null);
-    const location = useLocation();
 
-    // Extract a readable title from the route if pageTitle isn't explicitly passed
-    const currentPath = location.pathname === '/' ? 'Dashboard' :
-        location.pathname.substring(1).charAt(0).toUpperCase() + location.pathname.slice(2);
-    const displayTitle = pageTitle !== "Dashboard" ? pageTitle : currentPath;
+    // Map route path to human-readable page title if not provided
+    const getPageTitle = (pathname) => {
+        if (title) return title;
+        const path = pathname.split('/')[1];
+        if (!path) return 'Dashboard';
+        return path.charAt(0).toUpperCase() + path.slice(1);
+    };
 
+    const displayTitle = getPageTitle(location.pathname);
+
+    // Keyboard shortcut handler (Ctrl+K to focus search)
     useEffect(() => {
-        // Ctrl+K to focus search
         const handleKeyDown = (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                 e.preventDefault();
@@ -64,7 +78,6 @@ function Navbar({ onMenuClick, pageTitle = "Dashboard" }) {
             }
         };
 
-        // Close dropdowns when clicking outside
         const handleClickOutside = (e) => {
             if (notifRef.current && !notifRef.current.contains(e.target)) {
                 setIsNotifOpen(false);
@@ -164,8 +177,8 @@ function Navbar({ onMenuClick, pageTitle = "Dashboard" }) {
                 <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 text-amber-500 cursor-default select-none hover:border-amber-500/40 transition-colors">
                     <Sparkles size={16} className="text-amber-400" />
                     <div className="flex flex-col leading-none">
-                        <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">Level 4</span>
-                        <span className="text-xs font-bold">1,240 XP</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">Level {level || 1}</span>
+                        <span className="text-xs font-bold">{totalXP?.toLocaleString() || 0} XP</span>
                     </div>
                 </div>
 
@@ -317,4 +330,3 @@ function Navbar({ onMenuClick, pageTitle = "Dashboard" }) {
         </header>
     );
 }
-export default Navbar;

@@ -3,6 +3,7 @@ import { fetchUserXPThunk } from './xpThunks';
 
 const initialState = {
   totalXP: 0,
+  level: 1,
   loading: false,
   error: null,
 };
@@ -38,7 +39,8 @@ const xpSlice = createSlice({
       })
       .addCase(fetchUserXPThunk.fulfilled, (state, action) => {
         state.loading = false;
-        state.totalXP = action.payload;
+        state.totalXP = action.payload.totalXP;
+        state.level = action.payload.level;
       })
       .addCase(fetchUserXPThunk.rejected, (state, action) => {
         state.loading = false;

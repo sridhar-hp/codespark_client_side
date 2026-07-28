@@ -332,8 +332,9 @@ const quickActions = [
 
 function IdentityCard() {
     const { user } = useAuth();
-    const { totalXP } = useSelector((state) => state.xp);
+    const { totalXP, level } = useSelector((state) => state.xp);
     const displayXP = totalXP !== undefined && totalXP !== null ? totalXP : (user?.stats?.totalXP || 0);
+    const displayLevel = level || user?.stats?.level || 1;
     const displayName = user?.name || "Developer";
     const initials = displayName.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase() || "CS";
     const joinedDate = user?.createdAt
@@ -369,7 +370,7 @@ function IdentityCard() {
                         className="absolute -bottom-2 -right-2 rounded-full px-2.5 py-1 text-[11px] font-semibold flex items-center gap-1"
                         style={{ backgroundColor: COLORS.card, border: `1px solid ${COLORS.border}`, color: COLORS.amber }}
                     >
-                        <Trophy size={12} aria-hidden="true" /> Lvl 12
+                        <Trophy size={12} aria-hidden="true" /> Lvl {displayLevel}
                     </div>
                 </motion.div>
 
