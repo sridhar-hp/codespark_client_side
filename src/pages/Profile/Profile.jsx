@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { motion, useInView, useReducedMotion } from "framer-motion";
 import useAuth from "../../hooks/useAuth";
+import { fetchUserXPThunk } from "../../redux/xpThunks";
 import {
     Github,
     MapPin,
@@ -330,6 +332,8 @@ const quickActions = [
 
 function IdentityCard() {
     const { user } = useAuth();
+    const { totalXP } = useSelector((state) => state.xp);
+    const displayXP = totalXP || user?.stats?.totalXP || 0;
     const displayName = user?.name || "Developer";
     const initials = displayName.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase() || "CS";
     const joinedDate = user?.createdAt
@@ -386,7 +390,7 @@ function IdentityCard() {
                     </p>
 
                     <div className="flex flex-wrap gap-x-8 gap-y-4">
-                        <Stat icon={Zap} label="XP" value={user?.stats?.xp || 12480} suffix=" XP" color={COLORS.amber} />
+                        <Stat icon={Zap} label="XP" value={displayXP} suffix=" XP" color={COLORS.amber} />
                         <Stat icon={Flame} label="Current Streak" value={user?.stats?.streak || 18} suffix=" days" color={COLORS.orange} />
                         <Stat icon={Trophy} label="Current Rank" value={142} prefix="#" color={COLORS.cyan} />
                         <div className="flex flex-col gap-1">
@@ -783,11 +787,13 @@ function QuickActions() {
 /* ------------------------------------------------------------------ */
 
 export default function Profile() {
+    const dispatch = useDispatch();
     const { fetchProfile, status, error, user } = useAuth();
 
     useEffect(() => {
         fetchProfile();
-    }, []);
+        dispatch(fetchUserXPThunk());
+    }, [dispatch]);
 
     return (
         <div

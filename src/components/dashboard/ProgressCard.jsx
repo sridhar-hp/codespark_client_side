@@ -15,15 +15,18 @@ export default function ProgressCard({ title, value, type, delay = "0ms" }) {
             {type === 'bar' ? (
                 <div className="space-y-3">
                     <div className="flex justify-between text-xs font-medium">
-                        <span className="text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">Level 4</span>
-                        <span className="text-[#9CA3AF]">1240 / <span className="text-white">2000 XP</span></span>
+                        <span className="text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">Total XP</span>
+                        <span className="text-[#9CA3AF]"><span className="text-white font-bold text-sm">{value || 0}</span> XP</span>
                     </div>
                     <div className="w-full h-2.5 bg-[#0B1120] rounded-full overflow-hidden border border-[#1F2937] shadow-inner">
-                        <div className="h-full bg-gradient-to-r from-amber-600 via-amber-500 to-amber-300 w-[62%] relative">
+                        <div
+                            className="h-full bg-gradient-to-r from-amber-600 via-amber-500 to-amber-300 relative transition-all duration-700"
+                            style={{ width: `${Math.min(100, Math.max(5, ((value || 0) % 1000) / 10))}%` }}
+                        >
                             <div className="absolute right-0 top-0 bottom-0 w-4 bg-white/20 blur-[2px]" />
                         </div>
                     </div>
-                    <p className="text-[#6B7280] text-xs">760 XP to next level</p>
+                    <p className="text-[#6B7280] text-xs">{1000 - ((value || 0) % 1000)} XP to next milestone</p>
                 </div>
             ) : (
                 <div className="flex items-center gap-6">

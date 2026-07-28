@@ -9,6 +9,8 @@ import {
 } from '../../redux/taskThunks';
 import { fetchTodayProgressThunk, recordDailyProgressThunk } from '../../redux/dailyProgressThunks';
 import { updateLocalDailyProgress } from '../../redux/dailyProgressSlice';
+import { fetchUserXPThunk } from '../../redux/xpThunks';
+import { updateXPAmount } from '../../redux/xpSlice';
 import {
     Plus,
     Check,
@@ -242,6 +244,7 @@ export default function App() {
     const dispatch = useDispatch();
     const { tasks: backendTasks, loading, error } = useSelector((state) => state.tasks);
     const { todayProgress } = useSelector((state) => state.dailyProgress);
+    const { totalXP } = useSelector((state) => state.xp);
 
     const [routine, setRoutine] = useState(INITIAL_ROUTINE);
     const [selectedFilter, setSelectedFilter] = useState('all');
@@ -264,6 +267,7 @@ export default function App() {
     useEffect(() => {
         dispatch(fetchTasksThunk());
         dispatch(fetchTodayProgressThunk());
+        dispatch(fetchUserXPThunk());
         setIsMounted(true);
     }, [dispatch]);
 
@@ -330,11 +334,17 @@ export default function App() {
             const delta = updatedTask.completed ? 1 : -1;
             const xpDelta = updatedTask.completed ? (updatedTask.xpReward || 0) : -(updatedTask.xpReward || 0);
 
+            // Optimistic XP update
+            dispatch(updateXPAmount(xpDelta));
+
             dispatch(recordDailyProgressThunk({
                 date: new Date().toISOString().split('T')[0],
                 tasksCompleted: delta,
                 xpEarned: xpDelta
             }));
+
+            // Sync total XP from user profile
+            dispatch(fetchUserXPThunk());
 
             if (updatedTask.completed) {
                 triggerToast(`+${updatedTask.xpReward || 0} XP Earned! "${updatedTask.title}" Completed.`, 'xp');

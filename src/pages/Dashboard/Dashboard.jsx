@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Flame, GitPullRequest, Code, BookOpen, Crown } from 'lucide-react';
 import { fetchTodayProgressThunk } from '../../redux/dailyProgressThunks';
+import { fetchUserXPThunk } from '../../redux/xpThunks';
 import DashboardHeader from '../../components/dashboard/DashboardHeader';
 import StatCard from '../../components/dashboard/StatCard';
 import TaskCard from '../../components/dashboard/TaskCard';
@@ -14,9 +15,11 @@ import AchievementCard from '../../components/dashboard/AchievementCard';
 function Dashboard() {
     const dispatch = useDispatch();
     const { todayProgress } = useSelector((state) => state.dailyProgress);
+    const { totalXP } = useSelector((state) => state.xp);
 
     useEffect(() => {
         dispatch(fetchTodayProgressThunk());
+        dispatch(fetchUserXPThunk());
     }, [dispatch]);
 
     return (
@@ -49,7 +52,7 @@ function Dashboard() {
                     <QuoteCard delay="100ms" />
 
                     <div className="flex flex-col gap-4">
-                        <ProgressCard title="XP Progression" type="bar" delay="200ms" />
+                        <ProgressCard title="XP Progression" value={totalXP} type="bar" delay="200ms" />
                         <ProgressCard title="Daily Progress" value={todayProgress?.completionPercentage || 0} type="circle" delay="300ms" />
                     </div>
 
