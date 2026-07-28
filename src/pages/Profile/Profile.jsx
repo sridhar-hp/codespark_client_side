@@ -333,7 +333,7 @@ const quickActions = [
 function IdentityCard() {
     const { user } = useAuth();
     const { totalXP } = useSelector((state) => state.xp);
-    const displayXP = totalXP || user?.stats?.totalXP || 0;
+    const displayXP = totalXP !== undefined && totalXP !== null ? totalXP : (user?.stats?.totalXP || 0);
     const displayName = user?.name || "Developer";
     const initials = displayName.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase() || "CS";
     const joinedDate = user?.createdAt
