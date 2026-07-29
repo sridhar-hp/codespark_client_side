@@ -4,6 +4,7 @@ import taskReducer from './taskSlice';
 import dailyProgressReducer from './dailyProgressSlice';
 import xpReducer from './xpSlice';
 import analyticsReducer from './analyticsSlice';
+import achievementReducer from './achievementSlice';
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     dailyProgress: dailyProgressReducer,
     xp: xpReducer,
     analytics: analyticsReducer,
+    achievements: achievementReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
