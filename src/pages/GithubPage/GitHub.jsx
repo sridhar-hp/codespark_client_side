@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
     Github,
     RefreshCw,
@@ -30,8 +31,12 @@ import {
     ShieldCheck,
     Zap,
     Activity,
-    ChevronRight
+    ChevronRight,
+    Edit2,
+    X
 } from 'lucide-react';
+import { fetchGithubProfileThunk, connectGithubThunk } from '../../redux/githubThunks';
+import { clearGithubErrors } from '../../redux/githubSlice';
 
 const MOCK_REPOSITORIES = [
     {
@@ -47,7 +52,8 @@ const MOCK_REPOSITORIES = [
         tags: ['Vite', 'TypeScript', 'Tailwind'],
         healthScore: 98,
         lastCommit: 'refactor: optimize dynamic layout hydration',
-        lastPush: '2 hours ago'
+        lastPush: '2 hours ago',
+        htmlUrl: 'https://github.com'
     },
     {
         name: 'Leave-Management-System',
@@ -62,7 +68,8 @@ const MOCK_REPOSITORIES = [
         tags: ['React', 'Express', 'MongoDB'],
         healthScore: 92,
         lastCommit: 'fix: resolve auth validation schema warnings',
-        lastPush: 'Just now'
+        lastPush: 'Just now',
+        htmlUrl: 'https://github.com'
     },
     {
         name: 'algorithmic-structures',
@@ -77,7 +84,8 @@ const MOCK_REPOSITORIES = [
         tags: ['Python', 'DSA', 'LeetCode'],
         healthScore: 95,
         lastCommit: 'docs: update dynamic programming practice progress',
-        lastPush: '3 days ago'
+        lastPush: '3 days ago',
+        htmlUrl: 'https://github.com'
     },
     {
         name: 'micro-frontend-router',
@@ -92,7 +100,8 @@ const MOCK_REPOSITORIES = [
         tags: ['Vite', 'JavaScript', 'Router'],
         healthScore: 88,
         lastCommit: 'feat: map route parameters dynamically',
-        lastPush: '2 days ago'
+        lastPush: '2 days ago',
+        htmlUrl: 'https://github.com'
     },
     {
         name: 'internal-billing-api',
@@ -107,7 +116,8 @@ const MOCK_REPOSITORIES = [
         tags: ['Spring Boot', 'Stripe', 'API'],
         healthScore: 84,
         lastCommit: 'security: upgrade stripe dependency patches',
-        lastPush: '1 week ago'
+        lastPush: '1 week ago',
+        htmlUrl: 'https://github.com'
     },
     {
         name: 'codespark-docs',
@@ -122,7 +132,8 @@ const MOCK_REPOSITORIES = [
         tags: ['Tailwind', 'HTML', 'Notion'],
         healthScore: 90,
         lastCommit: 'docs: finalize semantic variables definition list',
-        lastPush: '3 weeks ago'
+        lastPush: '3 weeks ago',
+        htmlUrl: 'https://github.com'
     }
 ];
 
@@ -144,7 +155,6 @@ function AnimatedCounter({ value, duration = 1200, decimals = 0, suffix = "" }) 
         const animate = (timestamp) => {
             if (!startTime) startTime = timestamp;
             const progress = Math.min((timestamp - startTime) / duration, 1);
-            // Beautiful easeOutExpo easing curve
             const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
             setCount(easeProgress * target);
             if (progress < 1) {
@@ -194,8 +204,10 @@ function CardGlow({ children, className = "", delay = "0ms" }) {
 }
 
 export default function GitHubDashboard() {
+    const dispatch = useDispatch();
+    const { connected, profile, repos: liveRepos, loading, connecting, error, connectError } = useSelector((state) => state.github);
+
     const [isSyncing, setIsSyncing] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
     const [syncProgress, setSyncProgress] = useState(0);
     const [syncMessage, setSyncMessage] = useState('Synced 2 minutes ago');
     const [searchQuery, setSearchQuery] = useState('');
@@ -204,15 +216,18 @@ export default function GitHubDashboard() {
     const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
     const [toasts, setToasts] = useState([]);
     const [pageMounted, setPageMounted] = useState(false);
+    const [inputUsername, setInputUsername] = useState('');
+    const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
 
     const containerRef = useRef(null);
 
     useEffect(() => {
+        dispatch(fetchGithubProfileThunk());
         const timer = setTimeout(() => {
             setPageMounted(true);
         }, 100);
         return () => clearTimeout(timer);
-    }, []);
+    }, [dispatch]);
 
     const triggerToast = (message, type = 'success') => {
         const id = Date.now();
@@ -222,28 +237,59 @@ export default function GitHubDashboard() {
         }, 4000);
     };
 
+    const handleConnect = (e) => {
+        e?.preventDefault();
+        if (!inputUsername.trim()) return;
+        dispatch(clearGithubErrors());
+        dispatch(connectGithubThunk(inputUsername.trim())).unwrap().then(() => {
+            setIsConnectModalOpen(false);
+            setInputUsername('');
+            triggerToast('Successfully connected GitHub profile!', 'success');
+        }).catch((err) => {
+            triggerToast(typeof err === 'string' ? err : 'Failed to connect GitHub profile', 'info');
+        });
+    };
+
     const handleSync = () => {
         if (isSyncing) return;
         setIsSyncing(true);
-        setIsLoading(true);
         setSyncProgress(0);
         triggerToast('Initiating workspace synchronization with GitHub...', 'info');
 
-        let currentProg = 0;
-        const interval = setInterval(() => {
-            currentProg += 10;
-            setSyncProgress(currentProg);
-            if (currentProg >= 100) {
-                clearInterval(interval);
-                setIsSyncing(false);
-                setIsLoading(false);
-                setSyncMessage('Synced just now');
-                triggerToast('GitHub trees, commits, and productivity metrics successfully synchronized!', 'success');
-            }
-        }, 180);
+        dispatch(fetchGithubProfileThunk()).unwrap().then(() => {
+            setSyncProgress(100);
+            setIsSyncing(false);
+            setSyncMessage('Synced just now');
+            triggerToast('GitHub trees, commits, and productivity metrics successfully synchronized!', 'success');
+        }).catch(() => {
+            setIsSyncing(false);
+        });
     };
 
-    const filteredRepos = MOCK_REPOSITORIES.filter(repo => {
+    // Format repositories from live Redux state or fallback template
+    const displayRepositories = useMemo(() => {
+        if (liveRepos && liveRepos.length > 0) {
+            return liveRepos.map((r) => ({
+                name: r.name,
+                description: r.description,
+                language: r.language || 'JavaScript',
+                languageColor: r.language === 'TypeScript' ? '#3178c6' : r.language === 'Python' ? '#3572A5' : r.language === 'Java' ? '#b07219' : '#f1e05a',
+                stars: r.stars || 0,
+                forks: r.forks || 0,
+                issues: 0,
+                updatedAt: `Updated ${new Date(r.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+                visibility: 'Public',
+                tags: [r.language || 'Code', 'Repository'],
+                healthScore: 95,
+                lastCommit: `Updated repository ${r.name}`,
+                lastPush: 'Recently',
+                htmlUrl: r.htmlUrl || `https://github.com`
+            }));
+        }
+        return MOCK_REPOSITORIES;
+    }, [liveRepos]);
+
+    const filteredRepos = displayRepositories.filter(repo => {
         if (selectedFilter !== 'All') {
             if (selectedFilter === 'Public' && repo.visibility !== 'Public') return false;
             if (selectedFilter === 'Private' && repo.visibility !== 'Private') return false;
@@ -254,8 +300,8 @@ export default function GitHubDashboard() {
         if (searchQuery.trim() !== '') {
             const q = searchQuery.toLowerCase();
             const matchesName = repo.name.toLowerCase().includes(q);
-            const matchesDesc = repo.description.toLowerCase().includes(q);
-            const matchesLang = repo.language.toLowerCase().includes(q);
+            const matchesDesc = (repo.description || '').toLowerCase().includes(q);
+            const matchesLang = (repo.language || '').toLowerCase().includes(q);
             if (!matchesName && !matchesDesc && !matchesLang) return false;
         }
         return true;
@@ -528,10 +574,14 @@ export default function GitHubDashboard() {
                             {/* Profile Avatar Frame with glowing halo */}
                             <div className="relative mb-4 group-hover:scale-102 transition-transform duration-300">
                                 <div className="absolute inset-0 bg-gradient-to-tr from-amber-500 to-orange-500 rounded-full blur-[10px] opacity-30 group-hover:opacity-60 transition-opacity animate-pulse" />
-                                <div className="relative h-24 w-24 rounded-full p-1 bg-gradient-to-tr from-amber-600 via-amber-400 to-orange-500 shadow-xl transition-all duration-500 hover:rotate-6">
-                                    <div className="h-full w-full bg-[#0B1120] rounded-full flex items-center justify-center font-bold text-2xl text-amber-500 border border-[#0B1120]">
-                                        SM
-                                    </div>
+                                <div className="relative h-24 w-24 rounded-full p-1 bg-gradient-to-tr from-amber-600 via-amber-400 to-orange-500 shadow-xl transition-all duration-500 hover:rotate-6 overflow-hidden">
+                                    {profile?.avatarUrl ? (
+                                        <img src={profile.avatarUrl} alt={profile.username} className="h-full w-full object-cover rounded-full" />
+                                    ) : (
+                                        <div className="h-full w-full bg-[#0B1120] rounded-full flex items-center justify-center font-bold text-2xl text-amber-500 border border-[#0B1120]">
+                                            {profile?.name ? profile.name.substring(0, 2).toUpperCase() : 'SM'}
+                                        </div>
+                                    )}
                                 </div>
                                 {/* Embedded Level Badge */}
                                 <span className="absolute -bottom-1 -right-1 bg-gradient-to-r from-amber-500 to-orange-500 text-[#0B1120] font-extrabold text-[10px] px-2 py-0.5 rounded-full border-2 border-[#0B1120] shadow-lg">
@@ -541,12 +591,14 @@ export default function GitHubDashboard() {
 
                             <div className="space-y-1">
                                 <h3 className="text-white font-extrabold text-lg flex items-center gap-1.5 justify-center">
-                                    Sridhar Morgan
+                                    {profile?.name || "Sridhar Morgan"}
                                     <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
                                 </h3>
-                                <span className="text-xs text-amber-500 font-semibold uppercase tracking-wider">Staff Engineer • Senior Rank</span>
+                                <span className="text-xs text-amber-500 font-semibold uppercase tracking-wider">
+                                    {profile?.username ? `@${profile.username}` : "Staff Engineer • Senior Rank"}
+                                </span>
                                 <p className="text-xs text-[#9CA3AF] max-w-xs mt-2.5 leading-relaxed">
-                                    Senior Full-Stack Developer creating interactive telemetry models, clean SaaS modules, and custom developer analytics toolsets.
+                                    {profile?.bio || "Senior Full-Stack Developer creating interactive telemetry models, clean SaaS modules, and custom developer analytics toolsets."}
                                 </p>
                             </div>
 
@@ -554,15 +606,21 @@ export default function GitHubDashboard() {
                             <div className="grid grid-cols-3 gap-4 w-full border-y border-[#1F2937]/60 py-4 my-5 text-center">
                                 <div className="space-y-0.5 group/stat cursor-pointer">
                                     <span className="block text-[10px] text-[#6B7280] font-bold uppercase tracking-wider group-hover/stat:text-amber-500 transition-colors">Followers</span>
-                                    <span className="block text-sm font-extrabold text-white group-hover/stat:scale-105 transition-transform"><AnimatedCounter value={1200} /></span>
+                                    <span className="block text-sm font-extrabold text-white group-hover/stat:scale-105 transition-transform">
+                                        <AnimatedCounter value={profile?.followers !== undefined ? profile.followers : 1200} />
+                                    </span>
                                 </div>
                                 <div className="space-y-0.5 border-x border-[#1F2937]/60 group/stat cursor-pointer">
                                     <span className="block text-[10px] text-[#6B7280] font-bold uppercase tracking-wider group-hover/stat:text-amber-500 transition-colors">Following</span>
-                                    <span className="block text-sm font-extrabold text-white group-hover/stat:scale-105 transition-transform"><AnimatedCounter value={412} /></span>
+                                    <span className="block text-sm font-extrabold text-white group-hover/stat:scale-105 transition-transform">
+                                        <AnimatedCounter value={profile?.following !== undefined ? profile.following : 412} />
+                                    </span>
                                 </div>
                                 <div className="space-y-0.5 group/stat cursor-pointer">
                                     <span className="block text-[10px] text-[#6B7280] font-bold uppercase tracking-wider group-hover/stat:text-amber-500 transition-colors">Repos</span>
-                                    <span className="block text-sm font-extrabold text-white group-hover/stat:scale-105 transition-transform"><AnimatedCounter value={34} /></span>
+                                    <span className="block text-sm font-extrabold text-white group-hover/stat:scale-105 transition-transform">
+                                        <AnimatedCounter value={profile?.publicRepos !== undefined ? profile.publicRepos : 34} />
+                                    </span>
                                 </div>
                             </div>
 
@@ -578,21 +636,32 @@ export default function GitHubDashboard() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Calendar className="w-4 h-4 text-[#6B7280]" />
-                                    <span>Joined Oct 2021</span>
+                                    <span>Joined {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "Oct 2021"}</span>
                                 </div>
                                 <div className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer group">
                                     <Link2 className="w-4 h-4 text-[#6B7280] group-hover:text-amber-400 transition-colors" />
-                                    <span>sridharmorgan.dev</span>
+                                    <span>{profile?.username ? `github.com/${profile.username}` : "sridharmorgan.dev"}</span>
                                 </div>
                             </div>
 
-                            <button
-                                onClick={() => triggerToast('Redirecting to legacy GitHub profile page.', 'info')}
-                                className="w-full py-2.5 bg-[#1F2937]/50 hover:bg-[#1F2937] text-white border border-[#1F2937] hover:border-[#374151] rounded-xl text-xs font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-                            >
-                                View GitHub Profile
-                                <ExternalLink className="w-3.5 h-3.5 text-[#9CA3AF]" />
-                            </button>
+                            <div className="w-full flex gap-2">
+                                <a
+                                    href={profile?.htmlUrl || 'https://github.com'}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex-1 py-2.5 bg-[#1F2937]/50 hover:bg-[#1F2937] text-white border border-[#1F2937] hover:border-[#374151] rounded-xl text-xs font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                                >
+                                    View GitHub Profile
+                                    <ExternalLink className="w-3.5 h-3.5 text-[#9CA3AF]" />
+                                </a>
+                                <button
+                                    onClick={() => setIsConnectModalOpen(true)}
+                                    className="py-2.5 px-3 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                    title="Connect / Update GitHub Account"
+                                >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
                         </CardGlow>
 
                         {/* CURRENT ACTIVE WORKSPACE CARD */}
@@ -1058,7 +1127,7 @@ export default function GitHubDashboard() {
                             </div>
 
                             {/* SKELETON LOADER FEEDBACK & REPOSITORIES GRID LIST */}
-                            {isLoading ? (
+                            {loading ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {[1, 2, 3, 4].map(placeholder => (
                                         <div key={placeholder} className="bg-[#111827]/40 border border-[#1F2937] p-5 rounded-2xl space-y-4 overflow-hidden relative">
@@ -1212,6 +1281,73 @@ export default function GitHubDashboard() {
                 </div>
 
             </div>
+
+            {/* CONNECT GITHUB MODAL */}
+            {isConnectModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-[#111827] border border-[#1F2937] rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6 relative">
+                        <button
+                            onClick={() => setIsConnectModalOpen(false)}
+                            className="absolute top-4 right-4 p-2 text-[#9CA3AF] hover:text-white rounded-xl hover:bg-[#1F2937] transition-all"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center flex-shrink-0">
+                                <Github className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-extrabold text-white">Connect GitHub Profile</h3>
+                                <p className="text-xs text-[#9CA3AF]">Sync live profile statistics & top repositories</p>
+                            </div>
+                        </div>
+
+                        {(error || connectError) && (
+                            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                <span>{connectError || error}</span>
+                            </div>
+                        )}
+
+                        <form onSubmit={handleConnect} className="space-y-4">
+                            <div className="space-y-1">
+                                <label className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider">
+                                    GitHub Username
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6B7280] text-sm font-mono">
+                                        @
+                                    </span>
+                                    <input
+                                        type="text"
+                                        value={inputUsername}
+                                        onChange={(e) => setInputUsername(e.target.value)}
+                                        placeholder="e.g. octocat"
+                                        className="w-full pl-8 pr-4 py-3 bg-[#0F172A] border border-[#1F2937] rounded-xl text-sm font-medium text-white placeholder:text-[#4B5563] focus:outline-none focus:border-amber-500 transition-colors"
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={connecting || !inputUsername.trim()}
+                                className="w-full flex items-center justify-center gap-2 py-3 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-[#0B1120] font-bold text-sm rounded-xl shadow-lg transition-all cursor-pointer"
+                            >
+                                {connecting ? (
+                                    <>
+                                        <RefreshCw className="w-4 h-4 animate-spin" /> Connecting...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Link2 className="w-4 h-4" /> Save & Sync Profile
+                                    </>
+                                )}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
 
         </div>
     );
