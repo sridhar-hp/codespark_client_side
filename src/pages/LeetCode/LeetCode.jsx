@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
     Terminal,
     RefreshCw,
@@ -34,8 +35,18 @@ import {
     TrendingUp,
     ShieldAlert,
     Timer,
-    Compass
+    Compass,
+    Edit2,
+    X,
+    Link2,
+    AlertCircle
 } from 'lucide-react';
+import {
+    fetchLeetCodeProfileThunk,
+    connectLeetCodeThunk,
+    syncLeetCodeThunk
+} from '../../redux/leetcodeThunks';
+import { clearLeetCodeErrors } from '../../redux/leetcodeSlice';
 
 const MOTION_STYLES = `
 @keyframes pulse-ambient-glow {
@@ -142,7 +153,7 @@ const INITIAL_TOPIC_MASTERY = [
     { id: 'dp', name: 'Dynamic Programming', icon: Briefcase, pct: 15, solved: 4, xp: 120, easy: 0, med: 3, hard: 1, confidence: 'Beginner', lastDate: 'Jun 10, 2026' }
 ];
 
-const SUBMISSIONS = [
+const DEFAULT_SUBMISSIONS = [
     { id: 1, name: 'Regular Expression Matching', diff: 'Hard', runtime: '48 ms', memory: '11.2 MB', lang: 'Python', time: '12m ago', status: 'Accepted' },
     { id: 2, name: 'Search in Rotated Sorted Array', diff: 'Medium', runtime: '4 ms', memory: '9.8 MB', lang: 'C++', time: '1h ago', status: 'Accepted' },
     { id: 3, name: 'Valid Parentheses', diff: 'Easy', runtime: '68 ms', memory: '42.1 MB', lang: 'JavaScript', time: '5h ago', status: 'Accepted' },
@@ -165,31 +176,42 @@ const LANGUAGES = [
 ];
 
 export default function LeetCode() {
+    const dispatch = useDispatch();
+    const {
+        connected,
+        leetcodeUsername,
+        profile,
+        stats,
+        submissions: liveSubmissions,
+        loading,
+        connecting,
+        syncing,
+        error,
+        connectError
+    } = useSelector((state) => state.leetcode);
+
     const [isMounted, setIsMounted] = useState(false);
-    const [isSyncing, setIsSyncing] = useState(false);
     const [toasts, setToasts] = useState([]);
     const [particles, setParticles] = useState([]);
     const [isChallengeStarted, setIsChallengeStarted] = useState(false);
+    const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
+    const [inputUsername, setInputUsername] = useState('');
 
     const [timerActive, setTimerActive] = useState(false);
     const [timerSeconds, setTimerSeconds] = useState(25 * 60);
 
-    const [problemsSolved, setProblemsSolved] = useState(248);
-    const [streakCount, setStreakCount] = useState(14);
-    const [acceptanceRate, setAcceptanceRate] = useState(68);
-    const [contestRating, setContestRating] = useState(1854);
     const [todayGoal, setTodayGoal] = useState({ solved: 1, target: 2 });
-
     const [topics, setTopics] = useState(INITIAL_TOPIC_MASTERY);
     const [animatedRing, setAnimatedRing] = useState(0);
 
     useEffect(() => {
+        dispatch(fetchLeetCodeProfileThunk());
         setIsMounted(true);
         const ringTimer = setTimeout(() => {
             setAnimatedRing(68);
         }, 200);
         return () => clearTimeout(ringTimer);
-    }, []);
+    }, [dispatch]);
 
     useEffect(() => {
         let interval = null;
@@ -205,6 +227,36 @@ export default function LeetCode() {
         return () => clearInterval(interval);
     }, [timerActive, timerSeconds]);
 
+    // Live or fallback statistics
+    const problemsSolved = stats?.totalSolved !== undefined ? stats.totalSolved : 248;
+    const easySolved = stats?.easy !== undefined ? stats.easy : 110;
+    const totalEasy = stats?.totalEasy || 1200;
+    const mediumSolved = stats?.medium !== undefined ? stats.medium : 108;
+    const totalMedium = stats?.totalMedium || 1600;
+    const hardSolved = stats?.hard !== undefined ? stats.hard : 30;
+    const totalHard = stats?.totalHard || 800;
+
+    const streakCount = 14;
+    const acceptanceRate = stats?.acceptanceRate || 68;
+    const contestRating = stats?.contestRating || 1854;
+    const globalRanking = stats?.ranking || 12842;
+
+    const displaySubmissions = useMemo(() => {
+        if (liveSubmissions && liveSubmissions.length > 0) {
+            return liveSubmissions.map((sub, idx) => ({
+                id: idx + 1,
+                name: sub.title || 'LeetCode Problem',
+                diff: 'Medium',
+                runtime: '12 ms',
+                memory: '14.2 MB',
+                lang: sub.lang || 'Python',
+                time: sub.timestamp ? new Date(sub.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+                status: sub.status || 'Accepted'
+            }));
+        }
+        return DEFAULT_SUBMISSIONS;
+    }, [liveSubmissions]);
+
     const formatTimer = () => {
         const mins = Math.floor(timerSeconds / 60);
         const secs = timerSeconds % 60;
@@ -219,6 +271,29 @@ export default function LeetCode() {
         }, 4000);
     };
 
+    const handleConnect = (e) => {
+        e?.preventDefault();
+        if (!inputUsername.trim()) return;
+        dispatch(clearLeetCodeErrors());
+        dispatch(connectLeetCodeThunk(inputUsername.trim())).unwrap().then(() => {
+            setIsConnectModalOpen(false);
+            setInputUsername('');
+            triggerToast('Successfully connected LeetCode username!', 'success');
+        }).catch((err) => {
+            triggerToast(typeof err === 'string' ? err : 'Failed to connect LeetCode profile', 'info');
+        });
+    };
+
+    const handleLeetCodeSync = () => {
+        if (syncing || loading) return;
+        triggerToast('Synchronizing LeetCode problem solving matrix...', 'info');
+        dispatch(syncLeetCodeThunk()).unwrap().then(() => {
+            triggerToast('LeetCode statistics updated successfully!', 'xp');
+        }).catch(() => {
+            triggerToast('Failed to sync LeetCode data', 'info');
+        });
+    };
+
     const handleSolveTask = (name, xpReward = 50, event) => {
         setTodayGoal(prev => {
             const nextSolved = Math.min(prev.solved + 1, prev.target);
@@ -227,7 +302,6 @@ export default function LeetCode() {
             }
             return { ...prev, solved: nextSolved };
         });
-        setProblemsSolved(p => p + 1);
         triggerToast(`Objective complete: "${name}"!`, 'xp');
 
         if (event) {
@@ -248,20 +322,6 @@ export default function LeetCode() {
                 setParticles(prev => prev.filter(p => !sparks.find(s => s.id === p.id)));
             }, 800);
         }
-    };
-
-    const handleLeetCodeSync = () => {
-        if (isSyncing) return;
-        setIsSyncing(true);
-        triggerToast('Synchronizing LeetCode problem solving matrix...', 'info');
-
-        setTimeout(() => {
-            setIsSyncing(false);
-            setProblemsSolved(p => p + 1);
-            setAcceptanceRate(69);
-            setContestRating(r => r + 15);
-            triggerToast('LeetCode statistics updated successfully!', 'xp');
-        }, 3000);
     };
 
     const handlePracticeTopic = (topicName, id, event) => {
@@ -387,11 +447,19 @@ export default function LeetCode() {
                                 </div>
                                 <button
                                     onClick={handleLeetCodeSync}
-                                    disabled={isSyncing}
+                                    disabled={syncing || loading}
                                     className="flex items-center gap-2 px-4 py-1.5 bg-[#0B1120] hover:bg-[#111827] text-white border border-[#1F2937] hover:border-amber-500/20 text-xs font-bold rounded-xl transition-all disabled:opacity-50 cursor-pointer"
                                 >
-                                    <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-amber-500' : ''}`} />
-                                    <span>Sync Profile</span>
+                                    <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin text-amber-500' : ''}`} />
+                                    <span>{syncing ? 'Syncing...' : 'Sync Profile'}</span>
+                                </button>
+                                <button
+                                    onClick={() => setIsConnectModalOpen(true)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                                    title="Connect / Update LeetCode Account"
+                                >
+                                    <Edit2 className="w-3 h-3" />
+                                    <span>{leetcodeUsername ? `@${leetcodeUsername}` : 'Connect Account'}</span>
                                 </button>
                             </div>
                         </div>
@@ -411,7 +479,7 @@ export default function LeetCode() {
                         </div>
                     </div>
 
-                    {/* Hero Right Segment: Solving Target (No trend charts) */}
+                    {/* Hero Right Segment: Solving Target */}
                     <CardGlow className="lg:col-span-4 bg-gradient-to-br from-[#111827] to-[#0B1120] border border-[#1F2937] rounded-[36px] p-6 flex flex-row items-center justify-between gap-4">
                         <div className="space-y-3">
                             <span className="text-[10px] text-amber-500 uppercase tracking-widest font-extrabold block">Daily Track Target</span>
@@ -511,13 +579,13 @@ export default function LeetCode() {
                 {/* --- DOUBLE ROW MAIN COLUMN COMBINATION LAYOUT --- */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-                    {/* LEFT CONTAINER (8 COLS DESKTOP): PROGRESS, SKILL MASTERIES, REC PRACTICE */}
+                    {/* LEFT CONTAINER (8 COLS DESKTOP) */}
                     <div
                         className={`lg:col-span-8 space-y-8 transition-all duration-700 delay-150 transform ${isMounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
                             }`}
                     >
 
-                        {/* SECTION 5: THE PREMIUM TOPIC MASTERY DASHBOARD GRID (NO ROADMAPS OR HEATMAPS) */}
+                        {/* SECTION 5: TOPIC MASTERY DASHBOARD GRID */}
                         <div className="space-y-4">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1F2937] pb-4">
                                 <div>
@@ -532,7 +600,6 @@ export default function LeetCode() {
                                 </span>
                             </div>
 
-                            {/* Dynamic responsive card grid layout (2-4 columns) */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                                 {topics.map((topic, i) => {
                                     const IconComponent = topic.icon;
@@ -545,7 +612,6 @@ export default function LeetCode() {
                                             delay={`${i * 45}ms`}
                                             className="bg-[#111827]/40 border border-[#1F2937] p-5 rounded-2xl flex flex-col justify-between h-[230px] hover:border-amber-500/30 hover:scale-[1.03] hover:-translate-y-1.5 duration-300 relative group transition-all"
                                         >
-                                            {/* Glowing complete node indicators */}
                                             {isDone && (
                                                 <span className="absolute top-4 right-4 bg-emerald-500/15 text-emerald-400 text-[9px] font-extrabold px-2 py-0.5 rounded-full border border-emerald-500/20">
                                                     Mastered
@@ -559,7 +625,6 @@ export default function LeetCode() {
                                                 </span>
                                             )}
 
-                                            {/* Header detail */}
                                             <div className="space-y-3">
                                                 <div className="flex items-center gap-3">
                                                     <div className="p-2.5 rounded-xl bg-[#0B1120] border border-[#1F2937] text-amber-500 group-hover:scale-110 transition-transform duration-300">
@@ -571,7 +636,6 @@ export default function LeetCode() {
                                                     </div>
                                                 </div>
 
-                                                {/* Mini distribution metrics E / M / H */}
                                                 <div className="flex items-center gap-2 pt-1 text-[10px] font-semibold text-slate-400">
                                                     <span className="text-emerald-400">Easy: {topic.easy}</span>
                                                     <span>•</span>
@@ -581,7 +645,6 @@ export default function LeetCode() {
                                                 </div>
                                             </div>
 
-                                            {/* Progress slider bar and footer controls */}
                                             <div className="space-y-3 pt-2">
                                                 <div className="space-y-1">
                                                     <div className="flex justify-between items-center text-[10px] font-bold">
@@ -619,7 +682,6 @@ export default function LeetCode() {
                         {/* SECTION 3: CIRCULAR PROGRESS & DIFFICULTY */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                            {/* Solved progress donut ring */}
                             <CardGlow className="bg-[#111827]/40 backdrop-blur-md border border-[#1F2937] p-6 rounded-2xl flex flex-col items-center justify-center text-center">
                                 <h3 className="text-white font-extrabold text-sm uppercase tracking-wider mb-4 w-full text-left flex items-center gap-2">
                                     <Target className="w-4.5 h-4.5 text-amber-500" />
@@ -627,13 +689,11 @@ export default function LeetCode() {
                                 </h3>
 
                                 <div className="relative w-36 h-36 mb-4">
-                                    {/* Shimmer sweep */}
                                     <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                                         <circle cx="50" cy="50" r="42" className="stroke-slate-800 fill-none" strokeWidth="6" />
                                         <circle
                                             cx="50" cy="50" r="42"
                                             className="stroke-amber-500 fill-none transition-all duration-1000 ease-out"
-                                            style={{ animation: problemsSolved > 248 ? 'ring-pulse 2s infinite ease-in-out' : 'none' }}
                                             strokeWidth="6"
                                             strokeDasharray="263.8"
                                             strokeDashoffset={263.8 - (263.8 * animatedRing) / 100}
@@ -649,12 +709,11 @@ export default function LeetCode() {
                                 </div>
 
                                 <div className="space-y-1 w-full text-center">
-                                    <p className="text-xs font-semibold text-[#D1D5DB]">Remaining: <AnimatedCounter value={3600 - problemsSolved} /> Backlog</p>
+                                    <p className="text-xs font-semibold text-[#D1D5DB]">Remaining: <AnimatedCounter value={Math.max(0, 3600 - problemsSolved)} /> Backlog</p>
                                     <p className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-wider">+3,200 XP Cumulative Balance</p>
                                 </div>
                             </CardGlow>
 
-                            {/* Difficulty progress bars */}
                             <CardGlow className="bg-[#111827]/40 backdrop-blur-md border border-[#1F2937] p-6 rounded-2xl space-y-5">
                                 <h3 className="text-white font-extrabold text-sm uppercase tracking-wider flex items-center gap-2">
                                     <Layers className="w-4.5 h-4.5 text-amber-500 animate-pulse" />
@@ -662,43 +721,40 @@ export default function LeetCode() {
                                 </h3>
 
                                 <div className="space-y-4">
-                                    {/* Easy */}
                                     <div className="space-y-1.5">
                                         <div className="flex justify-between items-baseline text-xs font-semibold">
                                             <span className="text-emerald-400">Easy</span>
-                                            <span className="text-white">110 <span className="text-[#6B7280]">/ 1200</span></span>
+                                            <span className="text-white">{easySolved} <span className="text-[#6B7280]">/ {totalEasy}</span></span>
                                         </div>
                                         <div className="w-full h-2 bg-[#0B1120] rounded-full border border-[#1F2937] overflow-hidden">
-                                            <div className="h-full bg-emerald-500 rounded-full transition-all duration-1000" style={{ width: '9%' }} />
+                                            <div className="h-full bg-emerald-500 rounded-full transition-all duration-1000" style={{ width: `${Math.min(100, Math.round((easySolved / totalEasy) * 100))}%` }} />
                                         </div>
                                     </div>
 
-                                    {/* Medium */}
                                     <div className="space-y-1.5">
                                         <div className="flex justify-between items-baseline text-xs font-semibold">
                                             <span className="text-amber-400">Medium</span>
-                                            <span className="text-white">108 <span className="text-[#6B7280]">/ 1600</span></span>
+                                            <span className="text-white">{mediumSolved} <span className="text-[#6B7280]">/ {totalMedium}</span></span>
                                         </div>
                                         <div className="w-full h-2 bg-[#0B1120] rounded-full border border-[#1F2937] overflow-hidden">
-                                            <div className="h-full bg-amber-500 rounded-full transition-all duration-1000" style={{ width: '6.7%' }} />
+                                            <div className="h-full bg-amber-500 rounded-full transition-all duration-1000" style={{ width: `${Math.min(100, Math.round((mediumSolved / totalMedium) * 100))}%` }} />
                                         </div>
                                     </div>
 
-                                    {/* Hard */}
                                     <div className="space-y-1.5">
                                         <div className="flex justify-between items-baseline text-xs font-semibold">
                                             <span className="text-rose-400">Hard</span>
-                                            <span className="text-white">30 <span className="text-[#6B7280]">/ 800</span></span>
+                                            <span className="text-white">{hardSolved} <span className="text-[#6B7280]">/ {totalHard}</span></span>
                                         </div>
                                         <div className="w-full h-2 bg-[#0B1120] rounded-full border border-[#1F2937] overflow-hidden">
-                                            <div className="h-full bg-rose-500 rounded-full transition-all duration-1000" style={{ width: '3.75%' }} />
+                                            <div className="h-full bg-rose-500 rounded-full transition-all duration-1000" style={{ width: `${Math.min(100, Math.round((hardSolved / totalHard) * 100))}%` }} />
                                         </div>
                                     </div>
                                 </div>
                             </CardGlow>
                         </div>
 
-                        {/* SECTION 12: RECOMMENDED PRACTICE */}
+                        {/* RECOMMENDED PRACTICE */}
                         <div className="space-y-3">
                             <span className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">Recommended Practice Sets</span>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -738,13 +794,12 @@ export default function LeetCode() {
 
                     </div>
 
-                    {/* RIGHT CONTAINER (4 COLS DESKTOP): DAILY CHALLENGE, TIMER, INSIGHTS */}
+                    {/* RIGHT CONTAINER (4 COLS DESKTOP) */}
                     <div
                         className={`lg:col-span-4 space-y-6 transition-all duration-700 delay-300 transform ${isMounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
                             }`}
                     >
 
-                        {/* SECTION 4: DAILY GOAL */}
                         <CardGlow className="bg-[#111827]/40 backdrop-blur-md border border-[#1F2937] p-6 rounded-2xl relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/[0.02] rounded-full blur-2xl pointer-events-none" />
                             <h3 className="text-white text-sm font-bold flex items-center gap-2 mb-4">
@@ -776,7 +831,6 @@ export default function LeetCode() {
                             </div>
                         </CardGlow>
 
-                        {/* SECTION 8: DAILY CHALLENGE HIGHLIGHT */}
                         <CardGlow className="bg-gradient-to-br from-amber-600/10 via-orange-600/5 to-[#111827] border border-amber-500/20 p-6 rounded-2xl relative group">
                             <span className="absolute top-4 right-4 bg-amber-500 text-[#0B1120] text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full select-none shadow-[0_0_10px_rgba(245,158,11,0.3)]">
                                 Daily Challenge
@@ -809,7 +863,6 @@ export default function LeetCode() {
                             </div>
                         </CardGlow>
 
-                        {/* SECTION 13: FOCUS SESSION TIMER */}
                         <CardGlow className="bg-[#111827]/40 backdrop-blur-md border border-[#1F2937] p-6 rounded-2xl relative">
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-white text-sm font-bold flex items-center gap-2">
@@ -823,7 +876,6 @@ export default function LeetCode() {
 
                             <div className="flex flex-col items-center justify-center py-3 relative">
                                 <div className="relative w-32 h-32 flex items-center justify-center mb-5">
-                                    {/* Circular tracking ring dial */}
                                     <svg className="w-full h-full transform -rotate-90 absolute" viewBox="0 0 100 100">
                                         <circle cx="50" cy="50" r="44" className="stroke-[#1F2937]" strokeWidth="4" fill="none" />
                                         <circle
@@ -861,7 +913,6 @@ export default function LeetCode() {
                             </div>
                         </CardGlow>
 
-                        {/* SECTION 9: CONTEST PERFORMANCE (ONLY CARDS, NO TREND GRAPHS / NO TREND LINES) */}
                         <CardGlow className="bg-[#111827]/40 backdrop-blur-md border border-[#1F2937] p-6 rounded-2xl">
                             <h3 className="text-white text-sm font-bold flex items-center gap-2 mb-4">
                                 <Trophy className="w-4.5 h-4.5 text-amber-500" />
@@ -874,8 +925,8 @@ export default function LeetCode() {
                                     <span className="text-white font-bold"><AnimatedCounter value={contestRating} /></span>
                                 </div>
                                 <div className="flex justify-between items-center border-b border-[#1F2937] pb-2 text-xs">
-                                    <span className="text-[#9CA3AF]">Current Rank</span>
-                                    <span className="text-white font-bold">12,842 <span className="text-[10px] text-emerald-400">(Top 2%)</span></span>
+                                    <span className="text-[#9CA3AF]">Global Ranking</span>
+                                    <span className="text-white font-bold">{globalRanking.toLocaleString()} <span className="text-[10px] text-emerald-400">(Top 2%)</span></span>
                                 </div>
                                 <div className="flex justify-between items-center border-b border-[#1F2937] pb-2 text-xs">
                                     <span className="text-[#9CA3AF]">Best Contest Rank</span>
@@ -888,7 +939,6 @@ export default function LeetCode() {
                             </div>
                         </CardGlow>
 
-                        {/* SECTION 10: LANGUAGE USAGE */}
                         <CardGlow className="bg-[#111827]/40 backdrop-blur-md border border-[#1F2937] p-6 rounded-2xl">
                             <h3 className="text-white text-sm font-bold flex items-center gap-2 mb-4">
                                 <Code2 className="w-4.5 h-4.5 text-amber-500" />
@@ -910,7 +960,6 @@ export default function LeetCode() {
                             </div>
                         </CardGlow>
 
-                        {/* SECTION 6: RECENT SUBMISSIONS TIMELINE */}
                         <CardGlow className="bg-[#111827]/40 backdrop-blur-md border border-[#1F2937] p-6 rounded-2xl">
                             <h3 className="text-white font-extrabold text-sm uppercase tracking-wider mb-6 flex items-center gap-2">
                                 <History className="w-4.5 h-4.5 text-amber-500" />
@@ -918,7 +967,7 @@ export default function LeetCode() {
                             </h3>
 
                             <div className="relative space-y-6 pl-4 before:absolute before:top-0 before:bottom-0 before:left-1 before:w-[1.5px] before:bg-gradient-to-b before:from-[#1F2937] before:to-transparent">
-                                {SUBMISSIONS.map((sub) => (
+                                {displaySubmissions.map((sub) => (
                                     <div key={sub.id} className="relative flex items-center justify-between gap-4 group cursor-pointer">
                                         <div className="absolute -left-[16px] w-2.5 h-2.5 rounded-full bg-slate-800 border-2 border-[#111827] group-hover:bg-amber-500 group-hover:border-amber-400 transition-all duration-300" />
 
@@ -949,7 +998,6 @@ export default function LeetCode() {
                             </div>
                         </CardGlow>
 
-                        {/* SECTION 14: DEVELOPER QUOTE CARD */}
                         <CardGlow className="bg-gradient-to-tr from-amber-600/10 via-[#111827] text-orange-500/5 border border-amber-500/20 p-6 rounded-2xl relative">
                             <Quote className="absolute top-4 right-4 w-12 h-12 text-amber-500/5 pointer-events-none" />
                             <p className="text-xs font-bold text-amber-300 italic leading-relaxed">
@@ -965,6 +1013,73 @@ export default function LeetCode() {
                 </div>
 
             </div>
+
+            {/* CONNECT LEETCODE MODAL */}
+            {isConnectModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-[#111827] border border-[#1F2937] rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6 relative">
+                        <button
+                            onClick={() => setIsConnectModalOpen(false)}
+                            className="absolute top-4 right-4 p-2 text-[#9CA3AF] hover:text-white rounded-xl hover:bg-[#1F2937] transition-all"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center flex-shrink-0">
+                                <Code2 className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-extrabold text-white">Connect LeetCode Profile</h3>
+                                <p className="text-xs text-[#9CA3AF]">Sync live submission stats & contest ratings</p>
+                            </div>
+                        </div>
+
+                        {(error || connectError) && (
+                            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                <span>{connectError || error}</span>
+                            </div>
+                        )}
+
+                        <form onSubmit={handleConnect} className="space-y-4">
+                            <div className="space-y-1">
+                                <label className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider">
+                                    LeetCode Username
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6B7280] text-sm font-mono">
+                                        @
+                                    </span>
+                                    <input
+                                        type="text"
+                                        value={inputUsername}
+                                        onChange={(e) => setInputUsername(e.target.value)}
+                                        placeholder="e.g. faisalshohag"
+                                        className="w-full pl-8 pr-4 py-3 bg-[#0F172A] border border-[#1F2937] rounded-xl text-sm font-medium text-white placeholder:text-[#4B5563] focus:outline-none focus:border-amber-500 transition-colors"
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={connecting || !inputUsername.trim()}
+                                className="w-full flex items-center justify-center gap-2 py-3 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-[#0B1120] font-bold text-sm rounded-xl shadow-lg transition-all cursor-pointer"
+                            >
+                                {connecting ? (
+                                    <>
+                                        <RefreshCw className="w-4 h-4 animate-spin" /> Connecting...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Link2 className="w-4 h-4" /> Save & Sync Profile
+                                    </>
+                                )}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
 
         </div>
     );
