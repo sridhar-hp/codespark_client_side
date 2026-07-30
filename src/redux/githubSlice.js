@@ -1,12 +1,15 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { fetchGithubProfileThunk, connectGithubThunk } from './githubThunks';
+import { fetchGithubProfileThunk, connectGithubThunk, syncGithubThunk } from './githubThunks';
 
 const initialState = {
   connected: false,
   profile: null,
   repos: [],
+  contributions: null,
+  analytics: null,
   loading: false,
   connecting: false,
+  syncing: false,
   error: null,
   connectError: null,
 };
@@ -30,6 +33,8 @@ const githubSlice = createSlice({
       state.connected = false;
       state.profile = null;
       state.repos = [];
+      state.contributions = null;
+      state.analytics = null;
     },
   },
   extraReducers: (builder) => {
@@ -43,6 +48,8 @@ const githubSlice = createSlice({
         state.connected = action.payload.connected || false;
         state.profile = action.payload.profile || null;
         state.repos = action.payload.repos || [];
+        state.contributions = action.payload.contributions || null;
+        state.analytics = action.payload.analytics || null;
       })
       .addCase(fetchGithubProfileThunk.rejected, (state, action) => {
         state.loading = false;
@@ -50,12 +57,39 @@ const githubSlice = createSlice({
       });
 
     builder
+      .addCase(syncGithubThunk.pending, (state) => {
+        state.syncing = true;
+        state.error = null;
+      })
+      .addCase(syncGithubThunk.fulfilled, (state, action) => {
+        state.syncing = false;
+        if (action.payload.connected) {
+          state.connected = true;
+          state.profile = action.payload.profile || state.profile;
+          state.repos = action.payload.repos || state.repos;
+          state.contributions = action.payload.contributions || state.contributions;
+          state.analytics = action.payload.analytics || state.analytics;
+        }
+      })
+      .addCase(syncGithubThunk.rejected, (state, action) => {
+        state.syncing = false;
+        state.error = formatError(action.payload, 'Failed to sync GitHub profile');
+      });
+
+    builder
       .addCase(connectGithubThunk.pending, (state) => {
         state.connecting = true;
         state.connectError = null;
       })
-      .addCase(connectGithubThunk.fulfilled, (state) => {
+      .addCase(connectGithubThunk.fulfilled, (state, action) => {
         state.connecting = false;
+        if (action.payload.connected) {
+          state.connected = true;
+          state.profile = action.payload.profile || state.profile;
+          state.repos = action.payload.repos || state.repos;
+          state.contributions = action.payload.contributions || state.contributions;
+          state.analytics = action.payload.analytics || state.analytics;
+        }
       })
       .addCase(connectGithubThunk.rejected, (state, action) => {
         state.connecting = false;
