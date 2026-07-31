@@ -7,6 +7,7 @@ import analyticsReducer from './analyticsSlice';
 import achievementReducer from './achievementSlice';
 import githubReducer from './githubSlice';
 import leetcodeReducer from './leetcodeSlice';
+import learningReducer from './learningSlice';
 
 export const store = configureStore({
   reducer: {
@@ -18,6 +19,7 @@ export const store = configureStore({
     achievements: achievementReducer,
     github: githubReducer,
     leetcode: leetcodeReducer,
+    learning: learningReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

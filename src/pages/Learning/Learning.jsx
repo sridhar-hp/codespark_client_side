@@ -1,12 +1,22 @@
-
 // this is v2
 import React, { useState, useEffect, useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
     BookOpen, Sparkles, Flame, Play, Clock, CheckCircle2, ChevronRight,
     Plus, X, Terminal, Cpu, Database, Network, Code2, Layers, Compass,
     MonitorPlay, LayoutTemplate, Activity, History, ArrowRight, Zap, Target,
     Youtube, BookMarked, Monitor, LayoutGrid, FileText, BarChart3, Trophy
 } from 'lucide-react';
+import {
+    fetchLearningResourcesThunk,
+    createLearningResourceThunk,
+    fetchStudySessionsThunk,
+    fetchLearningAnalyticsThunk,
+    fetchLearningHeatmapThunk,
+    fetchLearningGoalsThunk,
+    createStudySessionThunk
+} from '../../redux/learningThunks';
+import { clearLearningErrors } from '../../redux/learningSlice';
 
 const STUDIO_ANIMATIONS = `
 @keyframes studio-ambient-drift {
@@ -81,11 +91,13 @@ function AnimatedCounter({ value, duration = 1500, suffix = "" }) {
     useEffect(() => {
         let startTimestamp = null;
         const startValue = displayValue;
+        const targetValue = typeof value === 'number' ? value : parseFloat(value) || 0;
+
         const step = (timestamp) => {
             if (!startTimestamp) startTimestamp = timestamp;
             const progress = Math.min((timestamp - startTimestamp) / duration, 1);
             const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
-            setDisplayValue(Math.floor(easeProgress * (value - startValue) + startValue));
+            setDisplayValue(Math.floor(easeProgress * (targetValue - startValue) + startValue));
             if (progress < 1) requestAnimationFrame(step);
         };
         requestAnimationFrame(step);
@@ -94,7 +106,6 @@ function AnimatedCounter({ value, duration = 1500, suffix = "" }) {
     return <span>{displayValue}{suffix}</span>;
 }
 
-// Interactive macOS-style floating dock
 function ResourceDock({ items }) {
     const [mouseX, setMouseX] = useState(null);
 
@@ -116,7 +127,6 @@ function ResourceDock({ items }) {
                     const rect = itemRef.current.getBoundingClientRect();
                     const itemCenterX = rect.left + rect.width / 2;
                     const distance = Math.abs(mouseX - itemCenterX);
-                    // Scale formula: max scale 1.5x, effect radius 150px
                     const maxScale = 1.6;
                     const effectRadius = 120;
                     if (distance < effectRadius) {
@@ -131,7 +141,6 @@ function ResourceDock({ items }) {
 
                 return (
                     <div key={idx} className="relative group/dock-item flex flex-col items-center">
-                        {/* Tooltip */}
                         <div className="absolute -top-12 opacity-0 group-hover/dock-item:opacity-100 transition-opacity duration-200 px-3 py-1.5 bg-[#1F2937] text-white text-[10px] font-bold rounded-lg whitespace-nowrap border border-[#374151] pointer-events-none">
                             {item.label}
                         </div>
@@ -148,7 +157,6 @@ function ResourceDock({ items }) {
                             <div className="absolute inset-0 bg-white/5 opacity-0 hover:opacity-100 transition-opacity" />
                             <Icon className="w-5 h-5 relative z-10" />
                         </button>
-                        {/* Active indicator dot */}
                         <div className={`w-1 h-1 rounded-full mt-1.5 transition-all duration-300 ${item.active ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]' : 'bg-transparent'}`} />
                     </div>
                 );
@@ -157,7 +165,7 @@ function ResourceDock({ items }) {
     );
 }
 
-const LIBRARY_PATHS = [
+const DEFAULT_LIBRARY_PATHS = [
     { id: 1, name: 'Next.js App Router', category: 'Frontend', logo: LayoutTemplate, targetHours: 40, completedHours: 28, level: 'Intermediate', status: 'In Progress', activeTopic: 'Server Actions & Mutations', color: 'from-blue-500 to-cyan-400' },
     { id: 2, title: 'Distributed Systems', category: 'System Design', logo: Network, targetHours: 60, completedHours: 60, level: 'Advanced', status: 'Completed', completionDate: 'Jul 2, 2026', color: 'from-amber-500 to-orange-500' },
     { id: 3, name: 'Node.js Microservices', category: 'Backend', logo: Cpu, targetHours: 50, completedHours: 12, level: 'Advanced', status: 'In Progress', activeTopic: 'Event-Driven Architecture with Kafka', color: 'from-emerald-500 to-green-400' },
@@ -165,7 +173,7 @@ const LIBRARY_PATHS = [
     { id: 5, name: 'Executive Communication', category: 'Soft Skills', logo: Activity, targetHours: 20, completedHours: 18, level: 'Master', status: 'In Progress', activeTopic: 'Technical Architecture Pitching', color: 'from-purple-500 to-pink-500' }
 ];
 
-const JOURNEY_MILESTONES = [
+const DEFAULT_JOURNEY_MILESTONES = [
     { id: 1, date: 'Today, 2:00 PM', tech: 'Next.js App Router', topic: 'Implementing Optimistic UI Updates', duration: '2h 15m', xp: 180 },
     { id: 2, date: 'Yesterday, 8:30 PM', tech: 'Executive Communication', topic: 'Mock C-Level Product Pitch', duration: '1h 30m', xp: 120 },
     { id: 3, date: 'Jul 6, 10:00 AM', tech: 'Node.js Microservices', topic: 'Dockerizing Event Producers', duration: '3h 45m', xp: 300 },
@@ -192,25 +200,91 @@ const DOCK_RESOURCES = [
 ];
 
 export default function LearningStudio() {
+    const dispatch = useDispatch();
+    const { resources, sessions, analytics, loading, submitting } = useSelector((state) => state.learning);
+
     const [isMounted, setIsMounted] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
     const [parallax, setParallax] = useState({ x: 0, y: 0 });
-    const [expandedTile, setExpandedTile] = useState(LIBRARY_PATHS[0].id); // Auto-expand first
+    const [expandedTile, setExpandedTile] = useState(1);
 
-    // Setup mount animations
+    // Modal Form State
+    const [titleInput, setTitleInput] = useState('');
+    const [categoryInput, setCategoryInput] = useState('Frontend');
+    const [targetHoursInput, setTargetHoursInput] = useState('40');
+    const [resourceUrlInput, setResourceUrlInput] = useState('');
+
     useEffect(() => {
+        dispatch(fetchLearningResourcesThunk());
+        dispatch(fetchStudySessionsThunk());
+        dispatch(fetchLearningAnalyticsThunk());
+        dispatch(fetchLearningHeatmapThunk());
+        dispatch(fetchLearningGoalsThunk());
         setIsMounted(true);
-    }, []);
+    }, [dispatch]);
 
-    // Parallax tracking for Hero Environment
     const handleHeroParallax = (e) => {
-        const x = (e.clientX / window.innerWidth - 0.5) * 20; // max 20px drift
+        const x = (e.clientX / window.innerWidth - 0.5) * 20;
         const y = (e.clientY / window.innerHeight - 0.5) * 20;
         setParallax({ x, y });
     };
 
+    const handleAddPathSubmit = (e) => {
+        e.preventDefault();
+        if (!titleInput.trim()) return;
+
+        const cat = categoryInput === 'Frontend' ? 'React' : categoryInput === 'Backend' ? 'Node.js' : categoryInput === 'System Design' ? 'MERN' : categoryInput === 'DevOps' ? 'DevOps' : 'Other';
+
+        dispatch(createLearningResourceThunk({
+            title: titleInput.trim(),
+            category: cat,
+            platform: 'Other',
+            totalHours: parseFloat(targetHoursInput) || 40,
+            resourceUrl: resourceUrlInput.trim() || undefined,
+        })).unwrap().then(() => {
+            setModalOpen(false);
+            setTitleInput('');
+            setResourceUrlInput('');
+        }).catch(() => {});
+    };
+
+    // Hydrated values from state
+    const displayPaths = (resources && resources.length > 0)
+        ? resources.map((r, idx) => ({
+            id: r._id || r.id || idx + 1,
+            name: r.title,
+            category: r.category || 'Technology',
+            logo: r.category === 'React' ? LayoutTemplate : r.category === 'Node.js' ? Cpu : r.category === 'DevOps' ? Network : Code2,
+            targetHours: r.totalHours || 40,
+            completedHours: r.completedHours || 0,
+            level: r.status === 'Completed' ? 'Mastered' : 'Active',
+            status: r.status || 'Not Started',
+            activeTopic: r.description || `Module ${idx + 1}`,
+            color: idx % 3 === 0 ? 'from-blue-500 to-cyan-400' : idx % 3 === 1 ? 'from-amber-500 to-orange-500' : 'from-emerald-500 to-green-400'
+        }))
+        : DEFAULT_LIBRARY_PATHS;
+
+    const displayMilestones = (sessions && sessions.length > 0)
+        ? sessions.map((s, idx) => ({
+            id: s._id || s.id || idx + 1,
+            date: s.studyDate ? new Date(s.studyDate).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recently',
+            tech: s.learningId?.title || 'Learning Session',
+            topic: s.notes || 'Focused practice & implementation',
+            duration: `${s.durationMinutes || 30} mins`,
+            xp: Math.round((s.durationMinutes || 30) * (40 / 60))
+        }))
+        : DEFAULT_JOURNEY_MILESTONES;
+
+    const todayHours = analytics?.todayHours || 2;
+    const todayMinutes = analytics?.todayMinutes ? analytics.todayMinutes % 60 : 15;
+    const streakDays = analytics?.currentStreakDays || 42;
+    const totalLifetimeHours = analytics?.totalLearningHours || 312;
+    const weeklyHours = analytics?.weeklyHours || 18.5;
+    const averageSessionHours = analytics?.averageDailyHours || 1.25;
+    const longestSprintMins = analytics?.longestSessionMinutes || 270;
+
     return (
-        <div className="min-h-screen  text-[#F9FAFB] font-sans overflow-x-hidden selection:bg-amber-500/30 selection:text-amber-200 pb-32">
+        <div className="min-h-screen text-[#F9FAFB] font-sans overflow-x-hidden selection:bg-amber-500/30 selection:text-amber-200 pb-32">
             <style dangerouslySetInnerHTML={{ __html: STUDIO_ANIMATIONS }} />
 
             {/* --- DOCK OVERLAY --- */}
@@ -227,7 +301,7 @@ export default function LearningStudio() {
                         style={{ animation: 'studio-ambient-drift 25s infinite alternate ease-in-out' }}
                     />
                     <div
-                        className="absolute bottom-[-20%] right-[-10%] w-[800px] h-[800px]rounded-full blur-[160px]"
+                        className="absolute bottom-[-20%] right-[-10%] w-[800px] h-[800px] rounded-full blur-[160px]"
                         style={{ animation: 'studio-ambient-drift 30s infinite alternate-reverse ease-in-out' }}
                     />
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#111827_1px,transparent_1px),linear-gradient(to_bottom,#111827_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_40%,#000_30%,transparent_100%)] opacity-30" />
@@ -263,7 +337,7 @@ export default function LearningStudio() {
                         </p>
                     </div>
 
-                    {/* Quick Glace HUD Data */}
+                    {/* Quick Glance HUD Data */}
                     <div className="flex flex-wrap items-center gap-4 animate-slide-up-stagger" style={{ animationDelay: '250ms' }}>
                         <div className="flex items-center gap-3 bg-[#111827]/80 backdrop-blur-lg border border-[#1F2937] px-5 py-3 rounded-2xl shadow-xl">
                             <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
@@ -271,7 +345,7 @@ export default function LearningStudio() {
                             </div>
                             <div>
                                 <p className="text-[10px] text-[#9CA3AF] font-bold uppercase tracking-wider">Current Focus</p>
-                                <p className="text-white font-bold">Next.js App Router</p>
+                                <p className="text-white font-bold">{displayPaths[0]?.name || 'Next.js App Router'}</p>
                             </div>
                         </div>
 
@@ -281,7 +355,7 @@ export default function LearningStudio() {
                             </div>
                             <div>
                                 <p className="text-[10px] text-[#9CA3AF] font-bold uppercase tracking-wider">Today's Time</p>
-                                <p className="text-white font-bold"><AnimatedCounter value={2} suffix="h" /> <AnimatedCounter value={15} suffix="m" /></p>
+                                <p className="text-white font-bold"><AnimatedCounter value={todayHours} suffix="h" /> <AnimatedCounter value={todayMinutes} suffix="m" /></p>
                             </div>
                         </div>
 
@@ -291,7 +365,7 @@ export default function LearningStudio() {
                             </div>
                             <div>
                                 <p className="text-[10px] text-[#9CA3AF] font-bold uppercase tracking-wider">Learning Streak</p>
-                                <p className="text-white font-bold"><AnimatedCounter value={42} suffix=" Days" /></p>
+                                <p className="text-white font-bold"><AnimatedCounter value={streakDays} suffix=" Days" /></p>
                             </div>
                         </div>
                     </div>
@@ -313,7 +387,7 @@ export default function LearningStudio() {
                         </div>
                         <button
                             onClick={() => setModalOpen(true)}
-                            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#111827] border border-[#1F2937] hover:border-amber-500/50 hover:bg-[#1F2937]/50 text-white font-bold text-sm transition-all shadow-lg active:scale-95 group"
+                            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#111827] border border-[#1F2937] hover:border-amber-500/50 hover:bg-[#1F2937]/50 text-white font-bold text-sm transition-all shadow-lg active:scale-95 group cursor-pointer"
                         >
                             <Plus className="w-4 h-4 text-amber-500 group-hover:rotate-90 transition-transform" />
                             Add Learning Path
@@ -321,11 +395,11 @@ export default function LearningStudio() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                        {LIBRARY_PATHS.map((path) => {
+                        {displayPaths.map((path) => {
                             const isCompleted = path.status === 'Completed';
                             const isExpanded = expandedTile === path.id;
-                            const Icon = path.logo;
-                            const progressPct = Math.round((path.completedHours / path.targetHours) * 100);
+                            const Icon = path.logo || Code2;
+                            const progressPct = path.targetHours > 0 ? Math.min(100, Math.round((path.completedHours / path.targetHours) * 100)) : 0;
 
                             return (
                                 <div
@@ -338,7 +412,6 @@ export default function LearningStudio() {
                                             : 'bg-[#111827]/60 border-[#1F2937] hover:border-[#374151] hover:bg-[#111827] opacity-80 hover:opacity-100'
                                         }`}
                                 >
-                                    {/* Glassmorphism Header */}
                                     <div className="p-6 pb-4 flex items-start justify-between relative z-10">
                                         <div className="flex gap-4 items-center">
                                             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner bg-gradient-to-tr ${path.color} bg-opacity-10 backdrop-blur-md border border-white/10`}>
@@ -356,7 +429,6 @@ export default function LearningStudio() {
                                         )}
                                     </div>
 
-                                    {/* Body Content - Expands cleanly */}
                                     <div className="px-6 flex-1 flex flex-col relative z-10">
                                         <div className="flex justify-between items-end mb-2">
                                             <div className="space-y-1">
@@ -369,7 +441,6 @@ export default function LearningStudio() {
                                             </div>
                                         </div>
 
-                                        {/* Premium Progress Bar */}
                                         <div className="w-full h-2 bg-[#0B1120] rounded-full overflow-hidden border border-[#1F2937] mb-6">
                                             <div
                                                 className={`h-full rounded-full transition-all duration-1000 ease-out bg-gradient-to-r ${path.color}`}
@@ -377,11 +448,10 @@ export default function LearningStudio() {
                                             />
                                         </div>
 
-                                        {/* Expandable Action Area */}
                                         <div className={`mt-auto pt-4 border-t border-[#1F2937] transition-all duration-300 overflow-hidden ${isExpanded ? 'opacity-100 max-h-40' : 'opacity-0 max-h-0 border-transparent pt-0'}`}>
                                             {isCompleted ? (
                                                 <div className="flex items-center justify-between text-amber-500/80 text-xs font-bold bg-amber-500/5 p-3 rounded-xl">
-                                                    <span>Completed on {path.completionDate}</span>
+                                                    <span>Completed Course</span>
                                                     <CheckCircle2 className="w-4 h-4" />
                                                 </div>
                                             ) : (
@@ -390,16 +460,25 @@ export default function LearningStudio() {
                                                         <span className="text-[10px] text-[#6B7280] font-bold uppercase tracking-wider block mb-1">Current Active Topic</span>
                                                         <span className="text-sm text-white font-medium">{path.activeTopic}</span>
                                                     </div>
-                                                    <button className="w-full flex items-center justify-center gap-2 py-2.5 bg-amber-500 hover:bg-amber-400 text-[#0B1120] font-bold text-xs rounded-xl transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)] active:scale-[0.98]">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            dispatch(createStudySessionThunk({
+                                                                learningId: path.id,
+                                                                durationMinutes: 45,
+                                                                notes: `Study session on ${path.name}`
+                                                            }));
+                                                        }}
+                                                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-amber-500 hover:bg-amber-400 text-[#0B1120] font-bold text-xs rounded-xl transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)] active:scale-[0.98] cursor-pointer"
+                                                    >
                                                         <Play className="w-3.5 h-3.5 fill-current" />
-                                                        Resume Session
+                                                        Resume Session (+45m)
                                                     </button>
                                                 </div>
                                             )}
                                         </div>
                                     </div>
 
-                                    {/* Aesthetic background glow specifically for completed paths */}
                                     {isCompleted && (
                                         <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent pointer-events-none z-0" />
                                     )}
@@ -426,16 +505,14 @@ export default function LearningStudio() {
                                 <span className="inline-block px-3 py-1 rounded-full bg-[#1F2937] border border-[#374151] text-[#D1D5DB] text-[10px] font-bold uppercase tracking-widest">
                                     Currently Learning
                                 </span>
-                                <h3 className="text-2xl font-extrabold text-white">Next.js App Router</h3>
+                                <h3 className="text-2xl font-extrabold text-white">{displayPaths[0]?.name || 'Next.js App Router'}</h3>
                             </div>
 
-                            {/* Large immersive breathing timer graphic */}
                             <div className="flex justify-center relative z-10 mb-8">
                                 <div className="relative w-48 h-48 flex items-center justify-center">
                                     <div className="absolute inset-0 rounded-full border border-[#1F2937]" />
                                     <div className="absolute inset-2 rounded-full border border-[#1F2937]/50" />
 
-                                    {/* Glowing active ring segment */}
                                     <svg className="absolute inset-0 w-full h-full transform -rotate-90 pointer-events-none">
                                         <circle
                                             cx="96" cy="96" r="94"
@@ -450,7 +527,7 @@ export default function LearningStudio() {
 
                                     <div className="text-center">
                                         <span className="block text-4xl font-extrabold text-white tracking-tighter">
-                                            2<span className="text-2xl text-[#6B7280]">h</span> 15<span className="text-2xl text-[#6B7280]">m</span>
+                                            {todayHours}<span className="text-2xl text-[#6B7280]">h</span> {todayMinutes}<span className="text-2xl text-[#6B7280]">m</span>
                                         </span>
                                         <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500 mt-1 block">
                                             Time Logged Today
@@ -461,11 +538,11 @@ export default function LearningStudio() {
 
                             <div className="grid grid-cols-2 gap-4 relative z-10">
                                 <div className="bg-[#0B1120] border border-[#1F2937] rounded-2xl p-4 text-center">
-                                    <span className="block text-xl font-bold text-amber-400">+180</span>
+                                    <span className="block text-xl font-bold text-amber-400">+{Math.round((todayHours * 60 + todayMinutes) * (40 / 60))}</span>
                                     <span className="text-[10px] text-[#6B7280] font-bold uppercase tracking-wider">XP Gained</span>
                                 </div>
                                 <div className="bg-[#0B1120] border border-[#1F2937] rounded-2xl p-4 text-center">
-                                    <span className="block text-xl font-bold text-white">3</span>
+                                    <span className="block text-xl font-bold text-white">{displayMilestones.length}</span>
                                     <span className="text-[10px] text-[#6B7280] font-bold uppercase tracking-wider">Sessions</span>
                                 </div>
                             </div>
@@ -482,7 +559,6 @@ export default function LearningStudio() {
                         <div className="bg-[#111827] border border-[#1F2937] rounded-3xl p-6 sm:p-10 relative overflow-hidden h-[400px]">
                             <div className="absolute inset-0 bg-[#0B1120]/30" />
 
-                            {/* SVG Connector Drawing Canvas */}
                             <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
                                 <path
                                     d="M 50 80 Q 150 80 150 160 T 250 240 T 400 200 T 550 150 T 700 200"
@@ -490,7 +566,6 @@ export default function LearningStudio() {
                                     stroke="#1F2937"
                                     strokeWidth="3"
                                 />
-                                {/* Active drawing stroke overlay */}
                                 <path
                                     className="timeline-path"
                                     d="M 50 80 Q 150 80 150 160 T 250 240 T 400 200 T 550 150 T 700 200"
@@ -540,9 +615,8 @@ export default function LearningStudio() {
 
                         <div className="bg-[#111827] border border-[#1F2937] rounded-3xl p-6 sm:p-10">
                             <div className="relative border-l-2 border-[#1F2937] ml-4 sm:ml-6 pl-8 space-y-10">
-                                {JOURNEY_MILESTONES.map((stone, i) => (
+                                {displayMilestones.map((stone, i) => (
                                     <div key={stone.id} className="relative group">
-                                        {/* Animated Timeline Node */}
                                         <div className="absolute -left-[42px] w-5 h-5 rounded-full bg-[#0B1120] border-4 border-[#1F2937] group-hover:border-amber-500 transition-colors duration-300 z-10 shadow-[0_0_0_4px_#111827]" />
 
                                         <div className="bg-[#0B1120]/50 border border-[#1F2937] p-5 rounded-2xl group-hover:bg-[#111827] group-hover:border-[#374151] transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-lg">
@@ -562,9 +636,6 @@ export default function LearningStudio() {
                                     </div>
                                 ))}
                             </div>
-                            <button className="w-full mt-8 py-3 bg-[#0B1120] border border-[#1F2937] hover:bg-[#1F2937]/50 text-white font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-2">
-                                View Full History <ArrowRight className="w-4 h-4" />
-                            </button>
                         </div>
                     </section>
 
@@ -579,25 +650,25 @@ export default function LearningStudio() {
 
                             <div className="space-y-1">
                                 <span className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wider">Total Time Invested</span>
-                                <div className="text-4xl font-extrabold text-white tracking-tight"><AnimatedCounter value={312} /> <span className="text-xl text-[#9CA3AF]">Hrs</span></div>
+                                <div className="text-4xl font-extrabold text-white tracking-tight"><AnimatedCounter value={totalLifetimeHours} /> <span className="text-xl text-[#9CA3AF]">Hrs</span></div>
                             </div>
 
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center pb-3 border-b border-[#1F2937]/60">
                                     <span className="text-xs text-[#9CA3AF] font-medium">Weekly Focus Time</span>
-                                    <span className="text-sm font-bold text-white">18.5 Hrs</span>
+                                    <span className="text-sm font-bold text-white">{weeklyHours} Hrs</span>
                                 </div>
                                 <div className="flex justify-between items-center pb-3 border-b border-[#1F2937]/60">
                                     <span className="text-xs text-[#9CA3AF] font-medium">Average Session</span>
-                                    <span className="text-sm font-bold text-white">1h 15m</span>
+                                    <span className="text-sm font-bold text-white">{averageSessionHours} Hrs</span>
                                 </div>
                                 <div className="flex justify-between items-center pb-3 border-b border-[#1F2937]/60">
                                     <span className="text-xs text-[#9CA3AF] font-medium">Longest Focus Sprint</span>
-                                    <span className="text-sm font-bold text-amber-400">4h 30m</span>
+                                    <span className="text-sm font-bold text-amber-400">{Math.floor(longestSprintMins / 60)}h {longestSprintMins % 60}m</span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-xs text-[#9CA3AF] font-medium">Total Lifetime XP</span>
-                                    <span className="text-sm font-bold text-white"><AnimatedCounter value={14200} /></span>
+                                    <span className="text-sm font-bold text-white"><AnimatedCounter value={Math.round(totalLifetimeHours * 40)} /></span>
                                 </div>
                             </div>
 
@@ -607,7 +678,7 @@ export default function LearningStudio() {
                                 </div>
                                 <div>
                                     <span className="block text-[10px] font-bold text-[#6B7280] uppercase tracking-wider mb-0.5">Favorite Tech</span>
-                                    <span className="block text-sm font-extrabold text-white">Next.js</span>
+                                    <span className="block text-sm font-extrabold text-white">{displayPaths[0]?.name || 'Next.js'}</span>
                                 </div>
                             </div>
 
@@ -631,37 +702,63 @@ export default function LearningStudio() {
                         <h2 className="text-2xl font-extrabold text-white mb-2 tracking-tight">Stage New Learning Path</h2>
                         <p className="text-[#9CA3AF] text-xs font-medium mb-8">Establish tracking for a new technological framework, language, or system design methodology.</p>
 
-                        <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); setModalOpen(false); }}>
+                        <form className="space-y-5" onSubmit={handleAddPathSubmit}>
                             <div>
                                 <label className="block text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-1.5 ml-1">Technology Name</label>
-                                <input type="text" placeholder="e.g. Apache Kafka" required className="w-full bg-[#0B1120] border border-[#1F2937] px-4 py-3 rounded-xl text-sm text-white placeholder-[#4B5563] focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all" />
+                                <input
+                                    type="text"
+                                    value={titleInput}
+                                    onChange={(e) => setTitleInput(e.target.value)}
+                                    placeholder="e.g. Apache Kafka"
+                                    required
+                                    className="w-full bg-[#0B1120] border border-[#1F2937] px-4 py-3 rounded-xl text-sm text-white placeholder-[#4B5563] focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all"
+                                />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-1.5 ml-1">Category</label>
-                                    <select className="w-full bg-[#0B1120] border border-[#1F2937] px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500/50 appearance-none">
-                                        <option>Frontend</option>
-                                        <option>Backend</option>
-                                        <option>System Design</option>
-                                        <option>DevOps</option>
-                                        <option>Soft Skills</option>
+                                    <select
+                                        value={categoryInput}
+                                        onChange={(e) => setCategoryInput(e.target.value)}
+                                        className="w-full bg-[#0B1120] border border-[#1F2937] px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500/50 appearance-none"
+                                    >
+                                        <option value="Frontend">Frontend</option>
+                                        <option value="Backend">Backend</option>
+                                        <option value="System Design">System Design</option>
+                                        <option value="DevOps">DevOps</option>
+                                        <option value="Soft Skills">Soft Skills</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-1.5 ml-1">Target Hours</label>
-                                    <input type="number" placeholder="40" required className="w-full bg-[#0B1120] border border-[#1F2937] px-4 py-3 rounded-xl text-sm text-white placeholder-[#4B5563] focus:outline-none focus:border-amber-500/50 transition-all" />
+                                    <input
+                                        type="number"
+                                        value={targetHoursInput}
+                                        onChange={(e) => setTargetHoursInput(e.target.value)}
+                                        placeholder="40"
+                                        required
+                                        className="w-full bg-[#0B1120] border border-[#1F2937] px-4 py-3 rounded-xl text-sm text-white placeholder-[#4B5563] focus:outline-none focus:border-amber-500/50 transition-all"
+                                    />
                                 </div>
                             </div>
 
                             <div>
                                 <label className="block text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-1.5 ml-1">Primary Resource (URL)</label>
-                                <input type="url" placeholder="https://..." className="w-full bg-[#0B1120] border border-[#1F2937] px-4 py-3 rounded-xl text-sm text-white placeholder-[#4B5563] focus:outline-none focus:border-amber-500/50 transition-all" />
+                                <input
+                                    type="url"
+                                    value={resourceUrlInput}
+                                    onChange={(e) => setResourceUrlInput(e.target.value)}
+                                    placeholder="https://..."
+                                    className="w-full bg-[#0B1120] border border-[#1F2937] px-4 py-3 rounded-xl text-sm text-white placeholder-[#4B5563] focus:outline-none focus:border-amber-500/50 transition-all"
+                                />
                             </div>
 
                             <div className="flex gap-3 pt-6">
                                 <button type="button" onClick={() => setModalOpen(false)} className="flex-1 px-4 py-3 rounded-xl border border-[#374151] hover:bg-[#1F2937] text-white text-xs font-bold transition-all">Cancel</button>
-                                <button type="submit" className="flex-1 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-[#0B1120] text-xs font-bold transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)]">Add to Library</button>
+                                <button type="submit" disabled={submitting} className="flex-1 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-[#0B1120] text-xs font-bold transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)] cursor-pointer">
+                                    {submitting ? 'Adding...' : 'Add to Library'}
+                                </button>
                             </div>
                         </form>
                     </div>
