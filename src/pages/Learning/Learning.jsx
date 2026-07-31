@@ -5,11 +5,14 @@ import {
     BookOpen, Sparkles, Flame, Play, Clock, CheckCircle2, ChevronRight,
     Plus, X, Terminal, Cpu, Database, Network, Code2, Layers, Compass,
     MonitorPlay, LayoutTemplate, Activity, History, ArrowRight, Zap, Target,
-    Youtube, BookMarked, Monitor, LayoutGrid, FileText, BarChart3, Trophy
+    Youtube, BookMarked, Monitor, LayoutGrid, FileText, BarChart3, Trophy,
+    Pencil, Trash2
 } from 'lucide-react';
 import {
     fetchLearningResourcesThunk,
     createLearningResourceThunk,
+    updateLearningResourceThunk,
+    deleteLearningResourceThunk,
     fetchStudySessionsThunk,
     fetchLearningAnalyticsThunk,
     fetchLearningHeatmapThunk,
@@ -18,7 +21,7 @@ import {
 } from '../../redux/learningThunks';
 import { clearLearningErrors } from '../../redux/learningSlice';
 
-const FRIENDLY_URL_ERROR = 'Please enter a valid website URL (for example: https://youtube.com or https://coursera.org).';
+const REQUIRED_URL_ERROR = 'Please enter a valid learning resource URL.';
 
 const STUDIO_ANIMATIONS = `
 @keyframes studio-ambient-drift {
@@ -168,11 +171,11 @@ function ResourceDock({ items }) {
 }
 
 const DEFAULT_LIBRARY_PATHS = [
-    { id: 1, name: 'Next.js App Router', category: 'Frontend', logo: LayoutTemplate, targetHours: 40, completedHours: 28, level: 'Intermediate', status: 'In Progress', activeTopic: 'Server Actions & Mutations', color: 'from-blue-500 to-cyan-400' },
-    { id: 2, title: 'Distributed Systems', category: 'System Design', logo: Network, targetHours: 60, completedHours: 60, level: 'Advanced', status: 'Completed', completionDate: 'Jul 2, 2026', color: 'from-amber-500 to-orange-500' },
-    { id: 3, name: 'Node.js Microservices', category: 'Backend', logo: Cpu, targetHours: 50, completedHours: 12, level: 'Advanced', status: 'In Progress', activeTopic: 'Event-Driven Architecture with Kafka', color: 'from-emerald-500 to-green-400' },
-    { id: 4, name: 'Advanced TypeScript', category: 'Language', logo: Code2, targetHours: 30, completedHours: 0, level: 'Expert', status: 'Not Started', activeTopic: 'Generics & Utility Types', color: 'from-blue-600 to-indigo-500' },
-    { id: 5, name: 'Executive Communication', category: 'Soft Skills', logo: Activity, targetHours: 20, completedHours: 18, level: 'Master', status: 'In Progress', activeTopic: 'Technical Architecture Pitching', color: 'from-purple-500 to-pink-500' }
+    { id: 1, name: 'Next.js App Router', category: 'Frontend', logo: LayoutTemplate, targetHours: 40, completedHours: 28, level: 'Intermediate', status: 'In Progress', activeTopic: 'Server Actions & Mutations', resourceUrl: 'https://nextjs.org', color: 'from-blue-500 to-cyan-400' },
+    { id: 2, title: 'Distributed Systems', category: 'System Design', logo: Network, targetHours: 60, completedHours: 60, level: 'Advanced', status: 'Completed', completionDate: 'Jul 2, 2026', resourceUrl: 'https://coursera.org', color: 'from-amber-500 to-orange-500' },
+    { id: 3, name: 'Node.js Microservices', category: 'Backend', logo: Cpu, targetHours: 50, completedHours: 12, level: 'Advanced', status: 'In Progress', activeTopic: 'Event-Driven Architecture with Kafka', resourceUrl: 'https://nodejs.org', color: 'from-emerald-500 to-green-400' },
+    { id: 4, name: 'Advanced TypeScript', category: 'Language', logo: Code2, targetHours: 30, completedHours: 0, level: 'Expert', status: 'Not Started', activeTopic: 'Generics & Utility Types', resourceUrl: 'https://typescriptlang.org', color: 'from-blue-600 to-indigo-500' },
+    { id: 5, name: 'Executive Communication', category: 'Soft Skills', logo: Activity, targetHours: 20, completedHours: 18, level: 'Master', status: 'In Progress', activeTopic: 'Technical Architecture Pitching', resourceUrl: 'https://youtube.com', color: 'from-purple-500 to-pink-500' }
 ];
 
 const DEFAULT_JOURNEY_MILESTONES = [
@@ -207,6 +210,8 @@ export default function LearningStudio() {
 
     const [isMounted, setIsMounted] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
+    const [editingId, setEditingId] = useState(null);
+    const [notification, setNotification] = useState(null);
     const [parallax, setParallax] = useState({ x: 0, y: 0 });
     const [expandedTile, setExpandedTile] = useState(1);
 
@@ -234,13 +239,47 @@ export default function LearningStudio() {
 
     const handleOpenModal = () => {
         dispatch(clearLearningErrors());
+        setEditingId(null);
+        setTitleInput('');
+        setCategoryInput('Frontend');
+        setTargetHoursInput('40');
+        setResourceUrlInput('');
         setUrlValidationError(null);
         setModalOpen(true);
+    };
+
+    const handleEditPath = (path) => {
+        dispatch(clearLearningErrors());
+        setEditingId(path.id);
+        setTitleInput(path.name || path.title || '');
+
+        const displayCat = path.category === 'React' ? 'Frontend' : path.category === 'Node.js' ? 'Backend' : path.category === 'MERN' ? 'System Design' : path.category === 'DevOps' ? 'DevOps' : path.category || 'Frontend';
+        setCategoryInput(displayCat);
+        setTargetHoursInput(String(path.targetHours || 40));
+        setResourceUrlInput(path.resourceUrl || '');
+        setUrlValidationError(null);
+        setModalOpen(true);
+    };
+
+    const handleDeletePath = (path) => {
+        if (window.confirm('Are you sure you want to delete this learning resource?')) {
+            dispatch(deleteLearningResourceThunk(path.id))
+                .unwrap()
+                .then(() => {
+                    setNotification('Learning resource deleted successfully!');
+                    setTimeout(() => setNotification(null), 4000);
+                })
+                .catch((err) => {
+                    setNotification(err || 'Failed to delete learning resource');
+                    setTimeout(() => setNotification(null), 4000);
+                });
+        }
     };
 
     const handleCloseModal = () => {
         dispatch(clearLearningErrors());
         setUrlValidationError(null);
+        setEditingId(null);
         setModalOpen(false);
     };
 
@@ -248,19 +287,22 @@ export default function LearningStudio() {
         e.preventDefault();
         if (!titleInput.trim()) return;
 
-        // Client-side URL validation check for friendly message
-        if (resourceUrlInput && resourceUrlInput.trim()) {
-            const raw = resourceUrlInput.trim();
-            try {
-                const parsed = new URL(raw);
-                if (!['http:', 'https:'].includes(parsed.protocol)) {
-                    setUrlValidationError(FRIENDLY_URL_ERROR);
-                    return;
-                }
-            } catch (err) {
-                setUrlValidationError(FRIENDLY_URL_ERROR);
+        // Resource URL validation check
+        const urlRaw = (resourceUrlInput || '').trim();
+        if (!urlRaw) {
+            setUrlValidationError(REQUIRED_URL_ERROR);
+            return;
+        }
+
+        try {
+            const parsed = new URL(urlRaw);
+            if (!['http:', 'https:'].includes(parsed.protocol)) {
+                setUrlValidationError(REQUIRED_URL_ERROR);
                 return;
             }
+        } catch (err) {
+            setUrlValidationError(REQUIRED_URL_ERROR);
+            return;
         }
 
         setUrlValidationError(null);
@@ -268,17 +310,38 @@ export default function LearningStudio() {
 
         const cat = categoryInput === 'Frontend' ? 'React' : categoryInput === 'Backend' ? 'Node.js' : categoryInput === 'System Design' ? 'MERN' : categoryInput === 'DevOps' ? 'DevOps' : 'Other';
 
-        dispatch(createLearningResourceThunk({
+        const payload = {
             title: titleInput.trim(),
             category: cat,
             platform: 'Other',
             totalHours: parseFloat(targetHoursInput) || 40,
-            resourceUrl: resourceUrlInput.trim() || undefined,
-        })).unwrap().then(() => {
-            setModalOpen(false);
-            setTitleInput('');
-            setResourceUrlInput('');
-        }).catch(() => {});
+            resourceUrl: urlRaw,
+        };
+
+        if (editingId) {
+            dispatch(updateLearningResourceThunk({ id: editingId, ...payload }))
+                .unwrap()
+                .then(() => {
+                    setModalOpen(false);
+                    setEditingId(null);
+                    setTitleInput('');
+                    setResourceUrlInput('');
+                    setNotification('Learning resource updated successfully!');
+                    setTimeout(() => setNotification(null), 4000);
+                })
+                .catch(() => {});
+        } else {
+            dispatch(createLearningResourceThunk(payload))
+                .unwrap()
+                .then(() => {
+                    setModalOpen(false);
+                    setTitleInput('');
+                    setResourceUrlInput('');
+                    setNotification('Learning resource created successfully!');
+                    setTimeout(() => setNotification(null), 4000);
+                })
+                .catch(() => {});
+        }
     };
 
     // Hydrated values from state
@@ -287,6 +350,8 @@ export default function LearningStudio() {
             id: r._id || r.id || idx + 1,
             name: r.title,
             category: r.category || 'Technology',
+            rawCategory: r.category,
+            resourceUrl: r.resourceUrl || '',
             logo: r.category === 'React' ? LayoutTemplate : r.category === 'Node.js' ? Cpu : r.category === 'DevOps' ? Network : Code2,
             targetHours: r.totalHours || 40,
             completedHours: r.completedHours || 0,
@@ -321,6 +386,13 @@ export default function LearningStudio() {
     return (
         <div className="min-h-screen text-[#F9FAFB] font-sans overflow-x-hidden selection:bg-amber-500/30 selection:text-amber-200 pb-32">
             <style dangerouslySetInnerHTML={{ __html: STUDIO_ANIMATIONS }} />
+
+            {/* Notification Toast */}
+            {notification && (
+                <div className="fixed top-20 right-8 z-50 px-5 py-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-bold text-xs shadow-2xl backdrop-blur-xl animate-bounce">
+                    {notification}
+                </div>
+            )}
 
             {/* --- DOCK OVERLAY --- */}
             <ResourceDock items={DOCK_RESOURCES} />
@@ -454,11 +526,33 @@ export default function LearningStudio() {
                                                 <h3 className="text-lg font-bold text-white leading-tight">{path.name || path.title}</h3>
                                             </div>
                                         </div>
-                                        {isCompleted && (
-                                            <div className="bg-amber-500/10 border border-amber-500/20 text-amber-500 p-2 rounded-full" title="Mastered">
-                                                <Trophy className="w-4 h-4" />
-                                            </div>
-                                        )}
+                                        <div className="flex items-center gap-1.5">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleEditPath(path);
+                                                }}
+                                                className="p-2 rounded-xl bg-[#1F2937]/80 hover:bg-[#374151] text-[#9CA3AF] hover:text-white transition-colors cursor-pointer"
+                                                title="Edit Learning Path"
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDeletePath(path);
+                                                }}
+                                                className="p-2 rounded-xl bg-[#1F2937]/80 hover:bg-red-500/20 text-[#9CA3AF] hover:text-red-400 transition-colors cursor-pointer"
+                                                title="Delete Learning Path"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                            {isCompleted && (
+                                                <div className="bg-amber-500/10 border border-amber-500/20 text-amber-500 p-2 rounded-full" title="Mastered">
+                                                    <Trophy className="w-4 h-4" />
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div className="px-6 flex-1 flex flex-col relative z-10">
@@ -717,7 +811,7 @@ export default function LearningStudio() {
 
             </div>
 
-            {/* --- ADD NEW PATH MODAL (GLASSMORPHISM POPUP) --- */}
+            {/* --- ADD / EDIT PATH MODAL (GLASSMORPHISM POPUP) --- */}
             {modalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-[#0B1120]/80 backdrop-blur-sm" onClick={handleCloseModal} />
@@ -727,8 +821,12 @@ export default function LearningStudio() {
                             <X className="w-5 h-5" />
                         </button>
 
-                        <h2 className="text-2xl font-extrabold text-white mb-2 tracking-tight">Stage New Learning Path</h2>
-                        <p className="text-[#9CA3AF] text-xs font-medium mb-6">Establish tracking for a new technological framework, language, or system design methodology.</p>
+                        <h2 className="text-2xl font-extrabold text-white mb-2 tracking-tight">
+                            {editingId ? 'Edit Learning Path' : 'Stage New Learning Path'}
+                        </h2>
+                        <p className="text-[#9CA3AF] text-xs font-medium mb-6">
+                            {editingId ? 'Update tracking details for your existing technological framework or language.' : 'Establish tracking for a new technological framework, language, or system design methodology.'}
+                        </p>
 
                         {activeError && (
                             <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-300 text-xs font-semibold leading-relaxed shadow-lg flex items-start gap-2.5">
@@ -739,7 +837,7 @@ export default function LearningStudio() {
 
                         <form className="space-y-5" onSubmit={handleAddPathSubmit}>
                             <div>
-                                <label className="block text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-1.5 ml-1">Technology Name</label>
+                                <label className="block text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-1.5 ml-1">Technology Name *</label>
                                 <input
                                     type="text"
                                     value={titleInput}
@@ -779,7 +877,7 @@ export default function LearningStudio() {
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-1.5 ml-1">Primary Resource (URL)</label>
+                                <label className="block text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-1.5 ml-1">Primary Resource (URL) *</label>
                                 <input
                                     type="text"
                                     value={resourceUrlInput}
@@ -789,6 +887,7 @@ export default function LearningStudio() {
                                         dispatch(clearLearningErrors());
                                     }}
                                     placeholder="https://..."
+                                    required
                                     className="w-full bg-[#0B1120] border border-[#1F2937] px-4 py-3 rounded-xl text-sm text-white placeholder-[#4B5563] focus:outline-none focus:border-amber-500/50 transition-all"
                                 />
                             </div>
@@ -796,7 +895,7 @@ export default function LearningStudio() {
                             <div className="flex gap-3 pt-6">
                                 <button type="button" onClick={handleCloseModal} className="flex-1 px-4 py-3 rounded-xl border border-[#374151] hover:bg-[#1F2937] text-white text-xs font-bold transition-all">Cancel</button>
                                 <button type="submit" disabled={submitting} className="flex-1 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-[#0B1120] text-xs font-bold transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)] cursor-pointer">
-                                    {submitting ? 'Adding...' : 'Add to Library'}
+                                    {submitting ? 'Saving...' : editingId ? 'Save Changes' : 'Add to Library'}
                                 </button>
                             </div>
                         </form>

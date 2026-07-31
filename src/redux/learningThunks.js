@@ -1,7 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../services/api';
 
-const FRIENDLY_URL_ERROR = 'Please enter a valid website URL (for example: https://youtube.com or https://coursera.org).';
+const REQUIRED_URL_ERROR = 'Please enter a valid learning resource URL.';
 
 const VALID_CATEGORIES = [
   'MERN',
@@ -56,20 +56,22 @@ export const createLearningResourceThunk = createAsyncThunk(
       };
 
       const rawUrl = resourceData.resourceUrl || resourceData.url || resourceData.primaryResource || '';
-      if (rawUrl && rawUrl.trim()) {
-        payload.resourceUrl = rawUrl.trim();
-        // Frontend URL format check
-        try {
-          const parsed = new URL(payload.resourceUrl);
-          if (!['http:', 'https:'].includes(parsed.protocol)) {
-            return rejectWithValue(FRIENDLY_URL_ERROR);
-          }
-        } catch (e) {
-          return rejectWithValue(FRIENDLY_URL_ERROR);
+      if (!rawUrl || !rawUrl.trim()) {
+        return rejectWithValue(REQUIRED_URL_ERROR);
+      }
+
+      payload.resourceUrl = rawUrl.trim();
+      try {
+        const parsed = new URL(payload.resourceUrl);
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+          return rejectWithValue(REQUIRED_URL_ERROR);
         }
+      } catch (e) {
+        return rejectWithValue(REQUIRED_URL_ERROR);
       }
 
       const response = await api.post('/learning', payload);
+      dispatch(fetchLearningResourcesThunk());
       dispatch(fetchLearningAnalyticsThunk());
       return response.data?.data || {};
     } catch (err) {
@@ -77,10 +79,10 @@ export const createLearningResourceThunk = createAsyncThunk(
       const details = err.response?.data?.details;
 
       if (
-        message.toLowerCase().includes('resource url must be a valid url') ||
+        message.toLowerCase().includes('url') ||
         (details && details.some((d) => d.msg?.toLowerCase().includes('url')))
       ) {
-        message = FRIENDLY_URL_ERROR;
+        message = REQUIRED_URL_ERROR;
       }
 
       return rejectWithValue(message);
@@ -92,18 +94,28 @@ export const updateLearningResourceThunk = createAsyncThunk(
   'learning/updateResource',
   async ({ id, ...updateData }, { rejectWithValue, dispatch }) => {
     try {
-      if (updateData.resourceUrl && updateData.resourceUrl.trim()) {
+      if (updateData.resourceUrl !== undefined) {
+        const urlStr = (updateData.resourceUrl || '').trim();
+        if (!urlStr) {
+          return rejectWithValue(REQUIRED_URL_ERROR);
+        }
         try {
-          const parsed = new URL(updateData.resourceUrl.trim());
+          const parsed = new URL(urlStr);
           if (!['http:', 'https:'].includes(parsed.protocol)) {
-            return rejectWithValue(FRIENDLY_URL_ERROR);
+            return rejectWithValue(REQUIRED_URL_ERROR);
           }
+          updateData.resourceUrl = urlStr;
         } catch (e) {
-          return rejectWithValue(FRIENDLY_URL_ERROR);
+          return rejectWithValue(REQUIRED_URL_ERROR);
         }
       }
 
+      if (updateData.category && !VALID_CATEGORIES.includes(updateData.category)) {
+        updateData.category = CATEGORY_MAP[updateData.category] || 'Other';
+      }
+
       const response = await api.put(`/learning/${id}`, updateData);
+      dispatch(fetchLearningResourcesThunk());
       dispatch(fetchLearningAnalyticsThunk());
       return response.data?.data || {};
     } catch (err) {
@@ -111,10 +123,10 @@ export const updateLearningResourceThunk = createAsyncThunk(
       const details = err.response?.data?.details;
 
       if (
-        message.toLowerCase().includes('resource url must be a valid url') ||
+        message.toLowerCase().includes('url') ||
         (details && details.some((d) => d.msg?.toLowerCase().includes('url')))
       ) {
-        message = FRIENDLY_URL_ERROR;
+        message = REQUIRED_URL_ERROR;
       }
 
       return rejectWithValue(message);
@@ -127,6 +139,7 @@ export const deleteLearningResourceThunk = createAsyncThunk(
   async (id, { rejectWithValue, dispatch }) => {
     try {
       await api.delete(`/learning/${id}`);
+      dispatch(fetchLearningResourcesThunk());
       dispatch(fetchLearningAnalyticsThunk());
       return id;
     } catch (err) {
