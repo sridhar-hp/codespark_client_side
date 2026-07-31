@@ -18,6 +18,8 @@ import {
 } from '../../redux/learningThunks';
 import { clearLearningErrors } from '../../redux/learningSlice';
 
+const FRIENDLY_URL_ERROR = 'Please enter a valid website URL (for example: https://youtube.com or https://coursera.org).';
+
 const STUDIO_ANIMATIONS = `
 @keyframes studio-ambient-drift {
   0%, 100% { transform: translate(0px, 0px) scale(1) rotate(0deg); opacity: 0.15; }
@@ -201,7 +203,7 @@ const DOCK_RESOURCES = [
 
 export default function LearningStudio() {
     const dispatch = useDispatch();
-    const { resources, sessions, analytics, loading, submitting } = useSelector((state) => state.learning);
+    const { resources, sessions, analytics, loading, submitting, error } = useSelector((state) => state.learning);
 
     const [isMounted, setIsMounted] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
@@ -213,6 +215,7 @@ export default function LearningStudio() {
     const [categoryInput, setCategoryInput] = useState('Frontend');
     const [targetHoursInput, setTargetHoursInput] = useState('40');
     const [resourceUrlInput, setResourceUrlInput] = useState('');
+    const [urlValidationError, setUrlValidationError] = useState(null);
 
     useEffect(() => {
         dispatch(fetchLearningResourcesThunk());
@@ -229,9 +232,39 @@ export default function LearningStudio() {
         setParallax({ x, y });
     };
 
+    const handleOpenModal = () => {
+        dispatch(clearLearningErrors());
+        setUrlValidationError(null);
+        setModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        dispatch(clearLearningErrors());
+        setUrlValidationError(null);
+        setModalOpen(false);
+    };
+
     const handleAddPathSubmit = (e) => {
         e.preventDefault();
         if (!titleInput.trim()) return;
+
+        // Client-side URL validation check for friendly message
+        if (resourceUrlInput && resourceUrlInput.trim()) {
+            const raw = resourceUrlInput.trim();
+            try {
+                const parsed = new URL(raw);
+                if (!['http:', 'https:'].includes(parsed.protocol)) {
+                    setUrlValidationError(FRIENDLY_URL_ERROR);
+                    return;
+                }
+            } catch (err) {
+                setUrlValidationError(FRIENDLY_URL_ERROR);
+                return;
+            }
+        }
+
+        setUrlValidationError(null);
+        dispatch(clearLearningErrors());
 
         const cat = categoryInput === 'Frontend' ? 'React' : categoryInput === 'Backend' ? 'Node.js' : categoryInput === 'System Design' ? 'MERN' : categoryInput === 'DevOps' ? 'DevOps' : 'Other';
 
@@ -283,6 +316,8 @@ export default function LearningStudio() {
     const averageSessionHours = analytics?.averageDailyHours || 1.25;
     const longestSprintMins = analytics?.longestSessionMinutes || 270;
 
+    const activeError = urlValidationError || error;
+
     return (
         <div className="min-h-screen text-[#F9FAFB] font-sans overflow-x-hidden selection:bg-amber-500/30 selection:text-amber-200 pb-32">
             <style dangerouslySetInnerHTML={{ __html: STUDIO_ANIMATIONS }} />
@@ -294,7 +329,6 @@ export default function LearningStudio() {
             <section className="relative w-full min-h-[60vh] flex flex-col justify-center px-6 md:px-12 lg:px-24 overflow-hidden bg-gradient-to-b from-transparent via-[#0F172A]/20 to-transparent"
                 onMouseMove={handleHeroParallax}
             >
-                {/* Layered Deep Ambient Light Orbs */}
                 <div className="absolute inset-0 pointer-events-none z-0">
                     <div
                         className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] rounded-full blur-[140px]"
@@ -307,7 +341,6 @@ export default function LearningStudio() {
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#111827_1px,transparent_1px),linear-gradient(to_bottom,#111827_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_40%,#000_30%,transparent_100%)] opacity-30" />
                 </div>
 
-                {/* 3D Floating Developer Elements */}
                 <div
                     className="absolute inset-0 z-10 pointer-events-none"
                     style={{ transform: `translate(${parallax.x}px, ${parallax.y}px)`, transition: 'transform 0.2s ease-out' }}
@@ -337,7 +370,6 @@ export default function LearningStudio() {
                         </p>
                     </div>
 
-                    {/* Quick Glance HUD Data */}
                     <div className="flex flex-wrap items-center gap-4 animate-slide-up-stagger" style={{ animationDelay: '250ms' }}>
                         <div className="flex items-center gap-3 bg-[#111827]/80 backdrop-blur-lg border border-[#1F2937] px-5 py-3 rounded-2xl shadow-xl">
                             <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
@@ -386,7 +418,7 @@ export default function LearningStudio() {
                             <p className="text-[#9CA3AF] mt-1.5 font-medium">Your curated catalog of technological mastery paths.</p>
                         </div>
                         <button
-                            onClick={() => setModalOpen(true)}
+                            onClick={handleOpenModal}
                             className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#111827] border border-[#1F2937] hover:border-amber-500/50 hover:bg-[#1F2937]/50 text-white font-bold text-sm transition-all shadow-lg active:scale-95 group cursor-pointer"
                         >
                             <Plus className="w-4 h-4 text-amber-500 group-hover:rotate-90 transition-transform" />
@@ -491,7 +523,6 @@ export default function LearningStudio() {
                 {/* --- GRID SPLIT: TODAY'S SESSION & ROADMAP --- */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 animate-slide-up-stagger" style={{ animationDelay: '550ms' }}>
 
-                    {/* SECTION 4: TODAY'S LEARNING WIDGET (LEFT COL) */}
                     <section className="lg:col-span-5 space-y-6">
                         <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
                             <Zap className="w-5 h-5 text-amber-500" />
@@ -549,7 +580,6 @@ export default function LearningStudio() {
                         </CardGlow>
                     </section>
 
-                    {/* SECTION 6: KNOWLEDGE ROADMAP (RIGHT COL) */}
                     <section className="lg:col-span-7 space-y-6">
                         <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
                             <Layers className="w-5 h-5 text-amber-500" />
@@ -606,7 +636,6 @@ export default function LearningStudio() {
                 {/* --- GRID SPLIT: LEARNING JOURNEY TIMELINE & INSIGHTS --- */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 animate-slide-up-stagger" style={{ animationDelay: '700ms' }}>
 
-                    {/* SECTION 5: LEARNING JOURNEY (LEFT COL) */}
                     <section className="lg:col-span-8 space-y-6">
                         <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
                             <History className="w-5 h-5 text-amber-500" />
@@ -639,7 +668,6 @@ export default function LearningStudio() {
                         </div>
                     </section>
 
-                    {/* SECTION 9: LEARNING INSIGHTS (RIGHT COL) */}
                     <section className="lg:col-span-4 space-y-6">
                         <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
                             <BarChart3 className="w-5 h-5 text-amber-500" />
@@ -692,15 +720,22 @@ export default function LearningStudio() {
             {/* --- ADD NEW PATH MODAL (GLASSMORPHISM POPUP) --- */}
             {modalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-[#0B1120]/80 backdrop-blur-sm" onClick={() => setModalOpen(false)} />
+                    <div className="absolute inset-0 bg-[#0B1120]/80 backdrop-blur-sm" onClick={handleCloseModal} />
 
                     <div className="relative w-full max-w-lg bg-[#111827]/90 backdrop-blur-2xl border border-[#374151] rounded-3xl p-6 sm:p-8 shadow-[0_30px_60px_rgba(0,0,0,0.6)]" style={{ animation: 'modal-glass-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
-                        <button onClick={() => setModalOpen(false)} className="absolute top-6 right-6 text-[#9CA3AF] hover:text-white transition-colors">
+                        <button onClick={handleCloseModal} className="absolute top-6 right-6 text-[#9CA3AF] hover:text-white transition-colors">
                             <X className="w-5 h-5" />
                         </button>
 
                         <h2 className="text-2xl font-extrabold text-white mb-2 tracking-tight">Stage New Learning Path</h2>
-                        <p className="text-[#9CA3AF] text-xs font-medium mb-8">Establish tracking for a new technological framework, language, or system design methodology.</p>
+                        <p className="text-[#9CA3AF] text-xs font-medium mb-6">Establish tracking for a new technological framework, language, or system design methodology.</p>
+
+                        {activeError && (
+                            <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-300 text-xs font-semibold leading-relaxed shadow-lg flex items-start gap-2.5">
+                                <Sparkles className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                                <span>{activeError}</span>
+                            </div>
+                        )}
 
                         <form className="space-y-5" onSubmit={handleAddPathSubmit}>
                             <div>
@@ -746,16 +781,20 @@ export default function LearningStudio() {
                             <div>
                                 <label className="block text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-1.5 ml-1">Primary Resource (URL)</label>
                                 <input
-                                    type="url"
+                                    type="text"
                                     value={resourceUrlInput}
-                                    onChange={(e) => setResourceUrlInput(e.target.value)}
+                                    onChange={(e) => {
+                                        setResourceUrlInput(e.target.value);
+                                        setUrlValidationError(null);
+                                        dispatch(clearLearningErrors());
+                                    }}
                                     placeholder="https://..."
                                     className="w-full bg-[#0B1120] border border-[#1F2937] px-4 py-3 rounded-xl text-sm text-white placeholder-[#4B5563] focus:outline-none focus:border-amber-500/50 transition-all"
                                 />
                             </div>
 
                             <div className="flex gap-3 pt-6">
-                                <button type="button" onClick={() => setModalOpen(false)} className="flex-1 px-4 py-3 rounded-xl border border-[#374151] hover:bg-[#1F2937] text-white text-xs font-bold transition-all">Cancel</button>
+                                <button type="button" onClick={handleCloseModal} className="flex-1 px-4 py-3 rounded-xl border border-[#374151] hover:bg-[#1F2937] text-white text-xs font-bold transition-all">Cancel</button>
                                 <button type="submit" disabled={submitting} className="flex-1 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-[#0B1120] text-xs font-bold transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)] cursor-pointer">
                                     {submitting ? 'Adding...' : 'Add to Library'}
                                 </button>
