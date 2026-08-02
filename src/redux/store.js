@@ -10,6 +10,7 @@ import leetcodeReducer from './leetcodeSlice';
 import learningReducer from './learningSlice';
 import notificationReducer from './notificationSlice';
 import activityReducer from './activitySlice';
+import settingsReducer from './settingsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -24,6 +25,7 @@ export const store = configureStore({
     learning: learningReducer,
     notifications: notificationReducer,
     activity: activityReducer,
+    settings: settingsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
