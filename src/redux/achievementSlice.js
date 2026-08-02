@@ -23,13 +23,30 @@ const formatError = (payload, fallback) => {
 const handleFulfilled = (state, action) => {
   state.loading = false;
   const data = action.payload || {};
-  state.achievements = data.achievements || [];
-  state.unlockedCount = data.unlockedCount || 0;
-  state.totalCount = data.totalCount || 0;
-  state.lockedCount = data.lockedCount || 0;
-  state.completionRate = data.completionRate || 0;
-  state.latestUnlocked = data.latestUnlocked || null;
-  state.nextGoal = data.nextGoal || null;
+  const summary = data.summary || {};
+
+  state.achievements = (data.achievements || []).map((a) => ({
+    ...a,
+    unlocked: Boolean(a.unlocked || a.isUnlocked),
+    isUnlocked: Boolean(a.unlocked || a.isUnlocked),
+  }));
+
+  state.unlockedCount = summary.unlocked ?? data.unlockedCount ?? 0;
+  state.totalCount = summary.totalBadges ?? data.totalCount ?? 0;
+  state.lockedCount = summary.locked ?? data.lockedCount ?? 0;
+  state.completionRate = summary.completion ?? data.completionRate ?? 0;
+  state.latestUnlocked = summary.latestUnlockedBadge ?? data.latestUnlocked ?? null;
+
+  const ng = summary.nextGoal || data.nextGoal;
+  if (ng) {
+    state.nextGoal = {
+      ...ng,
+      progressPct: ng.progressPct ?? ng.progress ?? 0,
+      progressLabel: ng.progressLabel || `${ng.current || 0}/${ng.target || 1}`,
+    };
+  } else {
+    state.nextGoal = null;
+  }
 };
 
 const achievementSlice = createSlice({

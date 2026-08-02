@@ -67,11 +67,12 @@ export default function Achievements() {
 
     const filteredAchievements = useMemo(() => {
         return (achievements || []).filter((a) => {
+            const isUnl = Boolean(a.unlocked || a.isUnlocked);
             const matchesQuery = (a.title + a.description + a.category).toLowerCase().includes(query.toLowerCase());
             if (!matchesQuery) return false;
             if (activeFilter === "All") return true;
-            if (activeFilter === "Unlocked") return a.unlocked;
-            if (activeFilter === "Locked") return !a.unlocked;
+            if (activeFilter === "Unlocked") return isUnl;
+            if (activeFilter === "Locked") return !isUnl;
             if (activeFilter === "Task") return a.category === "task";
             if (activeFilter === "XP") return a.category === "xp";
             if (activeFilter === "Level") return a.category === "level";
@@ -79,7 +80,7 @@ export default function Achievements() {
         });
     }, [achievements, query, activeFilter]);
 
-    const showSummary = (achievements || []).length > 0;
+    const showSummary = true;
 
     return (
         <div className="min-h-screen w-full p-6 md:p-8 max-w-[1400px] mx-auto space-y-8" style={{ color: C.text }}>
@@ -241,7 +242,7 @@ export default function Achievements() {
                     </div>
                     <button
                         onClick={handleRefresh}
-                        className="px-3 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-lg text-xs font-bold transition-all"
+                        className="px-3 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-lg text-xs font-bold transition-all cursor-pointer"
                     >
                         Retry
                     </button>
@@ -307,11 +308,12 @@ export default function Achievements() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                     {filteredAchievements.map((ach) => {
                         const IconComponent = ICON_MAP[ach.icon] || Trophy;
+                        const isUnl = Boolean(ach.unlocked || ach.isUnlocked);
                         return (
                             <div
                                 key={ach.key}
                                 className={`relative rounded-2xl border p-5 transition-all duration-300 flex flex-col justify-between ${
-                                    ach.unlocked
+                                    isUnl
                                         ? "bg-[#111827] border-amber-500/30 hover:border-amber-500/60 shadow-lg shadow-amber-500/5"
                                         : "bg-[#111827]/40 border-[#1F2937] opacity-60"
                                 }`}
@@ -320,7 +322,7 @@ export default function Achievements() {
                                     <div className="flex items-center justify-between mb-4">
                                         <div
                                             className={`w-12 h-12 rounded-xl flex items-center justify-center border ${
-                                                ach.unlocked
+                                                isUnl
                                                     ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
                                                     : "bg-[#1F2937]/50 border-[#1F2937] text-[#6B7280]"
                                             }`}
@@ -328,7 +330,7 @@ export default function Achievements() {
                                             <IconComponent size={22} />
                                         </div>
 
-                                        {ach.unlocked ? (
+                                        {isUnl ? (
                                             <span className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400">
                                                 <Check size={12} /> Unlocked
                                             </span>
@@ -339,7 +341,7 @@ export default function Achievements() {
                                         )}
                                     </div>
 
-                                    <h3 className={`font-bold text-base mb-1 ${ach.unlocked ? "text-white" : "text-[#9CA3AF]"}`}>
+                                    <h3 className={`font-bold text-base mb-1 ${isUnl ? "text-white" : "text-[#9CA3AF]"}`}>
                                         {ach.title}
                                     </h3>
                                     <p className="text-xs text-[#9CA3AF] leading-relaxed mb-4">
@@ -351,7 +353,7 @@ export default function Achievements() {
                                     <span className="text-[11px] uppercase tracking-wider text-[#6B7280]">
                                         {CATEGORY_NAMES[ach.category] || ach.category}
                                     </span>
-                                    {ach.unlocked && ach.unlockedAt ? (
+                                    {isUnl && ach.unlockedAt ? (
                                         <span className="text-[11px] text-amber-500/80 font-mono">
                                             {new Date(ach.unlockedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                                         </span>

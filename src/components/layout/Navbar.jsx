@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useLocation } from 'react-router-dom';
 import { fetchUserXPThunk } from '../../redux/xpThunks';
+import { fetchNotificationsThunk, markAllAsReadThunk } from '../../redux/notificationThunks';
 import {
     Menu,
     Search,
@@ -16,50 +17,25 @@ import {
     Flame
 } from 'lucide-react';
 
-const MOCK_NOTIFICATIONS = [
-    {
-        id: 1,
-        title: 'Daily Streak Achieved!',
-        description: 'You hit a 7-day coding streak. Keep it up!',
-        time: '2 hours ago',
-        unread: true,
-        icon: <Flame size={16} className="text-orange-500" /> // Will map to a span/icon
-    },
-    {
-        id: 2,
-        title: 'New LeetCode Challenge',
-        description: 'The weekly dynamic programming challenge is live.',
-        time: '5 hours ago',
-        unread: true,
-    },
-    {
-        id: 3,
-        title: 'GitHub Sync Complete',
-        description: '12 new commits have been synced to your profile.',
-        time: '1 day ago',
-        unread: false,
-    }
-];
-
 export default function Navbar({ onMenuClick, title }) {
     const dispatch = useDispatch();
     const { totalXP, level } = useSelector((state) => state.xp);
+    const { notifications = [], unreadCount = 0 } = useSelector((state) => state.notifications);
 
     useEffect(() => {
         dispatch(fetchUserXPThunk());
+        dispatch(fetchNotificationsThunk());
     }, [dispatch]);
 
     const location = useLocation();
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
-    const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
 
     const searchInputRef = useRef(null);
     const notifRef = useRef(null);
     const profileRef = useRef(null);
 
-    // Map route path to human-readable page title if not provided
     const getPageTitle = (pathname) => {
         if (title) return title;
         const path = pathname.split('/')[1];
@@ -69,7 +45,6 @@ export default function Navbar({ onMenuClick, title }) {
 
     const displayTitle = getPageTitle(location.pathname);
 
-    // Keyboard shortcut handler (Ctrl+K to focus search)
     useEffect(() => {
         const handleKeyDown = (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -96,11 +71,23 @@ export default function Navbar({ onMenuClick, title }) {
         };
     }, []);
 
-    const unreadCount = notifications.filter(n => n.unread).length;
-
-    const markAllAsRead = (e) => {
+    const handleMarkAllAsRead = (e) => {
         e.stopPropagation();
-        setNotifications(notifications.map(n => ({ ...n, unread: false })));
+        dispatch(markAllAsReadThunk());
+    };
+
+    const formatRelativeTime = (dateStr) => {
+        if (!dateStr) return 'Recently';
+        const date = new Date(dateStr);
+        const diffMs = Date.now() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        const diffHours = Math.floor(diffMins / 60);
+        if (diffHours < 24) return `${diffHours}h ago`;
+        const diffDays = Math.floor(diffHours / 24);
+        if (diffDays === 1) return 'Yesterday';
+        return `${diffDays}d ago`;
     };
 
     return (
@@ -173,7 +160,7 @@ export default function Navbar({ onMenuClick, title }) {
             {/* --- RIGHT SECTION: XP, Notifications, Profile --- */}
             <div className="flex items-center gap-2 sm:gap-4">
 
-                {/* XP Badge (Hidden on very small screens) */}
+                {/* XP Badge */}
                 <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 text-amber-500 cursor-default select-none hover:border-amber-500/40 transition-colors">
                     <Sparkles size={16} className="text-amber-400" />
                     <div className="flex flex-col leading-none">
@@ -211,7 +198,7 @@ export default function Navbar({ onMenuClick, title }) {
                             <h3 className="font-semibold text-white">Notifications</h3>
                             {unreadCount > 0 && (
                                 <button
-                                    onClick={markAllAsRead}
+                                    onClick={handleMarkAllAsRead}
                                     className="text-xs font-medium text-amber-500 hover:text-amber-400 flex items-center gap-1 transition-colors"
                                 >
                                     <Check size={12} /> Mark all read
@@ -225,33 +212,36 @@ export default function Navbar({ onMenuClick, title }) {
                                     You're all caught up!
                                 </div>
                             ) : (
-                                notifications.map((notif) => (
-                                    <Link
-                                        key={notif.id}
-                                        to="/notifications"
-                                        onClick={() => setIsNotifOpen(false)}
-                                        className="flex gap-3 px-4 py-3 hover:bg-[#1F2937]/50 transition-colors border-b border-[#1F2937]/50 last:border-0 group"
-                                    >
-                                        <div className="mt-0.5 flex-shrink-0">
-                                            {notif.unread ? (
-                                                <Circle size={10} className="fill-amber-500 text-amber-500" />
-                                            ) : (
-                                                <Circle size={10} className="text-[#374151]" />
-                                            )}
-                                        </div>
-                                        <div>
-                                            <p className={`text-sm font-medium mb-0.5 ${notif.unread ? 'text-white' : 'text-[#9CA3AF]'}`}>
-                                                {notif.title}
-                                            </p>
-                                            <p className="text-xs text-[#6B7280] line-clamp-2 leading-relaxed">
-                                                {notif.description}
-                                            </p>
-                                            <p className="text-[10px] font-medium text-[#4B5563] mt-1.5 uppercase tracking-wider">
-                                                {notif.time}
-                                            </p>
-                                        </div>
-                                    </Link>
-                                ))
+                                notifications.map((notif) => {
+                                    const isUnread = !notif.isRead && !notif.read;
+                                    return (
+                                        <Link
+                                            key={notif._id || notif.id}
+                                            to="/notifications"
+                                            onClick={() => setIsNotifOpen(false)}
+                                            className="flex gap-3 px-4 py-3 hover:bg-[#1F2937]/50 transition-colors border-b border-[#1F2937]/50 last:border-0 group"
+                                        >
+                                            <div className="mt-0.5 flex-shrink-0">
+                                                {isUnread ? (
+                                                    <Circle size={10} className="fill-amber-500 text-amber-500" />
+                                                ) : (
+                                                    <Circle size={10} className="text-[#374151]" />
+                                                )}
+                                            </div>
+                                            <div>
+                                                <p className={`text-sm font-medium mb-0.5 ${isUnread ? 'text-white' : 'text-[#9CA3AF]'}`}>
+                                                    {notif.title}
+                                                </p>
+                                                <p className="text-xs text-[#6B7280] line-clamp-2 leading-relaxed">
+                                                    {notif.message || notif.description}
+                                                </p>
+                                                <p className="text-[10px] font-medium text-[#4B5563] mt-1.5 uppercase tracking-wider">
+                                                    {formatRelativeTime(notif.createdAt || notif.time)}
+                                                </p>
+                                            </div>
+                                        </Link>
+                                    );
+                                })
                             )}
                         </div>
 

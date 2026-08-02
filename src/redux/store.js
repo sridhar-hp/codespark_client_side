@@ -8,6 +8,7 @@ import achievementReducer from './achievementSlice';
 import githubReducer from './githubSlice';
 import leetcodeReducer from './leetcodeSlice';
 import learningReducer from './learningSlice';
+import notificationReducer from './notificationSlice';
 
 export const store = configureStore({
   reducer: {
@@ -20,6 +21,7 @@ export const store = configureStore({
     github: githubReducer,
     leetcode: leetcodeReducer,
     learning: learningReducer,
+    notifications: notificationReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
