@@ -9,6 +9,7 @@ import githubReducer from './githubSlice';
 import leetcodeReducer from './leetcodeSlice';
 import learningReducer from './learningSlice';
 import notificationReducer from './notificationSlice';
+import activityReducer from './activitySlice';
 
 export const store = configureStore({
   reducer: {
@@ -22,6 +23,7 @@ export const store = configureStore({
     leetcode: leetcodeReducer,
     learning: learningReducer,
     notifications: notificationReducer,
+    activity: activityReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
