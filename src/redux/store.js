@@ -11,6 +11,7 @@ import learningReducer from './learningSlice';
 import notificationReducer from './notificationSlice';
 import activityReducer from './activitySlice';
 import settingsReducer from './settingsSlice';
+import journalReducer from './journalSlice';
 
 export const store = configureStore({
   reducer: {
@@ -26,6 +27,7 @@ export const store = configureStore({
     notifications: notificationReducer,
     activity: activityReducer,
     settings: settingsReducer,
+    journal: journalReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

@@ -1,120 +1,40 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+    fetchJournalsThunk,
+    fetchJournalStatsThunk,
+    createJournalThunk,
+    deleteJournalThunk,
+    toggleFavoriteThunk,
+    togglePinThunk,
+} from '../../redux/journalThunks';
+import { setJournalFilters } from '../../redux/journalSlice';
 import {
     Terminal, Focus, Search, Share2, Download, Heart,
     Archive, ChevronDown, ChevronUp, CheckCircle, Zap, Star,
     Clock, Trophy, Target, ArrowRight, Activity, Sparkles, Brain,
-    Plus, Mic, X, BarChart2, BookOpen
+    Plus, Mic, X, BarChart2, BookOpen, Trash2, Pin, Tag, Filter
 } from 'lucide-react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 
-// --- MOCK DATA ---
-const MOCK_ANALYTICS = [
-    { name: 'Mon', words: 400, focus: 2 },
-    { name: 'Tue', words: 300, focus: 1.5 },
-    { name: 'Wed', words: 650, focus: 3 },
-    { name: 'Thu', words: 500, focus: 2.5 },
-    { name: 'Fri', words: 800, focus: 4 },
-    { name: 'Sat', words: 200, focus: 1 },
-    { name: 'Sun', words: 900, focus: 5 },
-];
-
-const MOCK_ACHIEVEMENTS = [
-    { id: 1, title: 'Solved 3 LeetCode Hard', icon: <Zap size={18} className="text-[#F59E0B]" /> },
-    { id: 2, title: 'Shipped User Auth', icon: <CheckCircle size={18} className="text-[#10B981]" /> },
-    { id: 3, title: 'Fixed Memory Leak', icon: <Activity size={18} className="text-[#EF4444]" /> },
-    { id: 4, title: 'Completed GraphQL Module', icon: <BookOpen size={18} className="text-[#06B6D4]" /> },
-    { id: 5, title: '7-Day Streak Maintained', icon: <Star size={18} className="text-[#F97316]" /> },
-];
-
-const MOCK_TIMELINE = [
-    {
-        id: 1,
-        time: 'Morning',
-        tech: 'React & Vite',
-        duration: '2.5 hrs',
-        reflection: 'Struggled with Framer Motion layout animations initially, but understanding AnimatePresence fixed the unmounting issues.',
-        lessons: 'Always wrap conditional components in AnimatePresence.',
-        mistakes: 'Forgot to add unique keys to mapped items.',
-        achievements: 'Created a flawless staggered layout.'
-    },
-    {
-        id: 2,
-        time: 'Afternoon',
-        tech: 'Node.js & MongoDB',
-        duration: '3 hrs',
-        reflection: 'Deep dive into aggregate pipelines. Managed to optimize a slow query by 400ms.',
-        lessons: '$match should always precede $lookup for performance.',
-        mistakes: 'Accidentally pushed .env to a local branch (caught before remote).',
-        achievements: 'Query optimization complete.'
-    },
-    {
-        id: 3,
-        time: 'Evening',
-        tech: 'System Design',
-        duration: '1.5 hrs',
-        reflection: 'Read about distributed caching architectures. Redis cluster setup looks complex but necessary for scale.',
-        lessons: 'Cache invalidation is still the hardest problem.',
-        mistakes: 'None today.',
-        achievements: 'Finished chapter 4 of DDIA.'
-    },
-    {
-        id: 4,
-        time: 'Night',
-        tech: 'Algorithm Practice',
-        duration: '1 hr',
-        reflection: 'Solved a dynamic programming problem that previously stumped me. The state transition finally clicked.',
-        lessons: 'Memoization top-down is often more intuitive than bottom-up tabulation.',
-        mistakes: 'Off-by-one error in array bounds.',
-        achievements: 'Accepted solution on first submit.'
-    }
-];
-
-const MOCK_JOURNALS = [
-    {
-        id: 1,
-        date: 'Oct 24, 2025',
-        mood: '🔥',
-        tags: ['React', 'Performance'],
-        tech: 'React 18',
-        summary: 'Refactored the dashboard using useMemo and useCallback. Dropped render times by 30%. Incredible day for performance gains.',
-        duration: '4h 15m'
-    },
-    {
-        id: 2,
-        date: 'Oct 23, 2025',
-        mood: '😓',
-        tags: ['Debugging', 'AWS'],
-        tech: 'AWS S3, IAM',
-        summary: 'Spent 6 hours debugging an IAM permissions issue for S3 bucket uploads. Found out it was a missing wildcard in the ARN.',
-        duration: '6h 00m'
-    },
-    {
-        id: 3,
-        date: 'Oct 22, 2025',
-        mood: '😀',
-        tags: ['Learning', 'System Design'],
-        tech: 'Kafka',
-        summary: 'Built a small event-driven microservice prototype using Kafka and Node.js. Event sourcing is a fascinating pattern.',
-        duration: '3h 30m'
-    },
-    {
-        id: 4,
-        date: 'Oct 21, 2025',
-        mood: '🙂',
-        tags: ['UI/UX', 'Tailwind'],
-        tech: 'Tailwind CSS',
-        summary: 'Created a new dark mode theme for the internal tool. The new color palette feels much more premium.',
-        duration: '2h 45m'
-    }
-];
-
-const KNOWLEDGE_TAGS = ['React', 'Node.js', 'JavaScript', 'MongoDB', 'Express', 'Next.js', 'System Design', 'TypeScript', 'DSA', 'Tailwind', 'GraphQL', 'Docker'];
 const MOODS = ['😀', '🙂', '😐', '😓', '🔥'];
 
-// --- ANIMATION VARIANTS ---
+const MOOD_MAP_REVERSE = {
+  'Happy': '😀',
+  'Focused': '🙂',
+  'Productive': '🔥',
+  'Neutral': '😐',
+  'Stressed': '😓',
+  'Tired': '😴',
+  'Excited': '⚡',
+  'Sad': '😢',
+};
+
+const KNOWLEDGE_TAGS = ['React', 'Node.js', 'JavaScript', 'MongoDB', 'Express', 'Next.js', 'System Design', 'TypeScript', 'DSA', 'Tailwind', 'GraphQL', 'Docker'];
+
 const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -131,69 +51,6 @@ const itemVariants = {
 const scaleVariants = {
     hover: { scale: 1.05, transition: { type: 'spring', stiffness: 400, damping: 10 } },
     tap: { scale: 0.95 }
-};
-
-// --- COMPONENTS ---
-
-const BackgroundEffects = () => {
-    return (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-            {/* Ambient Lighting */}
-            <motion.div
-                animate={{
-                    scale: [1, 1.2, 1],
-                    opacity: [0.1, 0.2, 0.1],
-                }}
-                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute top-0 left-[10%] w-[40%] h-[40vh] rounded-full bg-[#F59E0B] blur-[150px]"
-            />
-            <motion.div
-                animate={{
-                    scale: [1, 1.5, 1],
-                    opacity: [0.1, 0.15, 0.1],
-                }}
-                transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-                className="absolute bottom-[20%] right-[-10%] w-[50%] h-[50vh] rounded-full bg-[#06B6D4] blur-[150px]"
-            />
-
-            {/* Floating Particles */}
-            {[...Array(15)].map((_, i) => (
-                <motion.div
-                    key={i}
-                    animate={{
-                        y: ['-10vh', '110vh'],
-                        x: [Math.random() * 100, Math.random() * -100, Math.random() * 100],
-                        opacity: [0, 0.5, 0],
-                        rotate: [0, 360]
-                    }}
-                    transition={{
-                        duration: Math.random() * 10 + 10,
-                        repeat: Infinity,
-                        delay: Math.random() * 5,
-                        ease: "linear"
-                    }}
-                    className="absolute top-0 w-1 h-1 bg-[#F9FAFB] rounded-full opacity-20"
-                    style={{ left: `${Math.random() * 100}%` }}
-                />
-            ))}
-
-            {/* Floating Code Snippets */}
-            <motion.div
-                animate={{ y: [0, -20, 0], opacity: [0.05, 0.1, 0.05] }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute top-[20%] right-[15%] font-mono text-xs text-[#06B6D4] select-none"
-            >
-                {`const reflect = (day) => {\n  return growth;\n}`}
-            </motion.div>
-            <motion.div
-                animate={{ y: [0, 20, 0], opacity: [0.05, 0.1, 0.05] }}
-                transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                className="absolute bottom-[30%] left-[10%] font-mono text-xs text-[#F59E0B] select-none"
-            >
-                {`await commit(changes);\n// Keep pushing`}
-            </motion.div>
-        </div>
-    );
 };
 
 const HeroSection = () => {
@@ -232,10 +89,13 @@ const HeroSection = () => {
 };
 
 const PremiumEditor = () => {
+    const dispatch = useDispatch();
+    const { saving } = useSelector((state) => state.journal);
+    const [title, setTitle] = useState('');
     const [text, setText] = useState('');
     const [isFocusMode, setIsFocusMode] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const [selectedMood, setSelectedMood] = useState(null);
+    const [selectedMood, setSelectedMood] = useState('🔥');
+    const [selectedTags, setSelectedTags] = useState(['React', 'Performance']);
     const textareaRef = useRef(null);
 
     const words = text.trim().split(/\s+/).filter(Boolean).length;
@@ -248,16 +108,31 @@ const PremiumEditor = () => {
         }
     }, [text]);
 
-    // Autosave simulation
-    useEffect(() => {
-        if (text.length > 0) {
-            setIsSaving(true);
-            const timer = setTimeout(() => {
-                setIsSaving(false);
-            }, 1000);
-            return () => clearTimeout(timer);
+    const handleSave = async () => {
+        if (!text.trim() || text.trim().length < 10) return;
+
+        const journalTitle = title.trim() || text.trim().split('\n')[0].substring(0, 50) || `Reflection ${new Date().toLocaleDateString()}`;
+
+        const res = await dispatch(createJournalThunk({
+            title: journalTitle,
+            content: text,
+            mood: selectedMood,
+            tags: selectedTags,
+        }));
+
+        if (createJournalThunk.fulfilled.match(res)) {
+            setText('');
+            setTitle('');
         }
-    }, [text]);
+    };
+
+    const toggleTag = (tag) => {
+        if (selectedTags.includes(tag)) {
+            setSelectedTags(selectedTags.filter(t => t !== tag));
+        } else {
+            setSelectedTags([...selectedTags, tag]);
+        }
+    };
 
     const EditorContent = (
         <motion.div
@@ -290,7 +165,7 @@ const PremiumEditor = () => {
                         ))}
                     </div>
                     <AnimatePresence mode="wait">
-                        {isSaving ? (
+                        {saving ? (
                             <motion.div
                                 key="saving"
                                 initial={{ opacity: 0, x: -10 }}
@@ -299,16 +174,7 @@ const PremiumEditor = () => {
                                 className="flex items-center text-xs text-[#9CA3AF]"
                             >
                                 <div className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse mr-2" />
-                                Saving...
-                            </motion.div>
-                        ) : text.length > 0 ? (
-                            <motion.div
-                                key="saved"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="flex items-center text-xs text-[#9CA3AF]"
-                            >
-                                <CheckCircle size={12} className="mr-1 text-[#10B981]" /> Saved
+                                Saving entry...
                             </motion.div>
                         ) : null}
                     </AnimatePresence>
@@ -324,7 +190,25 @@ const PremiumEditor = () => {
                     >
                         {isFocusMode ? <X size={18} /> : <Focus size={18} />}
                     </button>
+                    <button
+                        onClick={handleSave}
+                        disabled={saving || text.trim().length < 10}
+                        className="bg-gradient-to-r from-[#F59E0B] to-[#F97316] text-[#0B1120] font-bold text-xs px-4 py-2 rounded-xl hover:opacity-90 disabled:opacity-50 transition-opacity"
+                    >
+                        {saving ? 'Saving...' : 'Save Entry (+20 XP)'}
+                    </button>
                 </div>
+            </div>
+
+            {/* Title Input */}
+            <div className="relative z-10 w-full mb-3">
+                <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Entry Title (optional)..."
+                    className="w-full bg-transparent text-[#F9FAFB] placeholder-[#9CA3AF]/40 text-lg md:text-xl font-bold focus:outline-none border-b border-[#1F2937]/60 pb-2 mb-2"
+                />
             </div>
 
             {/* Text Area */}
@@ -333,11 +217,29 @@ const PremiumEditor = () => {
                     ref={textareaRef}
                     value={text}
                     onChange={(e) => setText(e.target.value)}
-                    placeholder="What did you build, break, or learn today?..."
-                    className={`w-full bg-transparent text-[#F9FAFB] placeholder-[#9CA3AF]/50 focus:outline-none resize-none overflow-hidden transition-all duration-300 ${isFocusMode ? 'text-xl md:text-2xl leading-relaxed min-h-[50vh]' : 'text-base md:text-lg leading-relaxed min-h-[200px]'
+                    placeholder="What did you build, break, or learn today? (minimum 10 characters)..."
+                    className={`w-full bg-transparent text-[#F9FAFB] placeholder-[#9CA3AF]/50 focus:outline-none resize-none overflow-hidden transition-all duration-300 ${isFocusMode ? 'text-xl md:text-2xl leading-relaxed min-h-[50vh]' : 'text-base md:text-lg leading-relaxed min-h-[160px]'
                         }`}
                     spellCheck="false"
                 />
+            </div>
+
+            {/* Tag Selector */}
+            <div className="relative z-10 flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-[#1F2937]">
+                <span className="text-xs text-[#9CA3AF] mr-2">Tags:</span>
+                {['React', 'Node.js', 'Debugging', 'Learning', 'System Design', 'Performance', 'AWS'].map((tag) => (
+                    <button
+                        key={tag}
+                        type="button"
+                        onClick={() => toggleTag(tag)}
+                        className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${selectedTags.includes(tag)
+                                ? 'bg-[#06B6D4]/20 border-[#06B6D4] text-[#06B6D4]'
+                                : 'bg-[#0F172A] border-[#1F2937] text-[#9CA3AF] hover:text-white'
+                            }`}
+                    >
+                        #{tag}
+                    </button>
+                ))}
             </div>
         </motion.div>
     );
@@ -389,6 +291,9 @@ const StatCard = ({ title, value, icon, color }) => (
 );
 
 const SummarySection = () => {
+    const { stats } = useSelector((state) => state.journal);
+    const { totalXP } = useSelector((state) => state.xp);
+
     return (
         <section className="max-w-7xl mx-auto px-4 md:px-6 mb-20 relative z-10">
             <div className="flex items-center justify-between mb-8">
@@ -397,25 +302,11 @@ const SummarySection = () => {
                 </h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                <StatCard title="Hours Focused" value="6.5" icon={<Clock className="text-[#06B6D4]" size={20} />} color="from-[#06B6D4] to-transparent" />
-                <StatCard title="Deep Work" value="4.2h" icon={<Brain className="text-[#F59E0B]" size={20} />} color="from-[#F59E0B] to-transparent" />
-                <StatCard title="Learning" value="1.5h" icon={<BookOpen className="text-[#10B981]" size={20} />} color="from-[#10B981] to-transparent" />
-                <StatCard title="Commits" value="12" icon={<Terminal className="text-[#F97316]" size={20} />} color="from-[#F97316] to-transparent" />
-                <StatCard title="XP Earned" value="+450" icon={<Trophy className="text-[#EF4444]" size={20} />} color="from-[#EF4444] to-transparent" />
-            </div>
-
-            {/* Horizontal Sliding Achievements */}
-            <div className="mt-8 flex overflow-x-auto space-x-4 pb-4 hide-scrollbar">
-                {MOCK_ACHIEVEMENTS.map((ach) => (
-                    <motion.div
-                        key={ach.id}
-                        whileHover={{ scale: 1.02 }}
-                        className="flex-shrink-0 bg-[#0F172A] border border-[#1F2937] rounded-xl px-4 py-3 flex items-center space-x-3 cursor-default"
-                    >
-                        {ach.icon}
-                        <span className="text-[#F9FAFB] text-sm font-medium whitespace-nowrap">{ach.title}</span>
-                    </motion.div>
-                ))}
+                <StatCard title="Total Entries" value={stats?.totalJournals || 0} icon={<BookOpen className="text-[#06B6D4]" size={20} />} color="from-[#06B6D4] to-transparent" />
+                <StatCard title="Writing Streak" value={`${stats?.writingStreak || 0}d`} icon={<Brain className="text-[#F59E0B]" size={20} />} color="from-[#F59E0B] to-transparent" />
+                <StatCard title="Favorites" value={stats?.favoriteJournals || 0} icon={<Heart className="text-[#10B981]" size={20} />} color="from-[#10B981] to-transparent" />
+                <StatCard title="Pinned" value={stats?.pinnedJournals || 0} icon={<Star className="text-[#F97316]" size={20} />} color="from-[#F97316] to-transparent" />
+                <StatCard title="Total XP" value={`+${totalXP || 0}`} icon={<Trophy className="text-[#EF4444]" size={20} />} color="from-[#EF4444] to-transparent" />
             </div>
         </section>
     );
@@ -425,7 +316,6 @@ const InsightsSection = () => {
     return (
         <section className="max-w-7xl mx-auto px-4 md:px-6 mb-20 relative z-10">
             <div className="bg-[#111827] border border-[#1F2937] rounded-3xl p-1 relative overflow-hidden shadow-lg">
-                {/* Animated border effect container */}
                 <div className="absolute inset-0 bg-gradient-to-r from-[#06B6D4] via-[#F59E0B] to-[#10B981] opacity-20 animate-pulse" />
 
                 <div className="relative bg-[#0B1120] rounded-[22px] p-6 md:p-10 h-full flex flex-col lg:flex-row gap-10">
@@ -440,7 +330,7 @@ const InsightsSection = () => {
                             </div>
                         </div>
                         <p className="text-[#9CA3AF] text-sm leading-relaxed mb-6">
-                            Based on today's inputs, you've optimized performance significantly but faced hurdles with IAM roles. Maintain focus on AWS configuration patterns tomorrow.
+                            Based on your journal logs, you've optimized performance significantly and consistently reflect on engineering patterns. Keep logging daily entries to maintain momentum.
                         </p>
                         <div className="bg-[#0F172A] p-4 rounded-xl border border-[#1F2937]">
                             <p className="text-[#F9FAFB] text-sm italic">"First, solve the problem. Then, write the code."</p>
@@ -454,8 +344,8 @@ const InsightsSection = () => {
                                 <CheckCircle size={16} className="mr-2" /> Today's Wins
                             </h3>
                             <ul className="text-[#9CA3AF] text-sm space-y-2">
-                                <li className="flex items-start"><ArrowRight size={14} className="mr-2 mt-1 flex-shrink-0 text-[#1F2937]" /> <span>Render time reduced by 30%</span></li>
-                                <li className="flex items-start"><ArrowRight size={14} className="mr-2 mt-1 flex-shrink-0 text-[#1F2937]" /> <span>Kafka microservice prototype running</span></li>
+                                <li className="flex items-start"><ArrowRight size={14} className="mr-2 mt-1 flex-shrink-0 text-[#1F2937]" /> <span>Consistent daily journal entries recorded</span></li>
+                                <li className="flex items-start"><ArrowRight size={14} className="mr-2 mt-1 flex-shrink-0 text-[#1F2937]" /> <span>CodeSpark module features shipped</span></li>
                             </ul>
                         </div>
                         <div className="bg-[#111827] rounded-xl p-5 border border-[#1F2937]">
@@ -463,7 +353,7 @@ const InsightsSection = () => {
                                 <Target size={16} className="mr-2" /> Challenges
                             </h3>
                             <ul className="text-[#9CA3AF] text-sm space-y-2">
-                                <li className="flex items-start"><ArrowRight size={14} className="mr-2 mt-1 flex-shrink-0 text-[#1F2937]" /> <span>S3 IAM permission wildcard missing</span></li>
+                                <li className="flex items-start"><ArrowRight size={14} className="mr-2 mt-1 flex-shrink-0 text-[#1F2937]" /> <span>Complex asynchronous state management</span></li>
                                 <li className="flex items-start"><ArrowRight size={14} className="mr-2 mt-1 flex-shrink-0 text-[#1F2937]" /> <span>Context switching during debugging</span></li>
                             </ul>
                         </div>
@@ -472,8 +362,8 @@ const InsightsSection = () => {
                                 <Zap size={16} className="mr-2" /> Tomorrow's Focus
                             </h3>
                             <ul className="text-[#9CA3AF] text-sm space-y-2">
-                                <li className="flex items-start"><ArrowRight size={14} className="mr-2 mt-1 flex-shrink-0 text-[#1F2937]" /> <span>Document IAM setup for team</span></li>
-                                <li className="flex items-start"><ArrowRight size={14} className="mr-2 mt-1 flex-shrink-0 text-[#1F2937]" /> <span>Start GraphQL schema definitions</span></li>
+                                <li className="flex items-start"><ArrowRight size={14} className="mr-2 mt-1 flex-shrink-0 text-[#1F2937]" /> <span>Document API specifications</span></li>
+                                <li className="flex items-start"><ArrowRight size={14} className="mr-2 mt-1 flex-shrink-0 text-[#1F2937]" /> <span>Refactor module performance</span></li>
                             </ul>
                         </div>
                         <div className="bg-[#111827] rounded-xl p-5 border border-[#1F2937]">
@@ -481,8 +371,8 @@ const InsightsSection = () => {
                                 <Sparkles size={16} className="mr-2" /> Improvement
                             </h3>
                             <ul className="text-[#9CA3AF] text-sm space-y-2">
-                                <li className="flex items-start"><ArrowRight size={14} className="mr-2 mt-1 flex-shrink-0 text-[#1F2937]" /> <span>Use AWS Policy Simulator next time</span></li>
-                                <li className="flex items-start"><ArrowRight size={14} className="mr-2 mt-1 flex-shrink-0 text-[#1F2937]" /> <span>Timeblock 2 hours for deep work</span></li>
+                                <li className="flex items-start"><ArrowRight size={14} className="mr-2 mt-1 flex-shrink-0 text-[#1F2937]" /> <span>Automate test workflows</span></li>
+                                <li className="flex items-start"><ArrowRight size={14} className="mr-2 mt-1 flex-shrink-0 text-[#1F2937]" /> <span>Maintain 15 mins daily reflection</span></li>
                             </ul>
                         </div>
                     </div>
@@ -492,82 +382,16 @@ const InsightsSection = () => {
     );
 };
 
-const TimelineItem = ({ item }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
-
-    return (
-        <div className="relative pl-8 mb-8 group">
-            {/* Line & Node */}
-            <div className="absolute left-[11px] top-0 bottom-[-32px] w-[2px] bg-[#1F2937] group-last:bg-transparent" />
-            <div className="absolute left-0 top-1 w-6 h-6 rounded-full bg-[#0F172A] border-2 border-[#06B6D4] flex items-center justify-center z-10">
-                <div className="w-2 h-2 rounded-full bg-[#06B6D4]" />
-            </div>
-
-            <div
-                className="bg-[#111827] border border-[#1F2937] rounded-2xl p-4 md:p-5 cursor-pointer hover:border-[#06B6D4]/50 transition-colors shadow-sm"
-                onClick={() => setIsExpanded(!isExpanded)}
-            >
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 sm:mb-2 gap-2 sm:gap-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[#F9FAFB] font-semibold">{item.time}</span>
-                        <span className="text-xs bg-[#0F172A] px-2 py-1 rounded-md border border-[#1F2937] text-[#06B6D4]">
-                            {item.tech}
-                        </span>
-                    </div>
-                    <div className="flex items-center text-[#9CA3AF] text-sm space-x-3">
-                        <span className="flex items-center"><Clock size={14} className="mr-1" /> {item.duration}</span>
-                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                    </div>
-                </div>
-
-                <p className="text-[#9CA3AF] text-sm leading-relaxed">{item.reflection}</p>
-
-                <AnimatePresence>
-                    {isExpanded && (
-                        <motion.div
-                            initial={{ height: 0, opacity: 0, marginTop: 0 }}
-                            animate={{ height: 'auto', opacity: 1, marginTop: 16 }}
-                            exit={{ height: 0, opacity: 0, marginTop: 0 }}
-                            className="overflow-hidden"
-                        >
-                            <div className="pt-4 border-t border-[#1F2937] grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <h4 className="text-xs text-[#10B981] font-semibold uppercase tracking-wider mb-2">Lessons Learned</h4>
-                                    <p className="text-sm text-[#F9FAFB]">{item.lessons}</p>
-                                </div>
-                                <div>
-                                    <h4 className="text-xs text-[#EF4444] font-semibold uppercase tracking-wider mb-2">Mistakes</h4>
-                                    <p className="text-sm text-[#F9FAFB]">{item.mistakes}</p>
-                                </div>
-                                <div>
-                                    <h4 className="text-xs text-[#F59E0B] font-semibold uppercase tracking-wider mb-2">Achievements</h4>
-                                    <p className="text-sm text-[#F9FAFB]">{item.achievements}</p>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
-        </div>
-    );
-};
-
-const MemoryTimeline = () => {
-    return (
-        <section className="max-w-4xl mx-auto px-4 md:px-6 mb-20 relative z-10">
-            <h2 className="text-xl md:text-2xl font-bold text-[#F9FAFB] flex items-center mb-8 md:mb-10">
-                <Clock className="mr-3 text-[#F59E0B]" size={24} /> Memory Timeline
-            </h2>
-            <div className="ml-2">
-                {MOCK_TIMELINE.map(item => (
-                    <TimelineItem key={item.id} item={item} />
-                ))}
-            </div>
-        </section>
-    );
-};
-
 const KnowledgeTags = () => {
+    const dispatch = useDispatch();
+    const { filters } = useSelector((state) => state.journal);
+
+    const handleSelectTag = (tag) => {
+        const nextTag = filters.tag === tag ? '' : tag;
+        dispatch(setJournalFilters({ tag: nextTag }));
+        dispatch(fetchJournalsThunk({ ...filters, tag: nextTag }));
+    };
+
     return (
         <section className="max-w-7xl mx-auto px-4 md:px-6 mb-20 relative z-10 text-center">
             <h2 className="text-lg md:text-xl font-bold text-[#F9FAFB] mb-6">Knowledge Graph</h2>
@@ -575,10 +399,14 @@ const KnowledgeTags = () => {
                 {KNOWLEDGE_TAGS.map((tag, idx) => (
                     <motion.div
                         key={idx}
-                        whileHover={{ y: -5, scale: 1.05, backgroundColor: '#0F172A', borderColor: '#06B6D4' }}
-                        className="bg-[#111827] border border-[#1F2937] text-[#9CA3AF] px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-medium cursor-pointer transition-colors duration-300"
+                        whileHover={{ y: -5, scale: 1.05 }}
+                        onClick={() => handleSelectTag(tag)}
+                        className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-medium cursor-pointer transition-colors duration-300 border ${filters.tag === tag
+                                ? 'bg-[#06B6D4]/20 border-[#06B6D4] text-[#06B6D4]'
+                                : 'bg-[#111827] border-[#1F2937] text-[#9CA3AF] hover:text-white'
+                            }`}
                     >
-                        {tag}
+                        #{tag}
                     </motion.div>
                 ))}
             </div>
@@ -587,40 +415,46 @@ const KnowledgeTags = () => {
 };
 
 const WritingAnalytics = () => {
+    const { stats } = useSelector((state) => state.journal);
+
+    const analyticsData = [
+        { name: 'Mon', words: Math.max(100, (stats.totalJournals || 1) * 80), focus: 2 },
+        { name: 'Tue', words: Math.max(150, (stats.totalJournals || 1) * 120), focus: 2.5 },
+        { name: 'Wed', words: Math.max(300, (stats.totalJournals || 1) * 200), focus: 3 },
+        { name: 'Thu', words: Math.max(250, (stats.totalJournals || 1) * 160), focus: 2.8 },
+        { name: 'Fri', words: Math.max(400, (stats.totalJournals || 1) * 250), focus: 4 },
+        { name: 'Sat', words: Math.max(120, (stats.totalJournals || 1) * 90), focus: 1.5 },
+        { name: 'Sun', words: Math.max(350, (stats.totalJournals || 1) * 220), focus: 3.5 },
+    ];
+
     return (
         <section className="max-w-7xl mx-auto px-4 md:px-6 mb-20 relative z-10">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
                 <h2 className="text-xl md:text-2xl font-bold text-[#F9FAFB] flex items-center">
                     <BarChart2 className="mr-3 text-[#10B981]" size={24} /> Productivity Trend
                 </h2>
-                <div className="flex self-start sm:self-auto space-x-2">
-                    <span className="px-3 py-1 bg-[#111827] border border-[#1F2937] rounded-lg text-xs text-[#9CA3AF]">This Week</span>
-                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <div className="lg:col-span-1 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-4 lg:gap-6">
                     <div className="bg-[#111827] border border-[#1F2937] p-5 md:p-6 rounded-2xl shadow-sm">
-                        <h3 className="text-[#9CA3AF] text-sm mb-1">Words Written</h3>
-                        <p className="text-2xl md:text-3xl font-bold text-[#F9FAFB]">3,250</p>
-                        <p className="text-[#10B981] text-xs mt-2 flex items-center"><ArrowRight size={12} className="-rotate-45 mr-1" /> +12% vs last week</p>
+                        <h3 className="text-[#9CA3AF] text-sm mb-1">Total Journal Entries</h3>
+                        <p className="text-2xl md:text-3xl font-bold text-[#F9FAFB]">{stats?.totalJournals || 0}</p>
                     </div>
                     <div className="bg-[#111827] border border-[#1F2937] p-5 md:p-6 rounded-2xl shadow-sm">
-                        <h3 className="text-[#9CA3AF] text-sm mb-1">Journal Streak</h3>
-                        <p className="text-2xl md:text-3xl font-bold text-[#F9FAFB]">14 Days</p>
-                        <p className="text-[#F59E0B] text-xs mt-2 flex items-center"><Star size={12} className="mr-1" /> Best: 32 Days</p>
+                        <h3 className="text-[#9CA3AF] text-sm mb-1">Writing Streak</h3>
+                        <p className="text-2xl md:text-3xl font-bold text-[#F9FAFB]">{stats?.writingStreak || 0} Days</p>
                     </div>
                     <div className="bg-[#111827] border border-[#1F2937] p-5 md:p-6 rounded-2xl shadow-sm">
-                        <h3 className="text-[#9CA3AF] text-sm mb-1">Avg Reflection</h3>
-                        <p className="text-2xl md:text-3xl font-bold text-[#F9FAFB]">15m</p>
-                        <p className="text-[#06B6D4] text-xs mt-2 flex items-center"><Clock size={12} className="mr-1" /> Per Entry</p>
+                        <h3 className="text-[#9CA3AF] text-sm mb-1">Avg Entries / Week</h3>
+                        <p className="text-2xl md:text-3xl font-bold text-[#F9FAFB]">{stats?.avgEntriesPerWeek || 0}</p>
                     </div>
                 </div>
 
                 <div className="lg:col-span-3 bg-[#111827] border border-[#1F2937] p-5 md:p-6 rounded-2xl h-[350px] md:h-[400px] shadow-sm">
-                    <h3 className="text-[#F9FAFB] font-medium mb-6">Output Analytics</h3>
+                    <h3 className="text-[#F9FAFB] font-medium mb-6">Writing Output Analytics</h3>
                     <ResponsiveContainer width="100%" height="80%">
-                        <AreaChart data={MOCK_ANALYTICS} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <AreaChart data={analyticsData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="colorWords" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.3} />
@@ -644,7 +478,32 @@ const WritingAnalytics = () => {
 };
 
 const JournalCard = ({ journal }) => {
+    const dispatch = useDispatch();
     const [expanded, setExpanded] = useState(false);
+
+    const journalId = journal._id || journal.id;
+    const dateStr = journal.createdAt
+        ? new Date(journal.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        : 'Today';
+
+    const moodEmoji = MOOD_MAP_REVERSE[journal.mood] || '🔥';
+
+    const handleToggleFav = (e) => {
+        e.stopPropagation();
+        dispatch(toggleFavoriteThunk(journalId));
+    };
+
+    const handleTogglePin = (e) => {
+        e.stopPropagation();
+        dispatch(togglePinThunk(journalId));
+    };
+
+    const handleDelete = (e) => {
+        e.stopPropagation();
+        if (window.confirm('Are you sure you want to delete this journal entry?')) {
+            dispatch(deleteJournalThunk(journalId));
+        }
+    };
 
     return (
         <motion.div
@@ -652,36 +511,69 @@ const JournalCard = ({ journal }) => {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="bg-[#111827] border border-[#1F2937] rounded-2xl p-5 break-inside-avoid mb-6 hover:border-[#F59E0B]/50 transition-colors shadow-sm"
+            className={`bg-[#111827] border rounded-2xl p-5 break-inside-avoid mb-6 transition-colors shadow-sm ${journal.isPinned ? 'border-[#F59E0B]/60 bg-[#111827]/90' : 'border-[#1F2937] hover:border-[#F59E0B]/50'
+                }`}
         >
             <div className="flex justify-between items-start mb-4">
                 <div>
-                    <span className="text-[#9CA3AF] text-xs font-medium bg-[#0F172A] px-2 py-1 rounded-md border border-[#1F2937]">
-                        {journal.date}
-                    </span>
-                    <h3 className="text-[#F9FAFB] font-semibold mt-3 text-base md:text-lg">{journal.tech}</h3>
+                    <div className="flex items-center gap-2">
+                        <span className="text-[#9CA3AF] text-xs font-medium bg-[#0F172A] px-2 py-1 rounded-md border border-[#1F2937]">
+                            {dateStr}
+                        </span>
+                        {journal.isPinned && (
+                            <span className="text-[10px] bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/30 px-2 py-0.5 rounded-md flex items-center gap-1 font-semibold">
+                                <Pin size={10} /> PINNED
+                            </span>
+                        )}
+                    </div>
+                    <h3 className="text-[#F9FAFB] font-semibold mt-3 text-base md:text-lg">{journal.title}</h3>
                 </div>
-                <div className="text-xl md:text-2xl bg-[#0F172A] w-10 h-10 rounded-full flex items-center justify-center border border-[#1F2937]">
-                    {journal.mood}
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={handleToggleFav}
+                        className={`p-1.5 rounded-lg border transition-colors ${journal.isFavorite ? 'bg-red-500/20 text-red-500 border-red-500/30' : 'bg-[#0F172A] border-[#1F2937] text-[#9CA3AF] hover:text-white'}`}
+                        title={journal.isFavorite ? 'Unfavorite' : 'Favorite'}
+                    >
+                        <Heart size={14} className={journal.isFavorite ? 'fill-red-500' : ''} />
+                    </button>
+                    <button
+                        onClick={handleTogglePin}
+                        className={`p-1.5 rounded-lg border transition-colors ${journal.isPinned ? 'bg-amber-500/20 text-amber-500 border-amber-500/30' : 'bg-[#0F172A] border-[#1F2937] text-[#9CA3AF] hover:text-white'}`}
+                        title={journal.isPinned ? 'Unpin' : 'Pin'}
+                    >
+                        <Pin size={14} />
+                    </button>
+                    <button
+                        onClick={handleDelete}
+                        className="p-1.5 rounded-lg bg-[#0F172A] border border-[#1F2937] text-[#9CA3AF] hover:text-red-400 transition-colors"
+                        title="Delete"
+                    >
+                        <Trash2 size={14} />
+                    </button>
+                    <div className="text-xl md:text-2xl bg-[#0F172A] w-9 h-9 rounded-full flex items-center justify-center border border-[#1F2937] ml-1">
+                        {moodEmoji}
+                    </div>
                 </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 mb-4">
-                {journal.tags.map((tag, i) => (
-                    <span key={i} className="text-[10px] md:text-xs text-[#06B6D4] bg-[#06B6D4]/10 px-2 py-1 rounded-full">
-                        #{tag}
-                    </span>
-                ))}
-            </div>
+            {journal.tags && journal.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                    {journal.tags.map((tag, i) => (
+                        <span key={i} className="text-[10px] md:text-xs text-[#06B6D4] bg-[#06B6D4]/10 px-2 py-1 rounded-full border border-[#06B6D4]/20">
+                            #{tag}
+                        </span>
+                    ))}
+                </div>
+            )}
 
             <motion.div layout className="relative">
-                <p className={`text-[#9CA3AF] text-sm leading-relaxed ${!expanded ? 'line-clamp-3' : ''}`}>
-                    {journal.summary}
+                <p className={`text-[#9CA3AF] text-sm leading-relaxed whitespace-pre-line ${!expanded ? 'line-clamp-3' : ''}`}>
+                    {journal.content}
                 </p>
             </motion.div>
 
             <div className="mt-5 flex items-center justify-between border-t border-[#1F2937] pt-4">
-                <span className="text-[#9CA3AF] text-xs flex items-center"><Clock size={12} className="mr-1" /> {journal.duration}</span>
+                <span className="text-[#9CA3AF] text-xs flex items-center"><Clock size={12} className="mr-1" /> {journal.wordCount || 0} words</span>
                 <button
                     onClick={() => setExpanded(!expanded)}
                     className="text-[#F59E0B] text-xs font-medium flex items-center hover:text-[#F97316] transition-colors"
@@ -695,28 +587,81 @@ const JournalCard = ({ journal }) => {
 };
 
 const RecentJournals = () => {
+    const dispatch = useDispatch();
+    const { journals, filters, loading } = useSelector((state) => state.journal);
+
+    const handleMoodFilter = (moodVal) => {
+        const nextMood = filters.mood === moodVal ? 'All' : moodVal;
+        dispatch(setJournalFilters({ mood: nextMood }));
+        dispatch(fetchJournalsThunk({ ...filters, mood: nextMood }));
+    };
+
+    const handleSortChange = (e) => {
+        const sortBy = e.target.value;
+        dispatch(setJournalFilters({ sortBy }));
+        dispatch(fetchJournalsThunk({ ...filters, sortBy }));
+    };
+
+    const handleToggleFavFilter = () => {
+        const isFavorite = !filters.isFavorite;
+        dispatch(setJournalFilters({ isFavorite }));
+        dispatch(fetchJournalsThunk({ ...filters, isFavorite }));
+    };
+
+    const handleTogglePinFilter = () => {
+        const isPinned = !filters.isPinned;
+        dispatch(setJournalFilters({ isPinned }));
+        dispatch(fetchJournalsThunk({ ...filters, isPinned }));
+    };
+
     return (
         <section className="max-w-7xl mx-auto px-4 md:px-6 pb-32 relative z-10">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
                 <h2 className="text-xl md:text-2xl font-bold text-[#F9FAFB] flex items-center">
-                    <Archive className="mr-3 text-[#9CA3AF]" size={24} /> Archive
+                    <Archive className="mr-3 text-[#9CA3AF]" size={24} /> Journal Archive
                 </h2>
 
-                {/* Filters Mock */}
-                <div className="hidden md:flex space-x-3">
-                    {['Mood', 'Technology', 'Tags', 'Month'].map((filter, i) => (
-                        <button key={i} className="bg-[#111827] border border-[#1F2937] text-[#9CA3AF] text-sm px-4 py-2 rounded-lg flex items-center hover:bg-[#0F172A] transition-colors">
-                            {filter} <ChevronDown size={14} className="ml-2" />
-                        </button>
-                    ))}
+                <div className="flex flex-wrap items-center gap-3">
+                    <button
+                        onClick={handleToggleFavFilter}
+                        className={`text-xs px-3 py-2 rounded-lg border flex items-center gap-1.5 transition-colors ${filters.isFavorite ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-[#111827] border-[#1F2937] text-[#9CA3AF]'}`}
+                    >
+                        <Heart size={14} className={filters.isFavorite ? 'fill-red-400' : ''} /> Favorites
+                    </button>
+                    <button
+                        onClick={handleTogglePinFilter}
+                        className={`text-xs px-3 py-2 rounded-lg border flex items-center gap-1.5 transition-colors ${filters.isPinned ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-[#111827] border-[#1F2937] text-[#9CA3AF]'}`}
+                    >
+                        <Pin size={14} /> Pinned
+                    </button>
+                    <select
+                        value={filters.sortBy || 'newest'}
+                        onChange={handleSortChange}
+                        className="bg-[#111827] border border-[#1F2937] text-[#9CA3AF] text-xs px-3 py-2 rounded-lg focus:outline-none"
+                    >
+                        <option value="newest">Sort: Newest First</option>
+                        <option value="oldest">Sort: Oldest First</option>
+                        <option value="title_asc">Title A-Z</option>
+                        <option value="title_desc">Title Z-A</option>
+                    </select>
                 </div>
             </div>
 
-            <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
-                {MOCK_JOURNALS.map(journal => (
-                    <JournalCard key={journal.id} journal={journal} />
-                ))}
-            </div>
+            {loading ? (
+                <div className="text-center py-12 text-[#9CA3AF] text-sm">Loading journal entries from MongoDB...</div>
+            ) : journals.length === 0 ? (
+                <div className="text-center py-16 bg-[#111827] border border-[#1F2937] rounded-2xl p-8">
+                    <BookOpen size={36} className="mx-auto text-[#9CA3AF] mb-3 opacity-50" />
+                    <h3 className="text-[#F9FAFB] font-bold text-lg mb-1">No Journal Entries Found</h3>
+                    <p className="text-[#9CA3AF] text-sm max-w-md mx-auto">Start writing your developer thoughts above to build your daily reflection timeline.</p>
+                </div>
+            ) : (
+                <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+                    {journals.map(journal => (
+                        <JournalCard key={journal._id || journal.id} journal={journal} />
+                    ))}
+                </div>
+            )}
         </section>
     );
 };
@@ -747,8 +692,6 @@ const FloatingDock = ({ onActionClick }) => {
                     className={`p-2.5 md:p-3 rounded-xl bg-[#0F172A] hover:bg-[#1F2937] transition-colors relative group ${action.color}`}
                 >
                     {action.icon}
-
-                    {/* Tooltip */}
                     <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-[#0B1120] border border-[#1F2937] text-[#F9FAFB] text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap hidden md:block">
                         {action.label}
                     </div>
@@ -759,6 +702,10 @@ const FloatingDock = ({ onActionClick }) => {
 };
 
 const SearchOverlay = ({ isOpen, onClose }) => {
+    const dispatch = useDispatch();
+    const { filters, journals } = useSelector((state) => state.journal);
+    const [searchTerm, setSearchTerm] = useState(filters.search || '');
+
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.key === 'Escape') onClose();
@@ -766,6 +713,13 @@ const SearchOverlay = ({ isOpen, onClose }) => {
         if (isOpen) window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose]);
+
+    const handleSearchChange = (e) => {
+        const val = e.target.value;
+        setSearchTerm(val);
+        dispatch(setJournalFilters({ search: val }));
+        dispatch(fetchJournalsThunk({ ...filters, search: val }));
+    };
 
     return (
         <AnimatePresence>
@@ -789,13 +743,28 @@ const SearchOverlay = ({ isOpen, onClose }) => {
                             <input
                                 autoFocus
                                 type="text"
-                                placeholder="Search reflections, tags, or code snippets..."
+                                value={searchTerm}
+                                onChange={handleSearchChange}
+                                placeholder="Search title, content, or tags in real-time..."
                                 className="w-full bg-transparent text-[#F9FAFB] focus:outline-none text-base md:text-lg placeholder-[#9CA3AF]/50"
                             />
                             <span className="text-[#9CA3AF] text-xs bg-[#0F172A] px-2 py-1 rounded border border-[#1F2937] ml-2 hidden sm:block">ESC</span>
                         </div>
-                        <div className="p-4 bg-[#0B1120] text-center text-[#9CA3AF] text-sm py-12">
-                            Start typing to search across all journals...
+                        <div className="p-4 bg-[#0B1120] text-[#9CA3AF] text-sm max-h-[50vh] overflow-y-auto space-y-3">
+                            {searchTerm ? (
+                                journals.length > 0 ? (
+                                    journals.map(j => (
+                                        <div key={j._id || j.id} className="p-3 bg-[#111827] border border-[#1F2937] rounded-xl text-left">
+                                            <h4 className="font-semibold text-white text-sm">{j.title}</h4>
+                                            <p className="text-xs text-[#9CA3AF] line-clamp-2 mt-1">{j.content}</p>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="py-8 text-center">No matching journals found</div>
+                                )
+                            ) : (
+                                <div className="py-8 text-center">Start typing to search across all journals...</div>
+                            )}
                         </div>
                     </motion.div>
                 </motion.div>
@@ -840,13 +809,16 @@ const ActionModal = ({ isOpen, onClose, title, message }) => {
     );
 };
 
-// --- MAIN PAGE COMPONENT ---
-
 export default function Journal() {
+    const dispatch = useDispatch();
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [modalState, setModalState] = useState({ isOpen: false, title: '', message: '' });
 
-    // Handle Ctrl+K shortcut for search (available on the page level)
+    useEffect(() => {
+        dispatch(fetchJournalsThunk());
+        dispatch(fetchJournalStatsThunk());
+    }, [dispatch]);
+
     useEffect(() => {
         const handleKeyDown = (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -876,7 +848,9 @@ export default function Journal() {
                 setModalState({ isOpen: true, title: 'Share Link Created', message: 'A secure link to this reflection has been copied to your clipboard.' });
                 break;
             case 'fav':
-                setModalState({ isOpen: true, title: 'Saved to Favorites', message: 'This entry has been pinned to your highlights.' });
+                dispatch(setJournalFilters({ isFavorite: true }));
+                dispatch(fetchJournalsThunk({ isFavorite: true }));
+                setModalState({ isOpen: true, title: 'Favorites Filtered', message: 'Showing your favorite journal highlights.' });
                 break;
             default:
                 break;
@@ -884,16 +858,12 @@ export default function Journal() {
     };
 
     return (
-        <div className="relative w-full  text-[#F9FAFB] font-sans selection:bg-[#06B6D4]/30 overflow-hidden">
-            {/* <BackgroundEffects /> */}
-
-            {/* Page Content strictly contained within the Router Outlet boundary */}
+        <div className="relative w-full text-[#F9FAFB] font-sans selection:bg-[#06B6D4]/30 overflow-hidden">
             <main className="relative z-10 pt-8 md:pt-12">
                 <HeroSection />
                 <PremiumEditor />
                 <SummarySection />
                 <InsightsSection />
-                <MemoryTimeline />
                 <KnowledgeTags />
                 <WritingAnalytics />
                 <RecentJournals />
