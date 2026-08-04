@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+    fetchCommunicationsThunk,
+    fetchCommunicationStatsThunk,
+    createCommunicationThunk,
+    updateCommunicationThunk,
+    deleteCommunicationThunk,
+    markCompletedThunk,
+    markMissedThunk,
+} from '../../redux/communicationThunks';
+import { setCommunicationFilters } from '../../redux/communicationSlice';
 import {
     LineChart, Line, AreaChart, Area, BarChart, Bar,
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -8,49 +19,31 @@ import {
     Mic, MessageSquare, Video, PenTool, TrendingUp, Activity, Award, Star,
     Clock, Zap, Target, BookOpen, Layers, Monitor, Briefcase, FileText,
     Share2, Linkedin, Terminal, CheckCircle2, Calendar, Play, BarChart3,
-    ChevronRight, Volume2, Users
+    ChevronRight, Volume2, Users, Plus, X, Search, Trash2, AlertCircle, Phone, Edit
 } from 'lucide-react';
 
-// --- MOCK DATA ---
-const performanceData = [
-    { name: 'Mon', confidence: 65, clarity: 70, pacing: 60 },
-    { name: 'Tue', confidence: 68, clarity: 75, pacing: 65 },
-    { name: 'Wed', confidence: 74, clarity: 72, pacing: 70 },
-    { name: 'Thu', confidence: 79, clarity: 80, pacing: 75 },
-    { name: 'Fri', confidence: 85, clarity: 82, pacing: 78 },
-    { name: 'Sat', confidence: 82, clarity: 85, pacing: 80 },
-    { name: 'Sun', confidence: 88, clarity: 89, pacing: 85 },
+const COMMUNICATION_TYPES = [
+    'All',
+    'Interview',
+    'HR',
+    'Recruiter',
+    'Networking',
+    'Meeting',
+    'Email',
+    'LinkedIn',
+    'Phone Call',
+    'Mock Interview',
+    'Other',
 ];
 
-const activityData = [
-    { name: 'System Design', time: 120 },
-    { name: 'Behavioral', time: 85 },
-    { name: 'Tech Blog', time: 150 },
-    { name: 'Code Review', time: 90 },
+const SORT_OPTIONS = [
+    { label: 'Newest First', value: 'newest' },
+    { label: 'Oldest First', value: 'oldest' },
+    { label: 'Upcoming', value: 'upcoming' },
+    { label: 'Completed', value: 'completed' },
+    { label: 'Priority', value: 'priority' },
+    { label: 'Alphabetical', value: 'alphabetical' },
 ];
-
-const timelineEvents = [
-    { id: 1, type: 'interview', title: 'System Design Explanation', duration: '15 min', topic: 'Microservices', xp: '+150 XP', icon: Layers, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-    { id: 2, type: 'writing', title: 'Technical Documentation', duration: '45 min', topic: 'React Hooks API', xp: '+200 XP', icon: FileText, color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
-    { id: 3, type: 'presentation', title: 'Project Demo', duration: '10 min', topic: 'Authentication Flow', xp: '+100 XP', icon: Monitor, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-    { id: 4, type: 'behavioral', title: 'HR Interview Practice', duration: '20 min', topic: 'Conflict Resolution', xp: '+180 XP', icon: Users, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-];
-
-const interviewModules = [
-    { title: 'Technical Interview', attempts: 24, completion: '85%', confidence: 'High', lastPracticed: '2h ago', icon: Terminal, accent: 'group-hover:text-cyan-500' },
-    { title: 'System Design', attempts: 18, completion: '60%', confidence: 'Medium', lastPracticed: '1d ago', icon: Layers, accent: 'group-hover:text-amber-500' },
-    { title: 'Behavioral (STAR)', attempts: 32, completion: '95%', confidence: 'Very High', lastPracticed: '5h ago', icon: Briefcase, accent: 'group-hover:text-emerald-500' },
-    { title: 'HR & Cultural Fit', attempts: 15, completion: '70%', confidence: 'High', lastPracticed: '3d ago', icon: Users, accent: 'group-hover:text-rose-500' },
-];
-
-const writingModules = [
-    { title: 'API Documentation', count: 12, icon: FileText },
-    { title: 'LinkedIn Posts', count: 8, icon: Linkedin },
-    { title: 'Code Review Comments', count: 145, icon: MessageSquare },
-    { title: 'Technical Blogs', count: 3, icon: PenTool },
-];
-
-// --- COMPONENTS ---
 
 const VoiceWave = () => {
     return (
@@ -116,19 +109,185 @@ const CircularProgress = ({ value, label, subtitle, color, size = 120 }) => {
 };
 
 export default function CommunicationStudio() {
-    const [hoveredCard, setHoveredCard] = useState(null);
+    const dispatch = useDispatch();
+    const { communications, stats, filters, loading, saving } = useSelector((state) => state.communication || {});
+
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [editingItem, setEditingItem] = useState(null);
+    const [searchTerm, setSearchTerm] = useState(filters?.search || '');
+    const [errorMsg, setErrorMsg] = useState('');
+    const [toastMsg, setToastMsg] = useState('');
+
+    const initialForm = {
+        title: '',
+        personName: '',
+        company: '',
+        communicationType: 'Interview',
+        status: 'Upcoming',
+        priority: 'Medium',
+        platform: 'Zoom',
+        durationMinutes: 30,
+        notes: '',
+        rating: 5,
+    };
+
+    const [form, setForm] = useState(initialForm);
+
+    useEffect(() => {
+        dispatch(fetchCommunicationsThunk());
+        dispatch(fetchCommunicationStatsThunk());
+    }, [dispatch]);
+
+    const handleOpenCreate = () => {
+        setEditingItem(null);
+        setForm(initialForm);
+        setErrorMsg('');
+        setIsCreateOpen(true);
+    };
+
+    const handleOpenEdit = (item) => {
+        setEditingItem(item);
+        setForm({
+            title: item.title || '',
+            personName: item.personName || '',
+            company: item.company || '',
+            communicationType: item.communicationType || 'Interview',
+            status: item.status || 'Upcoming',
+            priority: item.priority || 'Medium',
+            platform: item.platform || 'Zoom',
+            durationMinutes: item.durationMinutes || 30,
+            notes: item.notes || '',
+            rating: item.rating || 5,
+        });
+        setErrorMsg('');
+        setIsCreateOpen(true);
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setErrorMsg('');
+
+        if (!form.title.trim() || form.title.trim().length < 3) {
+            setErrorMsg('Title is required (minimum 3 characters).');
+            return;
+        }
+
+        if (!form.personName.trim()) {
+            setErrorMsg('Person Name is required.');
+            return;
+        }
+
+        let res;
+        if (editingItem) {
+            res = await dispatch(updateCommunicationThunk({ id: editingItem._id || editingItem.id, data: form }));
+        } else {
+            res = await dispatch(createCommunicationThunk(form));
+        }
+
+        if (createCommunicationThunk.fulfilled.match(res) || updateCommunicationThunk.fulfilled.match(res)) {
+            setIsCreateOpen(false);
+            setForm(initialForm);
+            setEditingItem(null);
+            setToastMsg(editingItem ? 'Communication updated successfully!' : 'Communication logged successfully!');
+            setTimeout(() => setToastMsg(''), 4000);
+        } else {
+            setErrorMsg(res.payload || 'Action failed. Please try again.');
+        }
+    };
+
+    const handleSearchChange = (e) => {
+        const val = e.target.value;
+        setSearchTerm(val);
+        dispatch(setCommunicationFilters({ search: val }));
+        dispatch(fetchCommunicationsThunk({ ...filters, search: val }));
+    };
+
+    const handleTypeFilter = (type) => {
+        const nextType = filters?.communicationType === type ? 'All' : type;
+        dispatch(setCommunicationFilters({ communicationType: nextType }));
+        dispatch(fetchCommunicationsThunk({ ...filters, communicationType: nextType }));
+    };
+
+    const handleSortChange = (e) => {
+        const sortBy = e.target.value;
+        let timeframe = 'All';
+        if (sortBy === 'upcoming') timeframe = 'upcoming';
+        if (sortBy === 'completed') timeframe = 'completed';
+
+        dispatch(setCommunicationFilters({ sortBy, timeframe }));
+        dispatch(fetchCommunicationsThunk({ ...filters, sortBy, timeframe }));
+    };
+
+    const handleComplete = (id) => {
+        dispatch(markCompletedThunk(id));
+        setToastMsg('Meeting marked as completed!');
+        setTimeout(() => setToastMsg(''), 4000);
+    };
+
+    const handleMissed = (id) => {
+        dispatch(markMissedThunk(id));
+        setToastMsg('Meeting marked as missed.');
+        setTimeout(() => setToastMsg(''), 4000);
+    };
+
+    const handleDelete = (id) => {
+        if (window.confirm('Are you sure you want to delete this communication record?')) {
+            dispatch(deleteCommunicationThunk(id));
+            setToastMsg('Communication log deleted.');
+            setTimeout(() => setToastMsg(''), 4000);
+        }
+    };
+
+    const performanceData = stats?.weeklyPerformance && stats.weeklyPerformance.length > 0
+        ? stats.weeklyPerformance
+        : [
+            { name: 'Mon', confidence: 65, clarity: 70, pacing: 60 },
+            { name: 'Tue', confidence: 68, clarity: 75, pacing: 65 },
+            { name: 'Wed', confidence: 74, clarity: 72, pacing: 70 },
+            { name: 'Thu', confidence: 79, clarity: 80, pacing: 75 },
+            { name: 'Fri', confidence: 85, clarity: 82, pacing: 78 },
+            { name: 'Sat', confidence: 82, clarity: 85, pacing: 80 },
+            { name: 'Sun', confidence: 88, clarity: 89, pacing: 85 },
+        ];
+
+    const interviewModules = [
+        { title: 'Technical Interview', attempts: stats?.interviewCount || 0, completion: '85%', confidence: 'High', lastPracticed: 'Live DB', icon: Terminal, accent: 'group-hover:text-cyan-500' },
+        { title: 'System Design', attempts: stats?.upcomingMeetings || 0, completion: '60%', confidence: 'Medium', lastPracticed: 'Live DB', icon: Layers, accent: 'group-hover:text-amber-500' },
+        { title: 'HR & Recruiter Call', attempts: stats?.recruiterConversations || 0, completion: '95%', confidence: 'Very High', lastPracticed: 'Live DB', icon: Briefcase, accent: 'group-hover:text-emerald-500' },
+        { title: 'Networking Drive', attempts: stats?.networkingEvents || 0, completion: '70%', confidence: 'High', lastPracticed: 'Live DB', icon: Users, accent: 'group-hover:text-rose-500' },
+    ];
+
+    const writingModules = [
+        { title: 'API Documentation', count: 12, icon: FileText },
+        { title: 'LinkedIn Posts', count: 8, icon: Linkedin },
+        { title: 'Code Review Comments', count: 145, icon: MessageSquare },
+        { title: 'Technical Blogs', count: 3, icon: PenTool },
+    ];
 
     return (
-        <div className="min-h-screen  text-gray-300 font-sans selection:bg-amber-500/30 overflow-x-hidden pb-24">
+        <div className="min-h-screen text-gray-300 font-sans selection:bg-amber-500/30 overflow-x-hidden pb-24 relative">
             {/* Background Ambient Glows */}
             <div className="fixed top-0 left-1/4 w-[800px] h-[600px] bg-amber-500/5 rounded-full blur-[120px] pointer-events-none -z-10" />
             <div className="fixed bottom-0 right-1/4 w-[600px] h-[500px] bg-cyan-500/5 rounded-full blur-[100px] pointer-events-none -z-10" />
 
+            {/* Success Toast Notification */}
+            <AnimatePresence>
+                {toastMsg && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="fixed top-6 right-6 z-[100] bg-emerald-500 text-gray-950 font-bold px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 text-sm"
+                    >
+                        <CheckCircle2 size={18} /> {toastMsg}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <div className="max-w-7xl mx-auto px-6 pt-12 space-y-12">
 
-                {/* ================= HERO SECTION ================= */}
+                {/* HERO SECTION */}
                 <section className="relative w-full py-10 flex flex-col lg:flex-row items-center justify-between gap-12">
-                    {/* Floating Background Particles */}
                     <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
                         <motion.div animate={{ y: [-10, 10, -10], rotate: [0, 5, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} className="absolute top-10 left-10 text-[#1F2937]">
                             <MessageSquare size={48} />
@@ -148,7 +307,7 @@ export default function CommunicationStudio() {
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
                             </span>
-                            <span>Studio Active</span>
+                            <span>Communication Activity Tracker</span>
                         </motion.div>
 
                         <motion.h1
@@ -169,7 +328,7 @@ export default function CommunicationStudio() {
                             transition={{ delay: 0.2 }}
                             className="text-lg text-gray-400 max-w-xl leading-relaxed"
                         >
-                            Elevate your engineering career. Practice system design explanations, behavioral interviews, and technical documentation with real-time AI feedback.
+                            Elevate your engineering career. Log recruiter calls, HR interviews, networking meetings, system design practice, and technical feedback.
                         </motion.p>
                     </div>
 
@@ -179,15 +338,14 @@ export default function CommunicationStudio() {
                         transition={{ delay: 0.3, type: "spring" }}
                         className="w-full lg:w-[400px] h-[280px] relative"
                     >
-                        {/* Glassmorphic Audio/Mic Panel */}
                         <div className="absolute inset-0 bg-[#111827]/80 backdrop-blur-xl border border-[#1F2937] rounded-3xl p-8 flex flex-col items-center justify-between shadow-2xl shadow-amber-500/10 overflow-hidden">
                             <div className="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/20 rounded-full blur-3xl" />
                             <div className="w-full flex justify-between items-start z-10">
                                 <div>
                                     <h3 className="text-white font-semibold flex items-center gap-2">
-                                        <Volume2 size={18} className="text-amber-500" /> Live Session
+                                        <Volume2 size={18} className="text-amber-500" /> Communication Log
                                     </h3>
-                                    <p className="text-xs text-gray-400 mt-1">Listening to pacing & clarity...</p>
+                                    <p className="text-xs text-gray-400 mt-1">Track calls & scheduled meetings...</p>
                                 </div>
                                 <div className="h-10 w-10 bg-amber-500/10 rounded-full flex items-center justify-center border border-amber-500/20">
                                     <Mic className="text-amber-500" size={20} />
@@ -198,21 +356,24 @@ export default function CommunicationStudio() {
                                 <VoiceWave />
                             </div>
 
-                            <button className="w-full py-3 bg-white text-[#0B1120] font-bold rounded-xl hover:bg-gray-100 transition-colors shadow-lg active:scale-95 flex items-center justify-center gap-2 z-10">
-                                <Play size={18} fill="currentColor" /> Start Practice
+                            <button
+                                onClick={handleOpenCreate}
+                                className="w-full py-3 bg-white text-[#0B1120] font-bold rounded-xl hover:bg-gray-100 transition-colors shadow-lg active:scale-95 flex items-center justify-center gap-2 z-10"
+                            >
+                                <Plus size={18} /> Log New Call / Meeting
                             </button>
                         </div>
                     </motion.div>
                 </section>
 
-                {/* ================= DASHBOARD METRICS ================= */}
+                {/* DASHBOARD METRICS */}
                 <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                     {[
-                        { label: "Today's Speaking Time", value: "45m", sub: "+12m from yesterday", icon: Clock, color: "text-amber-500", bg: "bg-amber-500/10" },
-                        { label: "Communication XP", value: "12,450", sub: "Level 14 Orator", icon: Zap, color: "text-cyan-500", bg: "bg-cyan-500/10" },
-                        { label: "Current Goal", value: "Sys Design", sub: "3/5 sessions done", icon: Target, color: "text-rose-500", bg: "bg-rose-500/10" },
-                        { label: "Dev Comm Level", value: "Senior", sub: "Top 15% globally", icon: Award, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-                        { label: "Confidence Score", value: "88/100", sub: "Trending up 📈", icon: TrendingUp, color: "text-amber-500", bg: "bg-amber-500/10" },
+                        { label: "Upcoming Meetings", value: stats?.upcomingMeetings || 0, sub: "Pending calls", icon: Clock, color: "text-amber-500", bg: "bg-amber-500/10" },
+                        { label: "Completed This Week", value: stats?.completedThisWeek || 0, sub: "Calls finished", icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+                        { label: "Total Hours", value: `${stats?.totalHours || 0}h`, sub: "Logged time", icon: Zap, color: "text-cyan-500", bg: "bg-cyan-500/10" },
+                        { label: "Interviews", value: stats?.interviewCount || 0, sub: "Technical & HR", icon: Briefcase, color: "text-rose-500", bg: "bg-rose-500/10" },
+                        { label: "Avg Rating", value: `${stats?.avgRating || 5}/5`, sub: "Self rating 🌟", icon: Star, color: "text-amber-500", bg: "bg-amber-500/10" },
                     ].map((stat, i) => (
                         <motion.div
                             key={i}
@@ -230,91 +391,58 @@ export default function CommunicationStudio() {
                             <h4 className="text-3xl font-bold text-white mb-1">{stat.value}</h4>
                             <p className="text-sm font-medium text-gray-300 mb-1">{stat.label}</p>
                             <p className="text-xs text-gray-500">{stat.sub}</p>
-
-                            {/* Hover gradient effect */}
                             <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/0 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                         </motion.div>
                     ))}
                 </section>
 
-                {/* ================= DAILY CHALLENGE & PROGRESS ================= */}
-                <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Daily Challenge - Takes up 2 cols */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        className="lg:col-span-2 relative bg-gradient-to-br from-[#111827] to-[#111827]/50 border border-amber-500/20 rounded-3xl p-8 overflow-hidden group shadow-[0_0_40px_-15px_rgba(245,158,11,0.1)] hover:shadow-[0_0_40px_-15px_rgba(245,158,11,0.2)] transition-shadow"
-                    >
-                        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <MessageSquare size={120} />
-                        </div>
+                {/* SEARCH & FILTERS BAR */}
+                <section className="bg-[#111827] border border-[#1F2937] rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className="relative w-full md:w-80">
+                        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={handleSearchChange}
+                            placeholder="Search by title, person, company..."
+                            className="w-full bg-[#0B1120] border border-[#1F2937] rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+                        />
+                    </div>
 
-                        <div className="flex items-center space-x-3 mb-6">
-                            <div className="bg-amber-500/20 p-2 rounded-xl border border-amber-500/30">
-                                <Zap className="text-amber-500" size={24} />
-                            </div>
-                            <h2 className="text-2xl font-bold text-white">Daily Communication Challenge</h2>
-                        </div>
+                    <div className="flex flex-wrap items-center gap-2 overflow-x-auto max-w-full py-1">
+                        {COMMUNICATION_TYPES.map((type) => (
+                            <button
+                                key={type}
+                                onClick={() => handleTypeFilter(type)}
+                                className={`text-xs px-3 py-1.5 rounded-lg border transition-colors whitespace-nowrap ${filters?.communicationType === type
+                                        ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                                        : 'bg-[#0B1120] border-[#1F2937] text-gray-400 hover:text-white'
+                                    }`}
+                            >
+                                {type}
+                            </button>
+                        ))}
+                    </div>
 
-                        <div className="space-y-4 max-w-xl z-10 relative">
-                            <h3 className="text-3xl font-semibold text-white leading-tight">
-                                Explain "React Hooks" to a Junior Developer in under 2 minutes.
-                            </h3>
-                            <p className="text-gray-400 text-lg">
-                                Focus on clarity, eliminating jargon, and using real-world analogies. Your pacing and filler-word usage will be analyzed.
-                            </p>
-
-                            <div className="pt-6 flex gap-4">
-                                <button className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold rounded-xl transition-colors active:scale-95 flex items-center gap-2">
-                                    <Mic size={20} /> Start Recording
-                                </button>
-                                <button className="px-6 py-3 bg-transparent border border-[#1F2937] hover:bg-[#1F2937] text-white font-medium rounded-xl transition-colors active:scale-95">
-                                    View Examples
-                                </button>
-                            </div>
-                        </div>
-                    </motion.div>
-
-                    {/* Speaking Progress */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        className="bg-[#111827] border border-[#1F2937] rounded-3xl p-8 flex flex-col items-center justify-center relative"
-                    >
-                        <h3 className="absolute top-6 left-6 font-semibold text-white flex items-center gap-2">
-                            <Activity size={18} className="text-cyan-500" /> Speaking Progress
-                        </h3>
-
-                        <div className="mt-8">
-                            <CircularProgress value={75} label="45m" subtitle="Today's Goal" color="text-cyan-500" size={160} />
-                        </div>
-
-                        <div className="w-full grid grid-cols-2 gap-4 mt-8">
-                            <div className="bg-[#0B1120] p-3 rounded-xl border border-[#1F2937] text-center">
-                                <p className="text-xs text-gray-400 mb-1">Weekly Avg</p>
-                                <p className="text-lg font-bold text-white">38m</p>
-                            </div>
-                            <div className="bg-[#0B1120] p-3 rounded-xl border border-[#1F2937] text-center">
-                                <p className="text-xs text-gray-400 mb-1">Streak</p>
-                                <p className="text-lg font-bold text-white flex items-center justify-center gap-1">
-                                    12 <Zap size={14} className="text-amber-500" fill="currentColor" />
-                                </p>
-                            </div>
-                        </div>
-                    </motion.div>
+                    <div>
+                        <select
+                            value={filters?.sortBy || 'newest'}
+                            onChange={handleSortChange}
+                            className="bg-[#0B1120] border border-[#1F2937] text-xs text-gray-300 px-3 py-2 rounded-xl focus:outline-none focus:border-amber-500"
+                        >
+                            {SORT_OPTIONS.map((opt) => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                        </select>
+                    </div>
                 </section>
 
-                {/* ================= BENTO GRID: INTERVIEWS & PRESENTATION ================= */}
+                {/* INTERVIEW PRACTICE BENTO */}
                 <section className="space-y-6">
                     <div className="flex items-center justify-between">
                         <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                            <Briefcase className="text-amber-500" /> Interview Practice
+                            <Briefcase className="text-amber-500" /> Communication Breakdown
                         </h2>
-                        <button className="text-sm text-amber-500 hover:text-amber-400 flex items-center gap-1 transition-colors">
-                            View All <ChevronRight size={16} />
-                        </button>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -325,9 +453,7 @@ export default function CommunicationStudio() {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: i * 0.1 }}
-                                onHoverStart={() => setHoveredCard(i)}
-                                onHoverEnd={() => setHoveredCard(null)}
-                                className="group bg-[#111827] border border-[#1F2937] rounded-2xl p-6 hover:-translate-y-1 hover:border-gray-600 transition-all duration-300 relative overflow-hidden cursor-pointer"
+                                className="group bg-[#111827] border border-[#1F2937] rounded-2xl p-6 hover:-translate-y-1 hover:border-gray-600 transition-all duration-300 relative overflow-hidden"
                             >
                                 <div className="flex justify-between items-start mb-6">
                                     <div className={`p-3 rounded-xl bg-[#0B1120] border border-[#1F2937] transition-colors duration-300 ${mod.accent}`}>
@@ -337,45 +463,24 @@ export default function CommunicationStudio() {
                                         {mod.lastPracticed}
                                     </span>
                                 </div>
-
-                                <h3 className="text-lg font-bold text-white mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-gray-400 transition-all">
-                                    {mod.title}
-                                </h3>
-
+                                <h3 className="text-lg font-bold text-white mb-4">{mod.title}</h3>
                                 <div className="space-y-3">
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-gray-400">Attempts</span>
+                                        <span className="text-gray-400">Total Count</span>
                                         <span className="text-white font-medium">{mod.attempts}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span className="text-gray-400">Confidence</span>
                                         <span className="text-white font-medium">{mod.confidence}</span>
                                     </div>
-
-                                    {/* Progress Bar */}
-                                    <div className="pt-2">
-                                        <div className="w-full bg-[#0B1120] rounded-full h-1.5 overflow-hidden">
-                                            <motion.div
-                                                initial={{ width: 0 }}
-                                                whileInView={{ width: mod.completion }}
-                                                viewport={{ once: true }}
-                                                transition={{ duration: 1, delay: 0.5 }}
-                                                className="bg-amber-500 h-1.5 rounded-full"
-                                            />
-                                        </div>
-                                    </div>
                                 </div>
-
-                                {/* Ambient hover glow */}
-                                <div className={`absolute -bottom-10 -right-10 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl transition-opacity duration-500 ${hoveredCard === i ? 'opacity-100' : 'opacity-0'}`} />
                             </motion.div>
                         ))}
                     </div>
                 </section>
 
-                {/* ================= WRITING & PRESENTATION STUDIO ================= */}
+                {/* WRITING & PRESENTATION STUDIO */}
                 <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Writing Studio */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -406,7 +511,6 @@ export default function CommunicationStudio() {
                         </div>
                     </motion.div>
 
-                    {/* Presentation Studio */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -441,9 +545,8 @@ export default function CommunicationStudio() {
                     </motion.div>
                 </section>
 
-                {/* ================= STATS & TIMELINE ================= */}
+                {/* STATS & TIMELINE */}
                 <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
                     {/* Charts (Takes 2 cols) */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -453,12 +556,8 @@ export default function CommunicationStudio() {
                     >
                         <div className="flex items-center justify-between mb-8">
                             <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                <BarChart3 className="text-indigo-500" /> Communication Statistics
+                                <BarChart3 className="text-indigo-500" /> Weekly Communication Activity
                             </h2>
-                            <div className="flex gap-2">
-                                <button className="px-3 py-1 bg-[#0B1120] text-xs font-medium text-white border border-[#1F2937] rounded-lg">Confidence</button>
-                                <button className="px-3 py-1 bg-transparent text-xs font-medium text-gray-400 border border-transparent hover:text-white rounded-lg transition-colors">Activity</button>
-                            </div>
                         </div>
 
                         <div className="h-[300px] w-full">
@@ -488,51 +587,242 @@ export default function CommunicationStudio() {
                         </div>
                     </motion.div>
 
-                    {/* Recent Practice Timeline */}
+                    {/* Live Communication Sessions Timeline */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.2 }}
-                        className="bg-[#111827] border border-[#1F2937] rounded-3xl p-8"
+                        className="bg-[#111827] border border-[#1F2937] rounded-3xl p-8 overflow-y-auto max-h-[480px]"
                     >
-                        <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-8">
-                            <Calendar className="text-rose-500" /> Recent Sessions
-                        </h2>
-
-                        <div className="relative pl-4 border-l border-[#1F2937] space-y-8">
-                            {timelineEvents.map((event, i) => (
-                                <motion.div
-                                    key={event.id}
-                                    initial={{ opacity: 0, x: -10 }}
-                                    whileInView={{ opacity: 1, x: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: i * 0.15 }}
-                                    className="relative"
-                                >
-                                    {/* Timeline Dot */}
-                                    <div className={`absolute -left-[33px] top-1 h-4 w-4 rounded-full border-4 border-[#111827] ${event.bg} flex items-center justify-center`}>
-                                        <div className={`h-1.5 w-1.5 rounded-full ${event.color.replace('text-', 'bg-')}`} />
-                                    </div>
-
-                                    <div className="bg-[#0B1120] border border-[#1F2937] rounded-xl p-4 hover:border-gray-600 transition-colors group cursor-pointer">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div className="flex items-center gap-2">
-                                                <event.icon size={14} className={event.color} />
-                                                <span className="text-xs font-medium text-gray-400 capitalize">{event.type}</span>
-                                            </div>
-                                            <span className="text-xs font-bold text-amber-500">{event.xp}</span>
-                                        </div>
-                                        <h4 className="text-sm font-semibold text-white group-hover:text-amber-400 transition-colors">{event.title}</h4>
-                                        <p className="text-xs text-gray-500 mt-1">{event.topic} • {event.duration}</p>
-                                    </div>
-                                </motion.div>
-                            ))}
+                        <div className="flex items-center justify-between mb-8">
+                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                <Calendar className="text-rose-500" /> Logged Communication Calls
+                            </h2>
                         </div>
-                    </motion.div>
 
+                        {loading ? (
+                            <div className="text-center py-12 text-gray-500 text-sm">Loading communication logs...</div>
+                        ) : !communications || communications.length === 0 ? (
+                            <div className="text-center py-12 text-gray-500 text-sm">
+                                <MessageSquare size={32} className="mx-auto mb-2 opacity-50" />
+                                No communication logs match filter criteria.
+                            </div>
+                        ) : (
+                            <div className="relative pl-4 border-l border-[#1F2937] space-y-6">
+                                {communications.map((event) => (
+                                    <div key={event._id || event.id} className="relative">
+                                        <div className="absolute -left-[25px] top-1 h-3.5 w-3.5 rounded-full border-2 border-[#111827] bg-amber-500" />
+                                        <div className="bg-[#0B1120] border border-[#1F2937] rounded-xl p-4 hover:border-gray-600 transition-colors">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <span className="text-xs font-semibold text-amber-500 uppercase tracking-wider">{event.communicationType}</span>
+                                                <span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${event.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400' : event.status === 'Missed' ? 'bg-red-500/20 text-red-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                                                    {event.status}
+                                                </span>
+                                            </div>
+                                            <h4 className="text-sm font-bold text-white">{event.title}</h4>
+                                            <p className="text-xs text-gray-400 mt-1">{event.personName} {event.company ? `(${event.company})` : ''} • {event.durationMinutes || 30} mins</p>
+                                            {event.notes && <p className="text-xs text-gray-500 mt-2 italic line-clamp-2">"{event.notes}"</p>}
+
+                                            <div className="mt-3 pt-3 border-t border-[#1F2937] flex items-center justify-between gap-2">
+                                                {event.status !== 'Completed' && (
+                                                    <button
+                                                        onClick={() => handleComplete(event._id || event.id)}
+                                                        className="text-[11px] text-emerald-400 hover:underline flex items-center gap-1"
+                                                    >
+                                                        <CheckCircle2 size={12} /> Mark Done
+                                                    </button>
+                                                )}
+                                                {event.status === 'Upcoming' && (
+                                                    <button
+                                                        onClick={() => handleMissed(event._id || event.id)}
+                                                        className="text-[11px] text-red-400 hover:underline flex items-center gap-1"
+                                                    >
+                                                        <X size={12} /> Mark Missed
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => handleOpenEdit(event)}
+                                                    className="text-[11px] text-amber-400 hover:underline flex items-center gap-1 ml-auto"
+                                                >
+                                                    <Edit size={12} /> Edit
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(event._id || event.id)}
+                                                    className="text-[11px] text-gray-500 hover:text-red-400 transition-colors"
+                                                >
+                                                    <Trash2 size={12} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </motion.div>
                 </section>
             </div>
+
+            {/* CREATE / EDIT COMMUNICATION MODAL */}
+            <AnimatePresence>
+                {isCreateOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+                        onClick={() => setIsCreateOpen(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-[#111827] border border-[#1F2937] rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl space-y-6"
+                        >
+                            <div className="flex items-center justify-between border-b border-[#1F2937] pb-4">
+                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                    <Phone className="text-amber-500" size={20} /> {editingItem ? 'Edit Communication Log' : 'Log Communication Call / Meeting'}
+                                </h3>
+                                <button onClick={() => setIsCreateOpen(false)} className="text-gray-400 hover:text-white">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            {errorMsg && (
+                                <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-xl text-xs flex items-center gap-2">
+                                    <AlertCircle size={16} /> {errorMsg}
+                                </div>
+                            )}
+
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <div>
+                                    <label className="text-xs font-medium text-gray-400">Title *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={form.title}
+                                        onChange={(e) => setForm({ ...form, title: e.target.value })}
+                                        placeholder="e.g. System Design Interview Round 1"
+                                        className="w-full bg-[#0B1120] border border-[#1F2937] rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-amber-500 mt-1"
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-xs font-medium text-gray-400">Person Name *</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={form.personName}
+                                            onChange={(e) => setForm({ ...form, personName: e.target.value })}
+                                            placeholder="e.g. Sarah Jenkins"
+                                            className="w-full bg-[#0B1120] border border-[#1F2937] rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-amber-500 mt-1"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-gray-400">Company</label>
+                                        <input
+                                            type="text"
+                                            value={form.company}
+                                            onChange={(e) => setForm({ ...form, company: e.target.value })}
+                                            placeholder="e.g. Google"
+                                            className="w-full bg-[#0B1120] border border-[#1F2937] rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-amber-500 mt-1"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-xs font-medium text-gray-400">Type</label>
+                                        <select
+                                            value={form.communicationType}
+                                            onChange={(e) => setForm({ ...form, communicationType: e.target.value })}
+                                            className="w-full bg-[#0B1120] border border-[#1F2937] rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-amber-500 mt-1"
+                                        >
+                                            {COMMUNICATION_TYPES.filter(t => t !== 'All').map(t => (
+                                                <option key={t} value={t}>{t}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-gray-400">Platform</label>
+                                        <select
+                                            value={form.platform}
+                                            onChange={(e) => setForm({ ...form, platform: e.target.value })}
+                                            className="w-full bg-[#0B1120] border border-[#1F2937] rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-amber-500 mt-1"
+                                        >
+                                            <option value="Zoom">Zoom</option>
+                                            <option value="Google Meet">Google Meet</option>
+                                            <option value="Microsoft Teams">Microsoft Teams</option>
+                                            <option value="Phone">Phone</option>
+                                            <option value="LinkedIn">LinkedIn</option>
+                                            <option value="Email">Email</option>
+                                            <option value="WhatsApp">WhatsApp</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-xs font-medium text-gray-400">Duration (Mins)</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="600"
+                                            value={form.durationMinutes}
+                                            onChange={(e) => setForm({ ...form, durationMinutes: parseInt(e.target.value, 10) || 0 })}
+                                            className="w-full bg-[#0B1120] border border-[#1F2937] rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-amber-500 mt-1"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-gray-400">Status</label>
+                                        <select
+                                            value={form.status}
+                                            onChange={(e) => setForm({ ...form, status: e.target.value })}
+                                            className="w-full bg-[#0B1120] border border-[#1F2937] rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-amber-500 mt-1"
+                                        >
+                                            <option value="Upcoming">Upcoming</option>
+                                            <option value="Completed">Completed</option>
+                                            <option value="Missed">Missed</option>
+                                            <option value="Cancelled">Cancelled</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="text-xs font-medium text-gray-400">Notes / Takeaways</label>
+                                    <textarea
+                                        rows="3"
+                                        value={form.notes}
+                                        onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                                        placeholder="Add meeting takeaways or preparation notes..."
+                                        className="w-full bg-[#0B1120] border border-[#1F2937] rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-amber-500 mt-1"
+                                    />
+                                </div>
+
+                                <div className="flex justify-end gap-3 pt-4 border-t border-[#1F2937]">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsCreateOpen(false)}
+                                        className="px-4 py-2 rounded-xl bg-[#0B1120] border border-[#1F2937] text-sm text-gray-300 hover:text-white"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={saving}
+                                        className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold text-sm transition-colors"
+                                    >
+                                        {saving ? 'Saving...' : editingItem ? 'Update Communication' : 'Save Communication Log'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
