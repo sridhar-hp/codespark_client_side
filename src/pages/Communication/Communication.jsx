@@ -41,6 +41,7 @@ const SORT_OPTIONS = [
     { label: 'Oldest First', value: 'oldest' },
     { label: 'Upcoming', value: 'upcoming' },
     { label: 'Completed', value: 'completed' },
+    { label: 'Missed', value: 'missed' },
     { label: 'Priority', value: 'priority' },
     { label: 'Alphabetical', value: 'alphabetical' },
 ];
@@ -185,9 +186,15 @@ export default function CommunicationStudio() {
         }
 
         if (createCommunicationThunk.fulfilled.match(res) || updateCommunicationThunk.fulfilled.match(res)) {
+            // 1. Close Modal
             setIsCreateOpen(false);
+            // 2. Clear Form
             setForm(initialForm);
             setEditingItem(null);
+            // 3 & 4. Refresh Communications & Stats
+            dispatch(fetchCommunicationsThunk(filters));
+            dispatch(fetchCommunicationStatsThunk());
+            // 5. Show Toast
             setToastMsg(editingItem ? 'Communication updated successfully!' : 'Communication logged successfully!');
             setTimeout(() => setToastMsg(''), 4000);
         } else {
@@ -213,26 +220,33 @@ export default function CommunicationStudio() {
         let timeframe = 'All';
         if (sortBy === 'upcoming') timeframe = 'upcoming';
         if (sortBy === 'completed') timeframe = 'completed';
+        if (sortBy === 'missed') timeframe = 'missed';
 
         dispatch(setCommunicationFilters({ sortBy, timeframe }));
         dispatch(fetchCommunicationsThunk({ ...filters, sortBy, timeframe }));
     };
 
-    const handleComplete = (id) => {
-        dispatch(markCompletedThunk(id));
+    const handleComplete = async (id) => {
+        await dispatch(markCompletedThunk(id));
+        dispatch(fetchCommunicationsThunk(filters));
+        dispatch(fetchCommunicationStatsThunk());
         setToastMsg('Meeting marked as completed!');
         setTimeout(() => setToastMsg(''), 4000);
     };
 
-    const handleMissed = (id) => {
-        dispatch(markMissedThunk(id));
+    const handleMissed = async (id) => {
+        await dispatch(markMissedThunk(id));
+        dispatch(fetchCommunicationsThunk(filters));
+        dispatch(fetchCommunicationStatsThunk());
         setToastMsg('Meeting marked as missed.');
         setTimeout(() => setToastMsg(''), 4000);
     };
 
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this communication record?')) {
-            dispatch(deleteCommunicationThunk(id));
+            await dispatch(deleteCommunicationThunk(id));
+            dispatch(fetchCommunicationsThunk(filters));
+            dispatch(fetchCommunicationStatsThunk());
             setToastMsg('Communication log deleted.');
             setTimeout(() => setToastMsg(''), 4000);
         }
