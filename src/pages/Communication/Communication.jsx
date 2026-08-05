@@ -10,6 +10,7 @@ import {
     markCompletedThunk,
     markMissedThunk,
 } from '../../redux/communicationThunks';
+import { fetchOmegaStatsThunk } from '../../redux/omegaThunks';
 import { setCommunicationFilters } from '../../redux/communicationSlice';
 import {
     LineChart, Line, AreaChart, Area, BarChart, Bar,
@@ -71,6 +72,7 @@ const VoiceWave = () => {
 export default function CommunicationStudio() {
     const dispatch = useDispatch();
     const { communications, stats, filters, loading, saving } = useSelector((state) => state.communication || {});
+    const { stats: omegaReduxStats, currentSession, lastSync: omegaLastSync } = useSelector((state) => state.omega || {});
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
@@ -96,6 +98,7 @@ export default function CommunicationStudio() {
     useEffect(() => {
         dispatch(fetchCommunicationsThunk(filters));
         dispatch(fetchCommunicationStatsThunk());
+        dispatch(fetchOmegaStatsThunk());
     }, [dispatch]);
 
     const handleOpenCreate = () => {
@@ -150,6 +153,7 @@ export default function CommunicationStudio() {
             setEditingItem(null);
             dispatch(fetchCommunicationsThunk(filters));
             dispatch(fetchCommunicationStatsThunk());
+            dispatch(fetchOmegaStatsThunk());
             setToastMsg(editingItem ? 'Communication updated successfully!' : 'Communication logged successfully!');
             setTimeout(() => setToastMsg(''), 4000);
         } else {
@@ -185,6 +189,7 @@ export default function CommunicationStudio() {
         await dispatch(markCompletedThunk(id));
         dispatch(fetchCommunicationsThunk(filters));
         dispatch(fetchCommunicationStatsThunk());
+        dispatch(fetchOmegaStatsThunk());
         setToastMsg('Meeting marked as completed!');
         setTimeout(() => setToastMsg(''), 4000);
     };
@@ -202,6 +207,7 @@ export default function CommunicationStudio() {
             await dispatch(deleteCommunicationThunk(id));
             dispatch(fetchCommunicationsThunk(filters));
             dispatch(fetchCommunicationStatsThunk());
+            dispatch(fetchOmegaStatsThunk());
             setToastMsg('Communication log deleted.');
             setTimeout(() => setToastMsg(''), 4000);
         }
@@ -231,7 +237,7 @@ export default function CommunicationStudio() {
         { title: 'Networking Drive', attempts: stats?.networkingEvents || 0, completion: '70%', confidence: 'High', lastPracticed: 'Live DB', icon: Users, accent: 'group-hover:text-rose-500' },
     ];
 
-    const omega = stats?.omegaStats || {};
+    const omega = omegaReduxStats?.hasData ? omegaReduxStats : (stats?.omegaStats || {});
 
     return (
         <div className="min-h-screen text-gray-300 font-sans selection:bg-amber-500/30 overflow-x-hidden pb-24 relative">
@@ -406,7 +412,7 @@ export default function CommunicationStudio() {
                     </div>
                 </section>
 
-                {/* 3. LOGGED COMMUNICATION CALLS (Moved immediately below Search + Filters) */}
+                {/* 3. LOGGED COMMUNICATION CALLS */}
                 <motion.section
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -565,7 +571,7 @@ export default function CommunicationStudio() {
                     </div>
                 </motion.section>
 
-                {/* 6. OMEGATV PRACTICE SECTION (Replacing Writing Studio & Presentation Practice) */}
+                {/* 6. OMEGATV PRACTICE SECTION (Chrome Extension Connected) */}
                 <motion.section
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -575,12 +581,12 @@ export default function CommunicationStudio() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 border-b border-[#1F2937] pb-6">
                         <div>
                             <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full text-amber-500 text-xs font-semibold mb-2">
-                                <Zap size={14} /> OMEGA PRACTICE STUDIO
+                                <Zap size={14} /> OMEGA PRACTICE TELEMETRY
                             </div>
                             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                                OmegaTV Practice Telemetry
+                                OmegaTV Live Monitoring & Telemetry
                             </h2>
-                            <p className="text-sm text-gray-400 mt-1">Real-time practice analytics & AI feedback session metrics.</p>
+                            <p className="text-sm text-gray-400 mt-1">Real-time session metrics synchronized via CodeSpark Chrome Extension.</p>
                         </div>
 
                         <button
@@ -595,41 +601,42 @@ export default function CommunicationStudio() {
                         <div className="py-12 text-center bg-[#0B1120] border border-[#1F2937] rounded-2xl p-6">
                             <Activity size={36} className="mx-auto text-amber-500 mb-3 opacity-60" />
                             <h3 className="text-white font-bold text-lg mb-1">No Omega practice yet.</h3>
-                            <p className="text-gray-400 text-sm max-w-md mx-auto">Log your communication & interview sessions or launch an Omega Session to start generating telemetry data.</p>
+                            <p className="text-gray-400 text-sm max-w-md mx-auto">Open <span className="text-amber-400 font-semibold">ome.tv</span> or click Launch Omega Session to start tracking automatically with our Chrome Extension.</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             <div className="bg-[#0B1120] border border-[#1F2937] p-5 rounded-2xl">
                                 <p className="text-xs text-gray-400 mb-1">Last Practice Date</p>
-                                <p className="text-xl font-bold text-white">{omega.lastPracticeDate}</p>
-                                <p className="text-xs text-amber-400 mt-1">Time: {omega.lastPracticeTime}</p>
+                                <p className="text-xl font-bold text-white">{omega.lastPracticeDate || 'No practice yet'}</p>
+                                <p className="text-xs text-amber-400 mt-1">Time: {omega.lastPracticeTime || '0m'}</p>
                             </div>
                             <div className="bg-[#0B1120] border border-[#1F2937] p-5 rounded-2xl">
-                                <p className="text-xs text-gray-400 mb-1">Total Practice Duration</p>
-                                <p className="text-xl font-bold text-white">{omega.totalPracticeDuration}</p>
-                                <p className="text-xs text-cyan-400 mt-1">Today: {omega.todayPracticeDuration}</p>
+                                <p className="text-xs text-gray-400 mb-1">Total Practice Time</p>
+                                <p className="text-xl font-bold text-white">{omega.totalPracticeDuration || '0 mins'}</p>
+                                <p className="text-xs text-cyan-400 mt-1">Today: {omega.todayPracticeDuration || '0 mins'}</p>
                             </div>
                             <div className="bg-[#0B1120] border border-[#1F2937] p-5 rounded-2xl">
-                                <p className="text-xs text-gray-400 mb-1">Total Omega Sessions</p>
-                                <p className="text-xl font-bold text-white">{omega.totalOmegaSessions}</p>
-                                <p className="text-xs text-emerald-400 mt-1">Longest: {omega.longestSession}</p>
+                                <p className="text-xs text-gray-400 mb-1">Total Sessions</p>
+                                <p className="text-xl font-bold text-white">{omega.totalOmegaSessions || 0}</p>
+                                <p className="text-xs text-emerald-400 mt-1">Longest: {omega.longestSession || '0 mins'}</p>
                             </div>
                             <div className="bg-[#0B1120] border border-[#1F2937] p-5 rounded-2xl">
-                                <p className="text-xs text-gray-400 mb-1">Practice Streak</p>
+                                <p className="text-xs text-gray-400 mb-1">Current Streak</p>
                                 <p className="text-xl font-bold text-white flex items-center gap-1.5">
-                                    {omega.currentPracticeStreak} <Flame size={18} className="text-amber-500" />
+                                    {omega.currentPracticeStreak || '0 Days'} <Flame size={18} className="text-amber-500" />
                                 </p>
-                                <p className="text-xs text-amber-400 mt-1">Best: {omega.bestStreak}</p>
+                                <p className="text-xs text-amber-400 mt-1">Best: {omega.bestStreak || '0 Days'}</p>
                             </div>
                             <div className="bg-[#0B1120] border border-[#1F2937] p-5 rounded-2xl">
-                                <p className="text-xs text-gray-400 mb-1">Avg Session Duration</p>
-                                <p className="text-xl font-bold text-white">{omega.avgSessionDuration}</p>
-                                <p className="text-xs text-gray-400 mt-1">Per session average</p>
+                                <p className="text-xs text-gray-400 mb-1">Average Session</p>
+                                <p className="text-xl font-bold text-white">{omega.avgSessionDuration || '0 mins'}</p>
+                                <p className="text-xs text-gray-400 mt-1">Per practice session</p>
                             </div>
                             <div className="bg-[#0B1120] border border-[#1F2937] p-5 rounded-2xl flex items-center justify-between">
                                 <div>
-                                    <p className="text-xs text-gray-400 mb-1">Omega Extension</p>
-                                    <p className="text-sm font-bold text-emerald-400">Ready to Connect</p>
+                                    <p className="text-xs text-gray-400 mb-1">Extension Status</p>
+                                    <p className="text-sm font-bold text-emerald-400">Chrome Extension Active</p>
+                                    <p className="text-[10px] text-gray-500 mt-0.5">Last Sync: {omegaLastSync ? new Date(omegaLastSync).toLocaleTimeString() : 'Live'}</p>
                                 </div>
                                 <div className="h-10 w-10 bg-amber-500/10 rounded-full flex items-center justify-center border border-amber-500/20 text-amber-500">
                                     <Zap size={20} />

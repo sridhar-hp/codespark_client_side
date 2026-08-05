@@ -13,6 +13,7 @@ import activityReducer from './activitySlice';
 import settingsReducer from './settingsSlice';
 import journalReducer from './journalSlice';
 import communicationReducer from './communicationSlice';
+import omegaReducer from './omegaSlice';
 
 export const store = configureStore({
   reducer: {
@@ -30,6 +31,7 @@ export const store = configureStore({
     settings: settingsReducer,
     journal: journalReducer,
     communication: communicationReducer,
+    omega: omegaReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
