@@ -19,7 +19,7 @@ import {
     Mic, MessageSquare, Video, PenTool, TrendingUp, Activity, Award, Star,
     Clock, Zap, Target, BookOpen, Layers, Monitor, Briefcase, FileText,
     Share2, Linkedin, Terminal, CheckCircle2, Calendar, Play, BarChart3,
-    ChevronRight, Volume2, Users, Plus, X, Search, Trash2, AlertCircle, Phone, Edit
+    ChevronRight, Volume2, Users, Plus, X, Search, Trash2, AlertCircle, Phone, Edit, ExternalLink, Flame
 } from 'lucide-react';
 
 const COMMUNICATION_TYPES = [
@@ -68,47 +68,6 @@ const VoiceWave = () => {
     );
 };
 
-const CircularProgress = ({ value, label, subtitle, color, size = 120 }) => {
-    const strokeWidth = 8;
-    const radius = (size - strokeWidth) / 2;
-    const circumference = radius * 2 * Math.PI;
-    const strokeDashoffset = circumference - (value / 100) * circumference;
-
-    return (
-        <div className="relative flex flex-col items-center justify-center" style={{ width: size, height: size }}>
-            <svg className="transform -rotate-90" width={size} height={size}>
-                <circle
-                    className="text-[#1F2937]"
-                    strokeWidth={strokeWidth}
-                    stroke="currentColor"
-                    fill="transparent"
-                    r={radius}
-                    cx={size / 2}
-                    cy={size / 2}
-                />
-                <motion.circle
-                    className={color}
-                    strokeWidth={strokeWidth}
-                    strokeDasharray={circumference}
-                    stroke="currentColor"
-                    fill="transparent"
-                    strokeLinecap="round"
-                    r={radius}
-                    cx={size / 2}
-                    cy={size / 2}
-                    initial={{ strokeDashoffset: circumference }}
-                    animate={{ strokeDashoffset }}
-                    transition={{ duration: 1.5, ease: "easeOut" }}
-                />
-            </svg>
-            <div className="absolute flex flex-col items-center justify-center text-center">
-                <span className="text-2xl font-bold text-white">{label}</span>
-                <span className="text-xs text-gray-400">{subtitle}</span>
-            </div>
-        </div>
-    );
-};
-
 export default function CommunicationStudio() {
     const dispatch = useDispatch();
     const { communications, stats, filters, loading, saving } = useSelector((state) => state.communication || {});
@@ -135,7 +94,7 @@ export default function CommunicationStudio() {
     const [form, setForm] = useState(initialForm);
 
     useEffect(() => {
-        dispatch(fetchCommunicationsThunk());
+        dispatch(fetchCommunicationsThunk(filters));
         dispatch(fetchCommunicationStatsThunk());
     }, [dispatch]);
 
@@ -186,15 +145,11 @@ export default function CommunicationStudio() {
         }
 
         if (createCommunicationThunk.fulfilled.match(res) || updateCommunicationThunk.fulfilled.match(res)) {
-            // 1. Close Modal
             setIsCreateOpen(false);
-            // 2. Clear Form
             setForm(initialForm);
             setEditingItem(null);
-            // 3 & 4. Refresh Communications & Stats
             dispatch(fetchCommunicationsThunk(filters));
             dispatch(fetchCommunicationStatsThunk());
-            // 5. Show Toast
             setToastMsg(editingItem ? 'Communication updated successfully!' : 'Communication logged successfully!');
             setTimeout(() => setToastMsg(''), 4000);
         } else {
@@ -252,16 +207,21 @@ export default function CommunicationStudio() {
         }
     };
 
+    const handleLaunchOmega = () => {
+        window.open('https://omegatv.com', '_blank');
+    };
+
+    // Real MongoDB graph data
     const performanceData = stats?.weeklyPerformance && stats.weeklyPerformance.length > 0
         ? stats.weeklyPerformance
         : [
-            { name: 'Mon', confidence: 65, clarity: 70, pacing: 60 },
-            { name: 'Tue', confidence: 68, clarity: 75, pacing: 65 },
-            { name: 'Wed', confidence: 74, clarity: 72, pacing: 70 },
-            { name: 'Thu', confidence: 79, clarity: 80, pacing: 75 },
-            { name: 'Fri', confidence: 85, clarity: 82, pacing: 78 },
-            { name: 'Sat', confidence: 82, clarity: 85, pacing: 80 },
-            { name: 'Sun', confidence: 88, clarity: 89, pacing: 85 },
+            { name: 'Mon', count: 0, duration: 0, confidence: 0, clarity: 0 },
+            { name: 'Tue', count: 0, duration: 0, confidence: 0, clarity: 0 },
+            { name: 'Wed', count: 0, duration: 0, confidence: 0, clarity: 0 },
+            { name: 'Thu', count: 0, duration: 0, confidence: 0, clarity: 0 },
+            { name: 'Fri', count: 0, duration: 0, confidence: 0, clarity: 0 },
+            { name: 'Sat', count: 0, duration: 0, confidence: 0, clarity: 0 },
+            { name: 'Sun', count: 0, duration: 0, confidence: 0, clarity: 0 },
         ];
 
     const interviewModules = [
@@ -271,12 +231,7 @@ export default function CommunicationStudio() {
         { title: 'Networking Drive', attempts: stats?.networkingEvents || 0, completion: '70%', confidence: 'High', lastPracticed: 'Live DB', icon: Users, accent: 'group-hover:text-rose-500' },
     ];
 
-    const writingModules = [
-        { title: 'API Documentation', count: 12, icon: FileText },
-        { title: 'LinkedIn Posts', count: 8, icon: Linkedin },
-        { title: 'Code Review Comments', count: 145, icon: MessageSquare },
-        { title: 'Technical Blogs', count: 3, icon: PenTool },
-    ];
+    const omega = stats?.omegaStats || {};
 
     return (
         <div className="min-h-screen text-gray-300 font-sans selection:bg-amber-500/30 overflow-x-hidden pb-24 relative">
@@ -300,7 +255,7 @@ export default function CommunicationStudio() {
 
             <div className="max-w-7xl mx-auto px-6 pt-12 space-y-12">
 
-                {/* HERO SECTION */}
+                {/* 1. HERO & QUICK STATS SECTION */}
                 <section className="relative w-full py-10 flex flex-col lg:flex-row items-center justify-between gap-12">
                     <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
                         <motion.div animate={{ y: [-10, 10, -10], rotate: [0, 5, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} className="absolute top-10 left-10 text-[#1F2937]">
@@ -380,7 +335,7 @@ export default function CommunicationStudio() {
                     </motion.div>
                 </section>
 
-                {/* DASHBOARD METRICS */}
+                {/* DASHBOARD METRIC CARDS */}
                 <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                     {[
                         { label: "Upcoming Meetings", value: stats?.upcomingMeetings || 0, sub: "Pending calls", icon: Clock, color: "text-amber-500", bg: "bg-amber-500/10" },
@@ -410,7 +365,7 @@ export default function CommunicationStudio() {
                     ))}
                 </section>
 
-                {/* SEARCH & FILTERS BAR */}
+                {/* 2. SEARCH & FILTERS BAR */}
                 <section className="bg-[#111827] border border-[#1F2937] rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
                     <div className="relative w-full md:w-80">
                         <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
@@ -451,7 +406,82 @@ export default function CommunicationStudio() {
                     </div>
                 </section>
 
-                {/* INTERVIEW PRACTICE BENTO */}
+                {/* 3. LOGGED COMMUNICATION CALLS (Moved immediately below Search + Filters) */}
+                <motion.section
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="bg-[#111827] border border-[#1F2937] rounded-3xl p-8"
+                >
+                    <div className="flex items-center justify-between mb-8">
+                        <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                            <Calendar className="text-rose-500" /> Logged Communication Calls
+                        </h2>
+                        <span className="text-xs text-gray-500">Total: {communications?.length || 0}</span>
+                    </div>
+
+                    {loading ? (
+                        <div className="text-center py-12 text-gray-500 text-sm">Loading communication logs...</div>
+                    ) : !communications || communications.length === 0 ? (
+                        <div className="text-center py-12 text-gray-500 text-sm">
+                            <MessageSquare size={32} className="mx-auto mb-2 opacity-50" />
+                            No communication logs match filter criteria. Click "Log New Call" to add one!
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {communications.map((event) => (
+                                <div key={event._id || event.id} className="relative">
+                                    <div className="bg-[#0B1120] border border-[#1F2937] rounded-xl p-5 hover:border-gray-600 transition-colors h-full flex flex-col justify-between">
+                                        <div>
+                                            <div className="flex justify-between items-start mb-2">
+                                                <span className="text-xs font-semibold text-amber-500 uppercase tracking-wider">{event.communicationType}</span>
+                                                <span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${event.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400' : event.status === 'Missed' ? 'bg-red-500/20 text-red-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                                                    {event.status}
+                                                </span>
+                                            </div>
+                                            <h4 className="text-base font-bold text-white mb-1">{event.title}</h4>
+                                            <p className="text-xs text-gray-400 mb-2">{event.personName} {event.company ? `(${event.company})` : ''} • {event.durationMinutes || 30} mins</p>
+                                            {event.notes && <p className="text-xs text-gray-500 italic line-clamp-2">"{event.notes}"</p>}
+                                        </div>
+
+                                        <div className="mt-4 pt-3 border-t border-[#1F2937] flex items-center justify-between gap-2">
+                                            {event.status !== 'Completed' && (
+                                                <button
+                                                    onClick={() => handleComplete(event._id || event.id)}
+                                                    className="text-[11px] text-emerald-400 hover:underline flex items-center gap-1"
+                                                >
+                                                    <CheckCircle2 size={12} /> Mark Done
+                                                </button>
+                                            )}
+                                            {event.status === 'Upcoming' && (
+                                                <button
+                                                    onClick={() => handleMissed(event._id || event.id)}
+                                                    className="text-[11px] text-red-400 hover:underline flex items-center gap-1"
+                                                >
+                                                    <X size={12} /> Mark Missed
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => handleOpenEdit(event)}
+                                                className="text-[11px] text-amber-400 hover:underline flex items-center gap-1 ml-auto"
+                                            >
+                                                <Edit size={12} /> Edit
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(event._id || event.id)}
+                                                className="text-[11px] text-gray-500 hover:text-red-400 transition-colors"
+                                            >
+                                                <Trash2 size={12} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </motion.section>
+
+                {/* 4. COMMUNICATION BREAKDOWN */}
                 <section className="space-y-6">
                     <div className="flex items-center justify-between">
                         <h2 className="text-2xl font-bold text-white flex items-center gap-2">
@@ -493,188 +523,122 @@ export default function CommunicationStudio() {
                     </div>
                 </section>
 
-                {/* WRITING & PRESENTATION STUDIO */}
-                <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="bg-[#111827] border border-[#1F2937] rounded-3xl p-8"
-                    >
-                        <div className="flex items-center justify-between mb-8">
-                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                <PenTool className="text-cyan-500" /> Writing Studio
-                            </h2>
-                            <span className="px-3 py-1 bg-cyan-500/10 text-cyan-500 text-xs font-medium rounded-full border border-cyan-500/20">
-                                Weekly Goal: 4/5
-                            </span>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {writingModules.map((item, i) => (
-                                <div key={i} className="flex items-center gap-4 p-4 rounded-xl bg-[#0B1120] border border-[#1F2937] hover:border-cyan-500/30 transition-colors cursor-pointer group">
-                                    <div className="p-2 bg-[#111827] rounded-lg border border-[#1F2937] group-hover:text-cyan-500 transition-colors">
-                                        <item.icon size={20} />
-                                    </div>
-                                    <div>
-                                        <h4 className="text-sm font-semibold text-white">{item.title}</h4>
-                                        <p className="text-xs text-gray-500">{item.count} items drafted</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </motion.div>
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.2 }}
-                        className="bg-gradient-to-br from-[#111827] to-[#0B1120] border border-[#1F2937] rounded-3xl p-8 relative overflow-hidden"
-                    >
-                        <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
-                            <Monitor size={160} />
-                        </div>
-
-                        <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-2">
-                            <Monitor className="text-emerald-500" /> Presentation Practice
+                {/* 5. WEEKLY COMMUNICATION ACTIVITY GRAPH */}
+                <motion.section
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="bg-[#111827] border border-[#1F2937] rounded-3xl p-8"
+                >
+                    <div className="flex items-center justify-between mb-8">
+                        <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                            <BarChart3 className="text-indigo-500" /> Weekly Communication Activity
                         </h2>
-                        <p className="text-gray-400 text-sm mb-8">Master the art of presenting your code and architecture to stakeholders.</p>
+                        <span className="text-xs text-gray-500">Live MongoDB Aggregation</span>
+                    </div>
 
-                        <div className="space-y-4 relative z-10">
-                            {['Authentication Flow Overview', 'Q3 Performance Optimization', 'Database Migration Strategy'].map((pres, i) => (
-                                <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-[#111827] border border-[#1F2937] hover:bg-[#1F2937]/50 transition-colors cursor-pointer group">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-8 w-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                                            <Video size={14} />
-                                        </div>
-                                        <span className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors">{pres}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                                        <Star size={12} className="text-amber-500" fill="currentColor" /> 92%
-                                    </div>
+                    <div className="h-[300px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={performanceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                                    </linearGradient>
+                                    <linearGradient id="colorDuration" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" vertical={false} />
+                                <XAxis dataKey="name" stroke="#6B7280" tick={{ fill: '#6B7280', fontSize: 12 }} axisLine={false} tickLine={false} />
+                                <YAxis stroke="#6B7280" tick={{ fill: '#6B7280', fontSize: 12 }} axisLine={false} tickLine={false} />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#111827', borderColor: '#1F2937', borderRadius: '12px', color: '#fff' }}
+                                    itemStyle={{ color: '#fff' }}
+                                    formatter={(val, name) => [name === 'duration' ? `${val} mins` : `${val} calls`, name === 'duration' ? 'Duration' : 'Communications']}
+                                />
+                                <Area type="monotone" dataKey="count" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" name="count" />
+                                <Area type="monotone" dataKey="duration" stroke="#06b6d4" strokeWidth={3} fillOpacity={1} fill="url(#colorDuration)" name="duration" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </motion.section>
+
+                {/* 6. OMEGATV PRACTICE SECTION (Replacing Writing Studio & Presentation Practice) */}
+                <motion.section
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="bg-[#111827] border border-[#1F2937] rounded-3xl p-8 relative overflow-hidden"
+                >
+                    <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 border-b border-[#1F2937] pb-6">
+                        <div>
+                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full text-amber-500 text-xs font-semibold mb-2">
+                                <Zap size={14} /> OMEGA PRACTICE STUDIO
+                            </div>
+                            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                                OmegaTV Practice Telemetry
+                            </h2>
+                            <p className="text-sm text-gray-400 mt-1">Real-time practice analytics & AI feedback session metrics.</p>
+                        </div>
+
+                        <button
+                            onClick={handleLaunchOmega}
+                            className="px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-gray-950 font-bold rounded-xl shadow-lg active:scale-95 transition-all flex items-center gap-2 text-sm"
+                        >
+                            Launch Omega Session <ExternalLink size={16} />
+                        </button>
+                    </div>
+
+                    {!omega?.hasData ? (
+                        <div className="py-12 text-center bg-[#0B1120] border border-[#1F2937] rounded-2xl p-6">
+                            <Activity size={36} className="mx-auto text-amber-500 mb-3 opacity-60" />
+                            <h3 className="text-white font-bold text-lg mb-1">No Omega practice yet.</h3>
+                            <p className="text-gray-400 text-sm max-w-md mx-auto">Log your communication & interview sessions or launch an Omega Session to start generating telemetry data.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="bg-[#0B1120] border border-[#1F2937] p-5 rounded-2xl">
+                                <p className="text-xs text-gray-400 mb-1">Last Practice Date</p>
+                                <p className="text-xl font-bold text-white">{omega.lastPracticeDate}</p>
+                                <p className="text-xs text-amber-400 mt-1">Time: {omega.lastPracticeTime}</p>
+                            </div>
+                            <div className="bg-[#0B1120] border border-[#1F2937] p-5 rounded-2xl">
+                                <p className="text-xs text-gray-400 mb-1">Total Practice Duration</p>
+                                <p className="text-xl font-bold text-white">{omega.totalPracticeDuration}</p>
+                                <p className="text-xs text-cyan-400 mt-1">Today: {omega.todayPracticeDuration}</p>
+                            </div>
+                            <div className="bg-[#0B1120] border border-[#1F2937] p-5 rounded-2xl">
+                                <p className="text-xs text-gray-400 mb-1">Total Omega Sessions</p>
+                                <p className="text-xl font-bold text-white">{omega.totalOmegaSessions}</p>
+                                <p className="text-xs text-emerald-400 mt-1">Longest: {omega.longestSession}</p>
+                            </div>
+                            <div className="bg-[#0B1120] border border-[#1F2937] p-5 rounded-2xl">
+                                <p className="text-xs text-gray-400 mb-1">Practice Streak</p>
+                                <p className="text-xl font-bold text-white flex items-center gap-1.5">
+                                    {omega.currentPracticeStreak} <Flame size={18} className="text-amber-500" />
+                                </p>
+                                <p className="text-xs text-amber-400 mt-1">Best: {omega.bestStreak}</p>
+                            </div>
+                            <div className="bg-[#0B1120] border border-[#1F2937] p-5 rounded-2xl">
+                                <p className="text-xs text-gray-400 mb-1">Avg Session Duration</p>
+                                <p className="text-xl font-bold text-white">{omega.avgSessionDuration}</p>
+                                <p className="text-xs text-gray-400 mt-1">Per session average</p>
+                            </div>
+                            <div className="bg-[#0B1120] border border-[#1F2937] p-5 rounded-2xl flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">Omega Extension</p>
+                                    <p className="text-sm font-bold text-emerald-400">Ready to Connect</p>
                                 </div>
-                            ))}
-                        </div>
-                    </motion.div>
-                </section>
-
-                {/* STATS & TIMELINE */}
-                <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Charts (Takes 2 cols) */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="lg:col-span-2 bg-[#111827] border border-[#1F2937] rounded-3xl p-8"
-                    >
-                        <div className="flex items-center justify-between mb-8">
-                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                <BarChart3 className="text-indigo-500" /> Weekly Communication Activity
-                            </h2>
-                        </div>
-
-                        <div className="h-[300px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={performanceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                    <defs>
-                                        <linearGradient id="colorConfidence" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                                            <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                                        </linearGradient>
-                                        <linearGradient id="colorClarity" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
-                                            <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" vertical={false} />
-                                    <XAxis dataKey="name" stroke="#6B7280" tick={{ fill: '#6B7280', fontSize: 12 }} axisLine={false} tickLine={false} />
-                                    <YAxis stroke="#6B7280" tick={{ fill: '#6B7280', fontSize: 12 }} axisLine={false} tickLine={false} />
-                                    <Tooltip
-                                        contentStyle={{ backgroundColor: '#111827', borderColor: '#1F2937', borderRadius: '12px', color: '#fff' }}
-                                        itemStyle={{ color: '#fff' }}
-                                    />
-                                    <Area type="monotone" dataKey="confidence" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorConfidence)" />
-                                    <Area type="monotone" dataKey="clarity" stroke="#06b6d4" strokeWidth={3} fillOpacity={1} fill="url(#colorClarity)" />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </motion.div>
-
-                    {/* Live Communication Sessions Timeline */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.2 }}
-                        className="bg-[#111827] border border-[#1F2937] rounded-3xl p-8 overflow-y-auto max-h-[480px]"
-                    >
-                        <div className="flex items-center justify-between mb-8">
-                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                <Calendar className="text-rose-500" /> Logged Communication Calls
-                            </h2>
-                        </div>
-
-                        {loading ? (
-                            <div className="text-center py-12 text-gray-500 text-sm">Loading communication logs...</div>
-                        ) : !communications || communications.length === 0 ? (
-                            <div className="text-center py-12 text-gray-500 text-sm">
-                                <MessageSquare size={32} className="mx-auto mb-2 opacity-50" />
-                                No communication logs match filter criteria.
+                                <div className="h-10 w-10 bg-amber-500/10 rounded-full flex items-center justify-center border border-amber-500/20 text-amber-500">
+                                    <Zap size={20} />
+                                </div>
                             </div>
-                        ) : (
-                            <div className="relative pl-4 border-l border-[#1F2937] space-y-6">
-                                {communications.map((event) => (
-                                    <div key={event._id || event.id} className="relative">
-                                        <div className="absolute -left-[25px] top-1 h-3.5 w-3.5 rounded-full border-2 border-[#111827] bg-amber-500" />
-                                        <div className="bg-[#0B1120] border border-[#1F2937] rounded-xl p-4 hover:border-gray-600 transition-colors">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <span className="text-xs font-semibold text-amber-500 uppercase tracking-wider">{event.communicationType}</span>
-                                                <span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${event.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400' : event.status === 'Missed' ? 'bg-red-500/20 text-red-400' : 'bg-amber-500/20 text-amber-400'}`}>
-                                                    {event.status}
-                                                </span>
-                                            </div>
-                                            <h4 className="text-sm font-bold text-white">{event.title}</h4>
-                                            <p className="text-xs text-gray-400 mt-1">{event.personName} {event.company ? `(${event.company})` : ''} • {event.durationMinutes || 30} mins</p>
-                                            {event.notes && <p className="text-xs text-gray-500 mt-2 italic line-clamp-2">"{event.notes}"</p>}
+                        </div>
+                    )}
+                </motion.section>
 
-                                            <div className="mt-3 pt-3 border-t border-[#1F2937] flex items-center justify-between gap-2">
-                                                {event.status !== 'Completed' && (
-                                                    <button
-                                                        onClick={() => handleComplete(event._id || event.id)}
-                                                        className="text-[11px] text-emerald-400 hover:underline flex items-center gap-1"
-                                                    >
-                                                        <CheckCircle2 size={12} /> Mark Done
-                                                    </button>
-                                                )}
-                                                {event.status === 'Upcoming' && (
-                                                    <button
-                                                        onClick={() => handleMissed(event._id || event.id)}
-                                                        className="text-[11px] text-red-400 hover:underline flex items-center gap-1"
-                                                    >
-                                                        <X size={12} /> Mark Missed
-                                                    </button>
-                                                )}
-                                                <button
-                                                    onClick={() => handleOpenEdit(event)}
-                                                    className="text-[11px] text-amber-400 hover:underline flex items-center gap-1 ml-auto"
-                                                >
-                                                    <Edit size={12} /> Edit
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(event._id || event.id)}
-                                                    className="text-[11px] text-gray-500 hover:text-red-400 transition-colors"
-                                                >
-                                                    <Trash2 size={12} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </motion.div>
-                </section>
             </div>
 
             {/* CREATE / EDIT COMMUNICATION MODAL */}
