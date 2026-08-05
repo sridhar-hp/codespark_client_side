@@ -208,7 +208,7 @@ export default function CommunicationStudio() {
     };
 
     const handleLaunchOmega = () => {
-        window.open('https://omegatv.com', '_blank');
+        window.open('https://ome.tv', '_blank');
     };
 
     // Real MongoDB graph data
